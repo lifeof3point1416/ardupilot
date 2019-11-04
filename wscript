@@ -12,6 +12,9 @@ import boards
 
 from waflib import Build, ConfigSet, Configure, Context, Utils
 
+# edited by Peter
+is_debug = True
+
 # TODO: implement a command 'waf help' that shows the basic tasks a
 # developer might want to do: e.g. how to configure a board, compile a
 # vehicle, compile all the examples, add a new example. Should fit in
@@ -157,7 +160,9 @@ def _collect_autoconfig_files(cfg):
                 paths.append(p)
 
         for p in paths:
-            if p in cfg.files or not os.path.isfile(p):
+            # edited by Peter
+            #if p in cfg.files or not os.path.isfile(p):
+            if p in cfg.files or p is None or not os.path.isfile(p):
                 continue
 
             with open(p, 'rb') as f:
@@ -254,6 +259,9 @@ def configure(cfg):
     cfg.define('_GNU_SOURCE', 1)
 
     cfg.write_config_header(os.path.join(cfg.variant, 'ap_config.h'))
+    
+    # Peter
+    if is_debug: print(__name__, "line 259; cfg:", cfg)
 
     _collect_autoconfig_files(cfg)
 
