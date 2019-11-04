@@ -20,11 +20,24 @@ static void failsafe_check_static()
 
 void Copter::init_ardupilot()
 {
+
+
     // initialise serial port
     serial_manager.init_console();
 
     // init vehicle capabilties
     init_capabilities();
+
+    // edit by PeterSt HERE
+    #if IS_PRINT_INIT_GCS_MESSAGE
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Hello via gcs message! from line %d", __LINE__);      // doesn't work (not set up yet)
+    #endif
+    #if IS_PRINT_INIT_PRINTF_MESSAGE
+        printf("Hello via printf from line %d :)\n", __LINE__);                                        // works on sitl (xterm)
+    #endif
+    #if IS_PRINT_INIT_HAL_PRINTF_MESSAGE
+        hal.console->printf("Hello via hal.console->printf from line %d\n", __LINE__);                     // doesn't work on sitl
+    #endif
 
     hal.console->printf("\n\nInit %s"
                         "\n\nFree RAM: %u\n",
@@ -290,6 +303,14 @@ void Copter::init_ardupilot()
 
     // flag that initialisation has completed
     ap.initialised = true;
+
+    // PeterSt
+    #if IS_PRINT_INIT_GCS_MESSAGE
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Hello via gcs message! from line %d", __LINE__);           // works :)
+    #endif
+    #if IS_PRINT_INIT_HAL_PRINTF_MESSAGE
+        hal.console->printf("Hello via hal.console->printf from line %d\n", __LINE__);                     // works on sitl (console)
+    #endif
 }
 
 

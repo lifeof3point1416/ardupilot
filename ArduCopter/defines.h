@@ -2,6 +2,8 @@
 
 #include <AP_HAL/AP_HAL_Boards.h>
 
+#include <DebugDefines.h>           // added by PeterSt
+
 // Just so that it's completely clear...
 #define ENABLED                 1
 #define DISABLED                0

@@ -72,9 +72,10 @@
  *  Requires modified version of Arduino, which can be found here: http://ardupilot.com/downloads/?category=6
  * 
  * Edited by Peter Steidten for midified Altitude Control
+ * changes marked by "PeterSt"
  * Started:             2019-10-30 12:08+01:00
- * last update:         2019-10-30 12:20+01:00
- * update deprecated?   No
+ * last update:         2019-11-03 18:10+01:00
+ * update deprecated?   Yes
  *
  */
 
@@ -420,6 +421,20 @@ void Copter::three_hz_loop()
 // one_hz_loop - runs at 1Hz
 void Copter::one_hz_loop()
 {
+    // debug stuff by PeterSt
+    call_1hz_loop_counter++;
+    #if IS_PRINT_REPEATET_GCS_MESSAGE
+        if (call_1hz_loop_counter % REPEATET_GCS_MESSAGE_INTERVAL == 1) {   // so that it's also executed in 1st loop
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Schalalalala :)");
+            uint64_t micros = AP_HAL::micros();
+            hal.console->printf("Time since start: %4d.%06d s\n", (int) (micros/1000000), (int) (micros%1000000));
+            //hal.console->printf("Time since start: %" PRIu64 " us\n", AP_HAL::micros());
+        }
+    #endif 
+    #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Moin :)");          // works
+    #endif
+
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);
     }
