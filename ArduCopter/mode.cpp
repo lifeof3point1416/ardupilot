@@ -159,6 +159,7 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
 #if MODE_MEASUREMENT_ENABLED == ENABLED
         case MEASUREMENT:
             ret = &mode_measurement;
+            break;
 #endif
 
         default:
