@@ -1239,3 +1239,29 @@ protected:
 
     uint32_t last_log_ms;   // system time of last time desired velocity was logging
 };
+
+
+// new flightmode by PeterSt
+// TODO: adapt copied class to MEASUREMENT flightmode
+class ModeMeasurement : public ModeGuided {
+
+public:
+    // inherit constructor
+    using Copter::ModeGuided::Mode;
+
+    bool init(bool ignore_checks) override;                                 // TODO: prio 7 implement
+    void run() override;                                                    // TODO: prio 7 implement
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+
+protected:
+
+    const char *name() const override { return "MEASUREMENT"; }
+    const char *name4() const override { return "MEAS"; }
+
+private:
+
+};

@@ -1011,6 +1011,14 @@ private:
 #if !HAL_MINIMIZE_FEATURES && OPTFLOW == ENABLED
     ModeFlowHold mode_flowhold;
 #endif
+// new flightmode by PeterSt
+// TODO: check if MODE_MEASUREMENT exists
+//  does ArduCopter/config.h get created automatically?
+#if MODE_MEASUREMENT == ENABLED
+    // TODO: prio 5 instantiate anticipating altitude control, too? 
+    //  Cf. autotune in http://ardupilot.org/dev/docs/apmcopter-adding-a-new-flight-mode.html 4.
+    ModeMeasurement mode_measurement;
+#endif
 
     // mode.cpp
     Mode *mode_from_mode_num(const uint8_t mode);
