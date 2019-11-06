@@ -310,6 +310,12 @@ void Copter::init_ardupilot()
     #endif
     #if IS_PRINT_INIT_HAL_PRINTF_MESSAGE
         hal.console->printf("Hello via hal.console->printf from line %d\n", __LINE__);                     // works on sitl (console)
+        //
+        hal.console->printf("This is the modified ArduCopter 3.6.11 version for an Anticipating Altitude Control.\n");
+        hal.console->printf("Last logged code change has been %s.\n", LAST_CODE_CHANGE);
+        if (IS_LAST_CHANGE_DATE_DEPRECATED) {
+            hal.console->printf("Note that there have been changes since then!\n");
+        }
     #endif
 }
 

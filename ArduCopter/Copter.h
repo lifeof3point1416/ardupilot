@@ -1014,8 +1014,8 @@ private:
 // new flightmode by PeterSt
 // TODO: check if MODE_MEASUREMENT exists
 //  does ArduCopter/config.h get created automatically?
-#if MODE_MEASUREMENT == ENABLED
-    // TODO: prio 5 instantiate anticipating altitude control, too? 
+#if MODE_MEASUREMENT_ENABLED == ENABLED
+    // TODO: prio 8 instantiate anticipating altitude control, too? 
     //  Cf. autotune in http://ardupilot.org/dev/docs/apmcopter-adding-a-new-flight-mode.html 4.
     ModeMeasurement mode_measurement;
 #endif

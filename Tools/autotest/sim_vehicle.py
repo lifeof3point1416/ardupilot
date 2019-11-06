@@ -972,6 +972,7 @@ if cmd_opts.vehicle not in vinfo.options:
 
 # try to validate vehicle
 if cmd_opts.vehicle not in vinfo.options:
+    # print("10 / 3:", 10/3)        # check pyversion (edited by PeterSt)
     progress('''
 ** Is (%s) really your vehicle type?
 Perhaps you could try -v %s

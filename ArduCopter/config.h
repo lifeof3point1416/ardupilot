@@ -350,6 +350,14 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// Measurement - Flightmode for measurement flights, manually added by PeterSt
+// didn't find a way to add MODE_MEASUREMENT_ENABLED, define hadn't been
+// added automatically
+#ifndef MODE_MEASUREMENT_ENABLED
+# define MODE_MEASUREMENT_ENABLED ENABLED
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Beacon support - support for local positioning systems
 #ifndef BEACON_ENABLED
 # define BEACON_ENABLED !HAL_MINIMIZE_FEATURES
