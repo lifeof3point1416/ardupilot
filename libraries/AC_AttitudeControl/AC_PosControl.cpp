@@ -504,7 +504,9 @@ void AC_PosControl::calc_leash_length_z()
 // vel_up_max, vel_down_max should have already been set before calling this method
 void AC_PosControl::run_z_controller()
 {
-    float curr_alt = _inav.get_altitude();
+    float curr_alt = _inav.get_altitude();          // PSt: relative altitude to home position
+    // (not altitude over ground!)
+    // 
 
     // clear position limit flags
     _limit.pos_up = false;
@@ -628,6 +630,7 @@ void AC_PosControl::run_z_controller()
     // get d term
     d = _pid_accel_z.get_d();
 
+    // Pst: actual pid for throttle out ("altitude control")
     float thr_out = (p+i+d)*0.001f +_motors.get_throttle_hover();
 
     // send throttle to attitude controller with angle boost

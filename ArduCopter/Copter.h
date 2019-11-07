@@ -680,6 +680,8 @@ private:
     void update_altitude();
     // debugging variables added by PeterSt
     int call_1hz_loop_counter = 0;                              // counts calls of Copter::one_hz_loop()
+    int call_run_counter = 0;                                   // counts calls of:
+    //  void Copter::ModeMeasurement::run(), Copter::ModeLoiter::run(), void Copter::ModeAltHold::run()
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);

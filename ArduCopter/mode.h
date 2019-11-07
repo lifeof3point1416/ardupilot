@@ -1256,6 +1256,7 @@ public:
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override { return from_gcs; }
     bool is_autopilot() const override { return true; }
+    // int call_run_counter = 0;                                               // public for Attitude.cpp
 
 protected:
 
@@ -1264,5 +1265,4 @@ protected:
 
 private:
 
-    int call_run_counter = 0;
 };

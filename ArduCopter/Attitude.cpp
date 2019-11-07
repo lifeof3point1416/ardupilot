@@ -215,8 +215,28 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     }
 
     // calc desired velocity correction from target rangefinder alt vs actual rangefinder alt (remove the error already passed to Altitude controller to avoid oscillations)
+    // PSt: error in altitudes over ground
     distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
     velocity_correction = distance_error * g.rangefinder_gain;
+    // PSt: 0 for LOITER?
+    // PSt: RNGFND_GAIN in http://ardupilot.org/copter/docs/parameters.html -->
+    //  Used to adjust the speed with which the target altitude is changed when objects are sensed below the copter
+    //  Range     Increment: 0.01 - 2.0; 0.01
+    // PeterSt: TODO: prio 9: print debug message rangefinder_gain CONTINUE HERE
+    #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN
+        //if (this->mode_measurement.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "print value of g.rangefinder_gain: %f", g.rangefinder_gain);
+            // print system time for checking intervals
+            hal.console->printf("print value (%s) Time since start: %" PRIu32 " us\n", this->flightmode->name4(), 
+                AP_HAL::micros());
+        }
+        //hal.console->printf("call_run_counter: %d\n", call_run_counter);
+        
+        // very verbose printout in case "call_run_counter check" doesn't work
+        // hal.console->printf("$ "); // works
+    #endif
+
     velocity_correction = constrain_float(velocity_correction, -THR_SURFACE_TRACKING_VELZ_MAX, THR_SURFACE_TRACKING_VELZ_MAX);
 
     // return combined pilot climb rate + rate to correct rangefinder alt error

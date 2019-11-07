@@ -76,6 +76,8 @@ void Copter::ModeLoiter::precision_loiter_xy()
 // should be called at 100hz or more
 void Copter::ModeLoiter::run()
 {
+    copter.call_run_counter++;                                  // added by PeterSt for debug messages
+
     LoiterModeState loiter_state;
 
     float target_roll, target_pitch;

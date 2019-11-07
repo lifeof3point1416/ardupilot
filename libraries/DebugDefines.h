@@ -19,6 +19,8 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_INIT_HAL_PRINTF_MESSAGE            1           // print init message via hal.console->printf
                                                                 // works on sitl after Copter::init_ardupilot()
 #define IS_PRINT_REPEATET_MESSAGE_IN_MEASUREMENT    1           // only sends gcs message in flightmode MEASUREMENT
+// print some values in a mavlink message if desired in interval: PRINT_MESSAGE_VALUE_INTERVAL
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     1           
 
 // more specific stuff
 #define IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE       0           // print message via GCS message in 1 Hz look
@@ -27,6 +29,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-06 17:59+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-11-07 16:12+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              0           // change to 1, if you changed code but
+#define PRINT_MESSAGE_VALUE_INTERVAL                30
 //                                                                  didn't update LAST_CODE_CHANGE
