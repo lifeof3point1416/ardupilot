@@ -158,6 +158,11 @@ float Copter::get_non_takeoff_throttle()
     return MAX(0,motors->get_throttle_hover()/2.0f);
 }
 
+// PSt: rangefinder comes into play here 
+// (flightmodi using this function are controlled by altitude over ground, not altitude over home)
+//  these are eg.: LOITER, ALT_HOLD
+//  these are not: GUIDED, AUTO
+
 // get_surface_tracking_climb_rate - hold copter at the desired distance above the ground
 //      returns climb rate (in cm/s) which should be passed to the position controller
 float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current_alt_target, float dt)
