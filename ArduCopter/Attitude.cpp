@@ -231,7 +231,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN
         //if (this->mode_measurement.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
         if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "print value of g.rangefinder_gain: %f", g.rangefinder_gain);
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: g.rangefinder_gain: %f", g.rangefinder_gain);
             // print system time for checking intervals
             hal.console->printf("print value (%s) Time since start: %" PRIu32 " us\n", this->flightmode->name4(), 
                 AP_HAL::micros());
@@ -241,6 +241,15 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // very verbose printout in case "call_run_counter check" doesn't work
         // hal.console->printf("$ "); // works
     #endif
+    // migrated the following printout to void Copter::one_hz_loop() in AC/ArduCopter.cpp, so that it gets exec'ed
+    //  always, not only when in this function here is called:
+    //
+    // #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
+    //     if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+    //         gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm: %" PRIi16 "",
+    //             rangefinder_state.alt_cm);
+    //     }
+    // #endif
 
     velocity_correction = constrain_float(velocity_correction, -THR_SURFACE_TRACKING_VELZ_MAX, THR_SURFACE_TRACKING_VELZ_MAX);
 

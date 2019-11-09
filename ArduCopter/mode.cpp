@@ -394,6 +394,7 @@ void Copter::Mode::zero_throttle_and_relax_ac()
 /*
   get a height above ground estimate for landing
  */
+// PSt: this might be interesting for anticipating alt ctrl
 int32_t Copter::Mode::get_alt_above_ground(void)
 {
     int32_t alt_above_ground;

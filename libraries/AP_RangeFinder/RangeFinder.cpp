@@ -608,6 +608,10 @@ void RangeFinder::init(void)
  */
 void RangeFinder::update(void)
 {
+    // PeterSt debug printout, num_instances is 1
+    #if 0
+        printf("in RangeFinder::update(void) num_instances: %hhu\n", num_instances);
+    #endif
     for (uint8_t i=0; i<num_instances; i++) {
         if (drivers[i] != nullptr) {
             if (state[i].type == RangeFinder_TYPE_NONE) {
@@ -617,6 +621,11 @@ void RangeFinder::update(void)
                 continue;
             }
             drivers[i]->update();
+            // PeterSt, debug printout
+            #if 0
+                // only 0 in sitl, because there is only 1 rangefinder
+                printf("in RangeFinder::update(void) drivers[%hhu]->update();\n", i);
+            #endif
             drivers[i]->update_pre_arm_check();
         }
     }
@@ -830,6 +839,13 @@ AP_RangeFinder_Backend *RangeFinder::find_instance(enum Rotation orientation) co
         if (backend == nullptr) {
             continue;
         }
+        // PeterSt: debug printout rangefinder orientation
+        #if 0
+            // sitl with emulated rangefinder:
+            //  25 == ROTATION_PITCH_270, why is that!?
+            printf("*RangeFinder::find_instance(...): backend->orientation(): %d; ", backend->orientation());
+            printf("orientation: %d\n", orientation);
+        #endif
         if (backend->orientation() != orientation) {
             continue;
         }

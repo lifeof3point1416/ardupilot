@@ -434,6 +434,39 @@ void Copter::one_hz_loop()
     #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Moin :)");          // works
     #endif
+    #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
+        if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm: %" PRIi16 "",
+                rangefinder_state.alt_cm);
+            // get particular rangefinder by its orientation, set in MP by RNGFND<N>_ORIENT
+            //  as of 2019-11-08: (MP-->Config/Tuning/Full Param List)
+            //  RNGFND_ORIENT:  0   ("Forward")     forward facing rangefinder (tilted ca 45°)
+            //  RNGFND2_ORIENT: 25  ("Down")        downward facing rangefinder
+            //  orientation-enum DOES NOT MATCH arducopter's from libraries/AP_Math/rotations.h
+            //      fwd should have ROTATION_PITCH_315, dwn NONE
+            //      actually our "forward facing rangefinder" is backward, due to practability reasons
+            //      but lets assume, its forward, as it is only a prototype
+            //  
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder.distance_cm_orient(");
+            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_NONE     ): %4" PRIi16 "; ori: %d",
+            //     rangefinder.distance_cm_orient(ROTATION_NONE     ), ROTATION_NONE);
+            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_PITCH_270): %4" PRIi16 "; ori: %d",
+            //     rangefinder.distance_cm_orient(ROTATION_PITCH_270), ROTATION_PITCH_270);
+            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_PITCH_315): %4" PRIi16 "; ori: %d",
+            //     rangefinder.distance_cm_orient(ROTATION_PITCH_315), ROTATION_PITCH_315);
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "<downward facing>): %4" PRIi16 "; ori: %d",
+                rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING),
+                RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "<forward facing>):  %4" PRIi16 "; ori: %d",
+                rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING),
+                RANGEFINDER_ORIENTATION_FORWARD_FACING);
+            // gcs().send_text(MAV_SEVERITY_CRITICAL, "<downward facing>): ");
+            // gcs().send_text(MAV_SEVERITY_CRITICAL, "%4" PRIi16 "; ori: %d",
+            //     rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING), 
+            //     RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
+            
+        }
+    #endif
 
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);

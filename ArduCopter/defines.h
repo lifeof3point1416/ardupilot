@@ -3,6 +3,8 @@
 #include <AP_HAL/AP_HAL_Boards.h>
 
 #include <DebugDefines.h>           // added by PeterSt
+#include <../libraries/AnticipatingAltCtrlDefines.h>
+//#include <libraries/AnticipatingAltCtrlDefines.h>
 
 // Just so that it's completely clear...
 #define ENABLED                 1

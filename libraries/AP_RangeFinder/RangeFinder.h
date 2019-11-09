@@ -134,6 +134,7 @@ public:
     bool has_orientation(enum Rotation orientation) const;
 
     // find first range finder instance with the specified orientation
+    // PSt: this to get 2nd rangefinder?
     AP_RangeFinder_Backend *find_instance(enum Rotation orientation) const;
 
     AP_RangeFinder_Backend *get_backend(uint8_t id) const;
