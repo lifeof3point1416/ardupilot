@@ -221,7 +221,22 @@ void Copter::ModeLoiter::run()
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
 
         // adjust climb rate using rangefinder
+        #if IS_PRINT_VALUE_LOITER_ALT_TARGET    // PeterSt added some debug printouts
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("%s pos_control->get_alt_target(): %f\n", name4(), pos_control->get_alt_target());
+                hal.console->printf("target_climb_rate before:           %f\n", target_climb_rate);
+            }
+        #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
+        // PSt: pos_control->get_alt_target() is probably an absolute altitude (ref to home position)
+        //  adjust target_climb_rate according to altitude over ground
         target_climb_rate = get_surface_tracking_climb_rate(target_climb_rate, pos_control->get_alt_target(), G_Dt);
+        
+        #if IS_PRINT_VALUE_LOITER_ALT_TARGET    // PeterSt added some debug printouts
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("%s pos_control->get_alt_target(): %f\n", name4(), pos_control->get_alt_target());
+                hal.console->printf("target_climb_rate after:            %f\n", target_climb_rate);
+            }
+        #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
 
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);

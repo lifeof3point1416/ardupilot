@@ -1,4 +1,5 @@
 #include "Copter.h"
+// #include <../libraries/AnticipatingAltCtrlModes.h>  // PeterSt
 
 // get_pilot_desired_heading - transform pilot's yaw input into a
 // desired yaw rate
@@ -182,6 +183,46 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
 
     target_rangefinder_alt_used = true;
 
+    // PeterSt: TODO: prio 8: implement new altitude controls HERE
+    //  CONTINUE HERE
+    // TODO: check if we are in flightmode MEASUREMENT
+    //
+    // #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+    // if (copter.control_mode == control_mode_t::MEASUREMENT) {
+    //     // differentiate between the altitude control methods
+    //     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == AltCtrlMode::EXTENDED_PID
+    //     // TODO: prio 8: implement extended pid
+    //     #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == AltCtrlMode::FFC
+    //     // TODO: prio 7: implement extended pid
+    //     #else
+    //     // TODO: prio 9: raise compiler error
+    //     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+    // } else {
+    //     // for all other flightmodes nothing changes
+    // }
+    // #else
+    // // for standard PID nothing changes
+    // #endif  // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+
+    // Anticipating Altitude Control HERE
+    
+    #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
+    if (copter.control_mode == control_mode_t::MEASUREMENT) {
+        // differentiate between the altitude control methods
+        #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
+        // TODO: prio 8: implement extended pid
+        #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_FFC
+        // TODO: prio 7: implement ffc (should be nothing inhere, ffc is implemented in run_z_controller)
+        #else
+        // TODO: prio 9: raise compiler error
+        #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+    } else {
+        // for all other flightmodes nothing changes
+    }
+    #else
+    // for standard PID nothing changes
+    #endif  // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
+
     // reset target altitude if this controller has just been engaged
     if (now - last_call_ms > RANGEFINDER_TIMEOUT_MS) {
         target_rangefinder_alt = rangefinder_state.alt_cm + current_alt_target - current_alt;
@@ -221,20 +262,25 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
 
     // calc desired velocity correction from target rangefinder alt vs actual rangefinder alt (remove the error already passed to Altitude controller to avoid oscillations)
     // PSt: error in altitudes over ground
+    //  differentiate distance_error by (1/g.rangefinder_gain) [s]; probably some empirical value
     distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
     velocity_correction = distance_error * g.rangefinder_gain;
+    
     // PSt: 0 for LOITER?
     // PSt: RNGFND_GAIN in http://ardupilot.org/copter/docs/parameters.html -->
     //  Used to adjust the speed with which the target altitude is changed when objects are sensed below the copter
     //  Range     Increment: 0.01 - 2.0; 0.01
-    // PeterSt: TODO: prio 9: print debug message rangefinder_gain CONTINUE HERE
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN
         //if (this->mode_measurement.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
         if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: g.rangefinder_gain: %f", g.rangefinder_gain);
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: g.rangefinder_gain: %f", (float) g.rangefinder_gain);
             // print system time for checking intervals
             hal.console->printf("print value (%s) Time since start: %" PRIu32 " us\n", this->flightmode->name4(), 
                 AP_HAL::micros());
+            //
+            hal.console->printf("velocity_correction: %f\n", velocity_correction);
+            hal.console->printf("distance_error:      %f\n", distance_error);
+            hal.console->printf("g.rangefinder_gain:  %f\n", (float) g.rangefinder_gain);
         }
         //hal.console->printf("call_run_counter: %d\n", call_run_counter);
         

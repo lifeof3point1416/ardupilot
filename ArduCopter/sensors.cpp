@@ -31,6 +31,9 @@ void Copter::read_rangefinder(void)
         DataFlash.Log_Write_RFND(rangefinder);
     }
 
+    // PSt: choosing the 1 and only particular rangefinder happens here
+    //  downward rangefinder is hardcoded with ROTATION_PITCH_270
+
     rangefinder_state.alt_healthy = ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::RangeFinder_Good) && (rangefinder.range_valid_count_orient(ROTATION_PITCH_270) >= RANGEFINDER_HEALTH_MAX));
 
     int16_t temp_alt = rangefinder.distance_cm_orient(ROTATION_PITCH_270);
@@ -40,7 +43,25 @@ void Copter::read_rangefinder(void)
     temp_alt = (float)temp_alt * MAX(0.707f, ahrs.get_rotation_body_to_ned().c.z);
  #endif
 
+    // PSt: rangefinder_state carries only the state of the downward facing rangefinder (tilt compensated)
     rangefinder_state.alt_cm = temp_alt;
+
+ #if IS_ENABLE_SECOND_RANGEFINDER
+    // begin added by PeterSt - do tilt compensation for forward facing rangefinder
+    rangefinder2_state.dist_healthy = (
+        (rangefinder.status_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING) == RangeFinder::RangeFinder_Good)
+        && (rangefinder.range_valid_count_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING) >= RANGEFINDER_HEALTH_MAX));
+
+    int16_t temp_dist_rangefinder2 = rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING);
+
+  #if (RANGEFINDER_TILT_CORRECTION == ENABLED) && IS_DO_TILT_COMPENSATION_SECOND_RANGEFINDER
+        // correct alt for angle of the rangefinder
+        // compensate maximum 45° tilt (sin 45° = 1/sqrt(2) ~== 0.707)
+        temp_dist_rangefinder2 = (float)temp_dist_rangefinder2 * MAX(0.707f, ahrs.get_rotation_body_to_ned().c.z);
+  #endif // (RANGEFINDER_TILT_CORRECTION == ENABLED) && IS_DO_TILT_COMPENSATION_SECOND_RANGEFINDER
+
+    rangefinder2_state.dist_cm = temp_dist_rangefinder2;
+ #endif // IS_ENABLE_SECOND_RANGEFINDER
 
     // filter rangefinder for use by AC_WPNav
     uint32_t now = AP_HAL::millis();

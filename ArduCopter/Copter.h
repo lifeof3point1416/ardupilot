@@ -248,6 +248,22 @@ private:
         int8_t glitch_count;
     } rangefinder_state = { false, false, 0, 0 };
 
+    // PeterSt
+    // added 2nd rangefinder for anticipating altitude control 
+#if IS_ENABLE_SECOND_RANGEFINDER
+    // rangefinder is a singleton - default orientation doesn't seem to be important for us
+    // RangeFinder rangefinder2{serial_manager, RANGEFINDER_ORIENTATION_FORWARD_FACING};   // need serial_manager???
+    // note: this rangefinder measures a dist(-ance), rather than an alt(-itude)
+    struct {
+        bool enabled:1;
+        bool dist_healthy:1; // true if we can trust the altitude from the rangefinder DEPRECATED???
+        int16_t dist_cm;     // tilt compensated distance (in cm) to ground from rangefinder
+        uint32_t last_healthy_ms;
+        LowPassFilterFloat dist_cm_filt; // altitude filter
+        int8_t glitch_count;
+    } rangefinder2_state = { false, false, 0, 0 };
+#endif // IS_ENABLE_SECOND_RANGEFINDER
+
 #if RPM_ENABLED == ENABLED
     AP_RPM rpm_sensor;
 #endif

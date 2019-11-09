@@ -434,10 +434,20 @@ void Copter::one_hz_loop()
     #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Moin :)");          // works
     #endif
+    #if 0   // print copter.flightmode
+        // CONTINUE HERE
+        if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
+        hal.console->printf("copter.flightmode GUIDED: %d\n", copter.flight_modes);
+        }
+    #endif  
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
         if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm: %" PRIi16 "",
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
                 rangefinder_state.alt_cm);
+            #if IS_ENABLE_SECOND_RANGEFINDER
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder2_state.dist_cm: %" PRIi16 "",
+                rangefinder2_state.dist_cm);
+            #endif
             // get particular rangefinder by its orientation, set in MP by RNGFND<N>_ORIENT
             //  as of 2019-11-08: (MP-->Config/Tuning/Full Param List)
             //  RNGFND_ORIENT:  0   ("Forward")     forward facing rangefinder (tilted ca 45°)
@@ -465,6 +475,18 @@ void Copter::one_hz_loop()
             //     rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING), 
             //     RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
             
+            // PeterSt play with different values, finding out about altitude frames
+            //hal.console->printf( "this->get_frame_string(): %s\n", this->get_frame_string() );
+            // in sitl: "QUAD"
+            //
+            // hal.console->printf("copter.current_loc.get_alt_frame(): %d\n", copter.current_loc.get_alt_frame());
+            // in sitl: 0; ALT_FRAME_ABSOLUTE = 0
+            int32_t alt_cm_in_frame = -99;
+            bool is_answer_alt_cm_in_frame = false;
+            is_answer_alt_cm_in_frame = copter.current_loc.get_alt_cm(
+                Location_Class::ALT_FRAME::ALT_FRAME_ABOVE_TERRAIN, alt_cm_in_frame);
+            hal.console->printf("copter.current_loc.get_alt_cm(<above terrain>): %d; ok? %d\n",
+                alt_cm_in_frame, is_answer_alt_cm_in_frame);
         }
     #endif
 

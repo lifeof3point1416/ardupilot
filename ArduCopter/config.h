@@ -104,6 +104,7 @@
  # define RANGEFINDER_WPNAV_FILT_HZ   0.25f // filter frequency for rangefinder altitude provided to waypoint navigation class
 #endif
 
+// PSt: set whether rangefinders' tilt compensation is enabled
 #ifndef RANGEFINDER_TILT_CORRECTION         // by disable tilt correction for use of range finder data by EKF
  # define RANGEFINDER_TILT_CORRECTION ENABLED
 #endif

@@ -350,6 +350,7 @@ void AC_PosControl::set_alt_target_from_climb_rate_ff(float climb_rate_cms, floa
     // adjust desired alt if motors have not hit their limits
     // To-Do: add check of _limit.pos_down?
     if ((_vel_desired.z<0 && (!_motors.limit.throttle_lower || force_descend)) || (_vel_desired.z>0 && !_motors.limit.throttle_upper && !_limit.pos_up)) {
+        // PSt: integrate desired vertical velocity onto target altitude
         _pos_target.z += _vel_desired.z * dt;
     }
 }
@@ -632,6 +633,13 @@ void AC_PosControl::run_z_controller()
 
     // Pst: actual pid for throttle out ("altitude control")
     float thr_out = (p+i+d)*0.001f +_motors.get_throttle_hover();
+
+    // PeterSt: TODO: prio 7: add FFC here
+    // Anticipating Altitude Control HERE
+    //  add output from FFC to PID output thr_out
+    //  TODO: check if MEASUREMENT flightmode, perhaps give flightmode as parameter
+    //  and introduce new function overload:
+    //      void AC_PosControl::run_z_controller(control_mode_t control_mode)
 
     // send throttle to attitude controller with angle boost
     _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
