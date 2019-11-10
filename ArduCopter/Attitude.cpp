@@ -163,6 +163,7 @@ float Copter::get_non_takeoff_throttle()
 // (flightmodi using this function are controlled by altitude over ground, not altitude over home)
 //  these are eg.: LOITER, ALT_HOLD
 //  these are not: GUIDED, AUTO
+// CONTINUE HERE
 
 // get_surface_tracking_climb_rate - hold copter at the desired distance above the ground
 //      returns climb rate (in cm/s) which should be passed to the position controller
@@ -182,46 +183,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     uint32_t now = millis();
 
     target_rangefinder_alt_used = true;
-
-    // PeterSt: TODO: prio 8: implement new altitude controls HERE
-    //  CONTINUE HERE
-    // TODO: check if we are in flightmode MEASUREMENT
-    //
-    // #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
-    // if (copter.control_mode == control_mode_t::MEASUREMENT) {
-    //     // differentiate between the altitude control methods
-    //     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == AltCtrlMode::EXTENDED_PID
-    //     // TODO: prio 8: implement extended pid
-    //     #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == AltCtrlMode::FFC
-    //     // TODO: prio 7: implement extended pid
-    //     #else
-    //     // TODO: prio 9: raise compiler error
-    //     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
-    // } else {
-    //     // for all other flightmodes nothing changes
-    // }
-    // #else
-    // // for standard PID nothing changes
-    // #endif  // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
-
-    // Anticipating Altitude Control HERE
-    
-    #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
-    if (copter.control_mode == control_mode_t::MEASUREMENT) {
-        // differentiate between the altitude control methods
-        #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
-        // TODO: prio 8: implement extended pid
-        #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_FFC
-        // TODO: prio 7: implement ffc (should be nothing inhere, ffc is implemented in run_z_controller)
-        #else
-        // TODO: prio 9: raise compiler error
-        #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
-    } else {
-        // for all other flightmodes nothing changes
-    }
-    #else
-    // for standard PID nothing changes
-    #endif  // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
 
     // reset target altitude if this controller has just been engaged
     if (now - last_call_ms > RANGEFINDER_TIMEOUT_MS) {
@@ -263,7 +224,79 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     // calc desired velocity correction from target rangefinder alt vs actual rangefinder alt (remove the error already passed to Altitude controller to avoid oscillations)
     // PSt: error in altitudes over ground
     //  differentiate distance_error by (1/g.rangefinder_gain) [s]; probably some empirical value
-    distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
+    // BEGIN    adjusted by PeterSt
+    // get altitude over ground of current position, detected by dwn facing rangefinder
+    int16_t rangefinder_state_alt_cm;
+    rangefinder_state_alt_cm = rangefinder_state.alt_cm;
+
+    // Anticipating Altitude Control HERE
+    // adjust rangefinder-altitude according to the desired altitude control
+
+    float rangefinder_alt_cm;                                       // altitude from rangefinder, depending on alt ctrl mode
+    rangefinder_alt_cm = rangefinder_state.alt_cm;                  // safe init (value used in official implementation)
+
+    #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
+    if (copter.control_mode == control_mode_t::MEASUREMENT) {
+        // differentiate between the altitude control methods
+     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
+
+      #if IS_MOCK_OSCILLATING_RANGEFINDER_DATA
+        // add some oscillating value, so we know the rangefinder value successfully gets manipulated here
+        float osci_value;
+        //osci_value = 100.0f * sinf(AP_HAL::micros() / 4e6);   // for SITL (higher amplitude is visible on graph)
+        osci_value = 10.0f * sinf(AP_HAL::micros() / 4e6);      // for real world (lower amplitude: don't want to crash)
+        rangefinder_state_alt_cm += osci_value;
+        //
+        rangefinder_alt_cm = rangefinder_state_alt_cm;
+        //distance_error = (target_rangefinder_alt - rangefinder_state_alt_cm) - (current_alt_target - current_alt);
+      #else
+        // use weighted interpolation between the two rangefinders
+
+        float rangefinder2_alt_cm_float, dist_horiz_proj, dist_horiz_2, alt_proj;
+        float rangefinder_weight_factor, rangefinder_alt_diff, vel_horiz;
+        // calculate altitude over ground for measured future point, detected by fwd facing rangefinder
+        rangefinder2_alt_cm_float = (float) rangefinder2_state.dist_cm * RANGEFINDER_COS_ANGLE_FORWARD_FACING; 
+        // horizontal distance to the projected future point
+        vel_horiz = inertial_nav.get_velocity_xy();             // horizontal velocity
+        dist_horiz_proj = vel_horiz * EXTENDED_PID_FUTURE_PROJECTION_TIME_MICROS / 1e6;
+        // horizontal distance to the measured future point
+        dist_horiz_2 = rangefinder2_alt_cm_float * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;
+        // altitude over ground at projected point, weighted between current (dwn rangefinder)
+        //  and future measured point (fwd rf)
+        rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
+        rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
+        alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
+        // use this projected altitude as rangefinder-value
+        rangefinder_alt_cm = alt_proj;
+      #endif // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
+
+     #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_FFC
+        // TODO: prio 7: implement ffc (should be nothing inhere, ffc is implemented in run_z_controller)
+        #error not implemented yet
+     #else
+        // TODO: prio 9: raise compiler error
+        #error unknown altitude control for flightmode MEASUREMENT
+     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+    } else {
+        // for all other flightmodes nothing changes
+    }
+    #else
+    // for standard PID nothing changes
+    #endif  // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
+
+    #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM
+    if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "rangefinder_alt_cm: %f", rangefinder_alt_cm);
+        // hal.console->printf("$$$");
+        // printf("$$$$$");
+    }
+    #endif
+
+    distance_error = (target_rangefinder_alt - rangefinder_alt_cm) - (current_alt_target - current_alt);
+    // END      adjusted by PeterSt
+
+    // next line was the original code (PeterSt)
+    //distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
     velocity_correction = distance_error * g.rangefinder_gain;
     
     // PSt: 0 for LOITER?
@@ -287,15 +320,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // very verbose printout in case "call_run_counter check" doesn't work
         // hal.console->printf("$ "); // works
     #endif
-    // migrated the following printout to void Copter::one_hz_loop() in AC/ArduCopter.cpp, so that it gets exec'ed
-    //  always, not only when in this function here is called:
-    //
-    // #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
-    //     if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-    //         gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm: %" PRIi16 "",
-    //             rangefinder_state.alt_cm);
-    //     }
-    // #endif
 
     velocity_correction = constrain_float(velocity_correction, -THR_SURFACE_TRACKING_VELZ_MAX, THR_SURFACE_TRACKING_VELZ_MAX);
 

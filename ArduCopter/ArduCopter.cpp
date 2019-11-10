@@ -434,12 +434,6 @@ void Copter::one_hz_loop()
     #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Moin :)");          // works
     #endif
-    #if 0   // print copter.flightmode
-        // CONTINUE HERE
-        if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
-        hal.console->printf("copter.flightmode GUIDED: %d\n", copter.flight_modes);
-        }
-    #endif  
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
         if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
             gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
@@ -486,7 +480,7 @@ void Copter::one_hz_loop()
             is_answer_alt_cm_in_frame = copter.current_loc.get_alt_cm(
                 Location_Class::ALT_FRAME::ALT_FRAME_ABOVE_TERRAIN, alt_cm_in_frame);
             hal.console->printf("copter.current_loc.get_alt_cm(<above terrain>): %d; ok? %d\n",
-                alt_cm_in_frame, is_answer_alt_cm_in_frame);
+                alt_cm_in_frame, (int) is_answer_alt_cm_in_frame);
         }
     #endif
 

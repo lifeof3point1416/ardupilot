@@ -1243,6 +1243,34 @@ protected:
 
 // new flightmode by PeterSt
 // TODO: adapt copied class to MEASUREMENT flightmode
+
+#if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
+class ModeMeasurement : public ModeLoiter {
+
+public:
+    // inherit constructor
+    using Copter::ModeLoiter::Mode;
+
+    bool init(bool ignore_checks) override;                                 // TODO: prio 7 implement
+    void run() override;                                                    // TODO: prio 7 implement
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+    // int call_run_counter = 0;                                               // public for Attitude.cpp
+
+protected:
+
+    const char *name() const override { return "MEASUREMENT"; }
+    const char *name4() const override { return "MEAS"; }
+
+private:
+
+};
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
+    #error This behavior for flightmode MEASUREMENT is not implemented
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_GUIDED
 class ModeMeasurement : public ModeGuided {
 
 public:
@@ -1266,3 +1294,7 @@ protected:
 private:
 
 };
+#else 
+    #error This behavior for flightmode MEASUREMENT is not implemented
+#endif // MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER 
+

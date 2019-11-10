@@ -23,6 +23,8 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     01
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     1
 #define IS_PRINT_VALUE_LOITER_ALT_TARGET            1
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM   1           // print rangefinder_alt_cm, variable that is manupulated
+    // depending on the altitude control, eg. by Extended PID altitude control of MEASUREMENT flightmode
 
 // more specific stuff
 #define IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE       0           // print message via GCS message in 1 Hz look
@@ -31,7 +33,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-09 23:55+01:00"    // TODO: frequently update after changes
-#define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but
+#define LAST_CODE_CHANGE                    "2019-11-10 19:29+01:00"    // TODO: frequently update after changes
+#define IS_LAST_CHANGE_DATE_DEPRECATED              01          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 //                                                                  didn't update LAST_CODE_CHANGE

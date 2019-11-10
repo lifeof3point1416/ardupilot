@@ -25,6 +25,8 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
+#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
+
 // rotation can be set in MissionPlanner: MP-->Config/Tuning/Full Param List
 //                     in MAVProxy: param set RNGFND_ORIENT 0    # for ROTATION_NONE
 //                                  param set RNGFND2_ORIENT 25  # for ROTATION_PITCH_270
@@ -38,17 +40,49 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_TILT_COMPENSATION_SECOND_RANGEFINDER  true
 #define IS_DO_HEALTH_CHECK_SECOND_RANGEFINDER       true
 
+#define IS_MOCK_OSCILLATING_RANGEFINDER_DATA        false    // for proving, I edited the right code
+
 
 //
 // for different altitude control methods
 //
 
+// define enum-mocks
 // for some reason, Log.cpp doesn't recognize these AltCtrlMode enum defines and causes a compiler error
 // therefore we add them as defines as a fix
 #define ALT_CTRL_MODE_STANDARD_PID                  1
 #define ALT_CTRL_MODE_EXTENDED_PID                  2
 #define ALT_CTRL_MODE_FFC                           3
 
+// specify behavior of MEASUREMENT flight mode
+#define MEASUREMENT_BEHAVIOR_LOITER                 1       // as loiter, but with new altitude controller
+#define MEASUREMENT_BEHAVIOR_SEMI_GUIDED            2       // initially as loiter, then forward flight is triggered manually
+#define MEASUREMENT_BEHAVIOR_GUIDED                 3       // behave as in guided
+
+// actual parameter definitions
+
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           AltCtrlMode::EXTENDED_PID // used altitude control method
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           EXTENDED_PID // used altitude control method
 #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
+
+// physical model parameters
+// TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
+#define PHYSICAL_MODEL_TIME_CONSTANT_MICROS         149000  // PT1-time constant tau of the copter (including deadtime)
+
+// for extended PID
+#define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
+
+//
+///////////////////////////////////////////////////////////////////////////////
+//
+///// calculated parameters - DO NOT CHANGE from here on, if you just want to adjust the parameters
+//
+
+// how much do we want to shift the rangefinder value into the future
+//  by interpolating dwn and fwd facing rangefinders with a weight
+//  this time controls the weight
+#define EXTENDED_PID_FUTURE_PROJECTION_TIME_MICROS  (EXTENDED_PID_PROJECTION_TAU_FACTOR * PHYSICAL_MODEL_TIME_CONSTANT_MICROS)
+
+#define RANGEFINDER_SIN_ANGLE_FORWARD_FACING        (sinf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
+#define RANGEFINDER_COS_ANGLE_FORWARD_FACING        (cosf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))

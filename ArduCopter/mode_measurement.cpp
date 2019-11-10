@@ -15,10 +15,22 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     // TODO: init future ground profile detection
     // TODO: init anticipating altitude control
 
+    bool ret = false;
+
+#if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
+    ret = Copter::ModeLoiter::init(ignore_checks);
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
+    #error This behavior for flightmode MEASUREMENT is not implemented
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_GUIDED
+    #error This behavior for flightmode MEASUREMENT is not implemented
     // start in angle control mode
     // TODO: really start in this mode angle control mode?
     Copter::ModeGuided::angle_control_start();
-    return true;
+#else 
+    #error This behavior for flightmode MEASUREMENT is not implemented
+#endif // MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER 
+
+    return ret;
 }
 
 // guided_run - runs the guided controller
@@ -29,7 +41,7 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 //  run() is called with 400 Hz
 void Copter::ModeMeasurement::run()
 {
-    float target_climb_rate = 0.0f;             // for altitude over ground
+    // float target_climb_rate = 0.0f;             // for altitude over ground
 
     // TODO: get some input? (eg. for setting altitude)
     copter.call_run_counter++;
@@ -44,13 +56,19 @@ void Copter::ModeMeasurement::run()
         // TODO: CONTINUE HERE
     #endif
 
+#if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
+    // #error This behavior for flightmode MEASUREMENT is not implemented
+    Copter::ModeLoiter::run();
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
+    #error This behavior for flightmode MEASUREMENT is not implemented
+#elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_GUIDED
+    // TODO: implement perhaps
+    #error This behavior for flightmode MEASUREMENT is not implemented
     // run angle controller
-#if 1
+#if 1   // begin Copter::ModeGuided::angle_control_run(), 0 --> direct call; 1 --> reimplementation
     Copter::ModeGuided::angle_control_run();
-#endif
-
+#else 
     // copied Copter::ModeGuided::angle_control_run() from mode_guided.cpp, so we can adjust things
-#if 0   // begin Copter::ModeGuided::angle_control_run()
     // if not auto armed or motors not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !ap.auto_armed || !motors->get_interlock() || (ap.land_complete && guided_angle_state.climb_rate_cms <= 0.0f)) {
 #if FRAME_CONFIG == HELI_FRAME
@@ -110,4 +128,9 @@ void Copter::ModeMeasurement::run()
     pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false);
     pos_control->update_z_controller();
 #endif // end Copter::ModeGuided::angle_control_run()
+
+#else
+    // TODO: throw compiler error
+    #error This behavior for flightmode MEASUREMENT is unknown
+#endif  // MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
 }

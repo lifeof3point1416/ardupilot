@@ -317,6 +317,11 @@ void Copter::init_ardupilot()
             hal.console->printf("Note that there have been changes since then!\n");
         }
     #endif
+
+    #if IS_MOCK_OSCILLATING_RANGEFINDER_DATA
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Attention!! Using mock rangefinder oscillation");
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "    This is for testing purposes only");
+    #endif
 }
 
 
