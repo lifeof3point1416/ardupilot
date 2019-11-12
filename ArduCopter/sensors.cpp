@@ -47,7 +47,7 @@ void Copter::read_rangefinder(void)
     rangefinder_state.alt_cm = temp_alt;
 
  #if IS_ENABLE_SECOND_RANGEFINDER
-    // begin added by PeterSt - do tilt compensation for forward facing rangefinder
+    // added by PeterSt - do tilt compensation for forward facing rangefinder
     rangefinder2_state.dist_healthy = (
         (rangefinder.status_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING) == RangeFinder::RangeFinder_Good)
         && (rangefinder.range_valid_count_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING) >= RANGEFINDER_HEALTH_MAX));
@@ -64,6 +64,7 @@ void Copter::read_rangefinder(void)
  #endif // IS_ENABLE_SECOND_RANGEFINDER
 
     // filter rangefinder for use by AC_WPNav
+    // PSt comment: don't need to do that for second rangefinder, as it wont't be used for AC_WPNav
     uint32_t now = AP_HAL::millis();
 
     if (rangefinder_state.alt_healthy) {
@@ -83,7 +84,15 @@ void Copter::read_rangefinder(void)
     rangefinder_state.enabled = false;
     rangefinder_state.alt_healthy = false;
     rangefinder_state.alt_cm = 0;
-#endif
+
+    // code for 2nd rangefinder added by PeterSt
+ #if IS_ENABLE_SECOND_RANGEFINDER
+    rangefinder2_state.enabled = false;
+    rangefinder2_state.dist_healthy = false;
+    rangefinder2_state.dist_cm = 0;
+ #endif // IS_ENABLE_SECOND_RANGEFINDER
+
+#endif // RANGEFINDER_ENABLED == ENABLED
 }
 
 // return true if rangefinder_alt can be used
