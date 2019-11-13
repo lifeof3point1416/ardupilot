@@ -19,11 +19,12 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_INIT_HAL_PRINTF_MESSAGE            1           // print init message via hal.console->printf
                                                                 // works on sitl after Copter::init_ardupilot()
 #define IS_PRINT_REPEATET_MESSAGE_IN_MEASUREMENT    1           // only sends gcs message in flightmode MEASUREMENT
+#define IS_TEST_MEASUREMENT_INSTANCE_INIT           1           
 // print some values in a mavlink message if desired in interval: PRINT_MESSAGE_VALUE_INTERVAL
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     01
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     1
-#define IS_PRINT_VALUE_LOITER_ALT_TARGET            1
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM   1           // print rangefinder_alt_cm, variable that is manupulated
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     00
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     00
+#define IS_PRINT_VALUE_LOITER_ALT_TARGET            00
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM   00           // print rangefinder_alt_cm, variable that is manipulated
     // depending on the altitude control, eg. by Extended PID altitude control of MEASUREMENT flightmode
 
 // more specific stuff
@@ -33,7 +34,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-10 19:40+01:00"    // TODO: frequently update after changes
-#define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
+#define LAST_CODE_CHANGE                    "2019-11-13 17:51+01:00"    // TODO: frequently update after changes
+#define IS_LAST_CHANGE_DATE_DEPRECATED              1          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 //                                                                  didn't update LAST_CODE_CHANGE

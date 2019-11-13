@@ -15,6 +15,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     // TODO: init future ground profile detection
     // TODO: init anticipating altitude control
 
+#if IS_TEST_MEASUREMENT_INSTANCE_INIT
+    call_conter_Copter_ModeMeasurement_init++;
+#endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
+
     bool ret = false;
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
@@ -55,6 +59,17 @@ void Copter::ModeMeasurement::run()
         }
         // TODO: CONTINUE HERE
     #endif
+
+    #if IS_TEST_MEASUREMENT_INSTANCE_INIT
+    if (copter.call_run_counter % (REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "call_conter_Copter_ModeMeasurement_init: %d", 
+            call_conter_Copter_ModeMeasurement_init);
+        // print system time for checking intervals
+        hal.console->printf("(%s:) Time since start: %" PRIu32 " us\n", this->name4(), AP_HAL::micros());
+        printf("call_conter_Copter_ModeMeasurement_init: %d\n", 
+            call_conter_Copter_ModeMeasurement_init);
+    }
+    #endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
     // #error This behavior for flightmode MEASUREMENT is not implemented

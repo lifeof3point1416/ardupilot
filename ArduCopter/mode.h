@@ -1267,6 +1267,9 @@ protected:
 
 private:
 
+    #if IS_TEST_MEASUREMENT_INSTANCE_INIT
+    int call_conter_Copter_ModeMeasurement_init = 0;
+    #endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
 };
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented
