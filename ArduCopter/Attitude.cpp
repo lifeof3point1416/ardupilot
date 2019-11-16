@@ -265,7 +265,19 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         //  and future measured point (fwd rf)
         rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
         rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
+        // projected altitude
         alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
+        // BEGIN new
+        // TODO: prio 9: test this
+        // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
+        //  very steep slope,
+        //  overwrite with dwn rangefinder, if necessary
+        #if IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
+        if (rangefinder_state_alt_cm < IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND) {
+            alt_proj = rangefinder_state_alt_cm;
+        }
+        #endif // IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
+        // END new
         // use this projected altitude as rangefinder-value
         rangefinder_alt_cm = alt_proj;
       #endif // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
@@ -274,7 +286,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // TODO: prio 7: implement ffc (should be nothing inhere, ffc is implemented in run_z_controller)
         #error not implemented yet
      #else
-        // TODO: prio 9: raise compiler error
         #error unknown altitude control for flightmode MEASUREMENT
      #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
     } else {
@@ -290,7 +301,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // hal.console->printf("$$$");
         // printf("$$$$$");
     }
-    #endif
+    #endif // IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM
 
     distance_error = (target_rangefinder_alt - rangefinder_alt_cm) - (current_alt_target - current_alt);
     // END      adjusted by PeterSt

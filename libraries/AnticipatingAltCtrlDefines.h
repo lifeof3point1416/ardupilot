@@ -41,7 +41,8 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_HEALTH_CHECK_SECOND_RANGEFINDER       true
 
 #define IS_MOCK_OSCILLATING_RANGEFINDER_DATA        false    // for proving, I edited the right code
-
+#define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 9: test this
+#define DIST_MINIMUM_ALTITUDE_OVER_GROUND_CM        50      // do not go below this altitude           
 
 //
 // for different altitude control methods
