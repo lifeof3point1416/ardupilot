@@ -34,7 +34,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-13 17:51+01:00"    // TODO: frequently update after changes
-#define IS_LAST_CHANGE_DATE_DEPRECATED              1          // change to 1, if you changed code but
+#define LAST_CODE_CHANGE                    "2019-11-16 15:49+01:00"    // TODO: frequently update after changes
+#define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 //                                                                  didn't update LAST_CODE_CHANGE
