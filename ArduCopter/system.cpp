@@ -307,6 +307,7 @@ void Copter::init_ardupilot()
     // PeterSt
     #if IS_PRINT_INIT_GCS_MESSAGE
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Hello via gcs message! from line %d", __LINE__);           // works :)
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "last code change: %s", LAST_CODE_CHANGE);
     #endif
     #if IS_PRINT_INIT_HAL_PRINTF_MESSAGE
         hal.console->printf("Hello via hal.console->printf from line %d\n", __LINE__);                     // works on sitl (console)
@@ -315,6 +316,9 @@ void Copter::init_ardupilot()
         hal.console->printf("Last logged code change has been %s.\n", LAST_CODE_CHANGE);
         if (IS_LAST_CHANGE_DATE_DEPRECATED) {
             hal.console->printf("Note that there have been changes since then!\n");
+        }
+        if (IS_MOCK_OSCILLATING_RANGEFINDER_DATA) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "MOCKING OSCILLATING RANGEFINDER!");
         }
     #endif
 

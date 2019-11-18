@@ -46,7 +46,6 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 void Copter::ModeMeasurement::run()
 {
     // float target_climb_rate = 0.0f;             // for altitude over ground
-
     // TODO: get some input? (eg. for setting altitude)
     copter.call_run_counter++;
     // call_run_counter++;
@@ -72,7 +71,6 @@ void Copter::ModeMeasurement::run()
     #endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
-    // #error This behavior for flightmode MEASUREMENT is not implemented
     Copter::ModeLoiter::run();
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented

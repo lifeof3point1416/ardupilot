@@ -3,7 +3,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define LOITER_SPEED_DEFAULT                1250.0f // default loiter speed in cm/s
+#define LOITER_SPEED_DEFAULT                1250.0f // default loiter speed in cm/s     // PSt: this seems to be the max used
 #define LOITER_SPEED_MIN                    20.0f   // minimum loiter speed in cm/s
 #define LOITER_ACCEL_MAX_DEFAULT            500.0f  // default acceleration in loiter mode
 #define LOITER_BRAKE_ACCEL_DEFAULT          250.0f  // minimum acceleration in loiter mode
@@ -32,6 +32,9 @@ const AP_Param::GroupInfo AC_Loiter::var_info[] = {
     // @Increment: 50
     // @User: Standard
     AP_GROUPINFO("SPEED", 2, AC_Loiter, _speed_cms, LOITER_SPEED_DEFAULT),
+    // PSt: this seems to set the max loiter speed
+    //  parameter name:         LOIT_SPEED
+    //  variable name in AC:    _speed_cms
 
     // @Param: ACC_MAX
     // @DisplayName: Loiter maximum correction acceleration
@@ -212,6 +215,29 @@ void AC_Loiter::update(float ekfGndSpdLimit, float ekfNavVelGainScaler)
     if (dt >= 0.2f) {
         dt = 0.0f;
     }
+
+    // TODO: CONTNINUE HERE
+    // PeterSt:
+    // begin max speed check
+#if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    //if (copter.control_mode == control_mode_t::MEASUREMENT) {
+    if (is_measurement_mode) {
+        // change _speed_cms (which sets the max horizontal speed),
+        //  but store old value, so we can restore it if necessary
+        if (!_is_overwrote_speed_cms) {                         // don't "double overwrite"
+            _is_overwrote_speed_cms = true;
+            _speed_cms_old = _speed_cms;
+            _speed_cms = MAX_MEASUREMENT_HORIZONTAL_SPEED;
+        }
+    } else {
+        // restore _speed_cms if it had been overwritten 
+        if (_is_overwrote_speed_cms) {
+            _speed_cms = _speed_cms_old;
+            _is_overwrote_speed_cms = false;
+        }
+    }
+#endif // IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    // end max speed check
 
     // initialise pos controller speed and acceleration
     _pos_control.set_speed_xy(_speed_cms);

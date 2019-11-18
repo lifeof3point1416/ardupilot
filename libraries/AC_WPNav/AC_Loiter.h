@@ -9,6 +9,9 @@
 #include <AC_AttitudeControl/AC_AttitudeControl.h>
 #include <AC_Avoidance/AC_Avoid.h>
 
+#include <DebugDefines.h>                                   // by PeterSt
+#include <AnticipatingAltCtrlDefines.h>                     // by PeterSt
+
 class AC_Loiter
 {
 public:
@@ -59,6 +62,10 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+#if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT  // PeterSt
+    bool        is_measurement_mode = false;   // true if we fly in MEASUREMENT flightmode, using loiter behavior
+#endif // IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+
 protected:
 
     // sanity check parameters
@@ -78,6 +85,11 @@ protected:
     // parameters
     AP_Float    _angle_max;             // maximum pilot commanded angle in degrees. Set to zero for 2/3 Angle Max
     AP_Float    _speed_cms;             // maximum horizontal speed in cm/s while in loiter
+#if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT  // PeterSt
+    AP_Float    _speed_cms_old;         // for storing old value, if _speed_cms had been overwritten
+    bool        _is_overwrote_speed_cms = false;
+    //bool        _is_measurement_mode = false;   // true if we fly in MEASUREMENT flightmode, using loiter behavior
+#endif // IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
     AP_Float    _accel_cmss;            // loiter's max acceleration in cm/s/s
     AP_Float    _brake_accel_cmss;      // loiter's acceleration during braking in cm/s/s
     AP_Float    _brake_jerk_max_cmsss;

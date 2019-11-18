@@ -76,7 +76,13 @@ void Copter::ModeLoiter::precision_loiter_xy()
 // should be called at 100hz or more
 void Copter::ModeLoiter::run()
 {
-    copter.call_run_counter++;                                  // added by PeterSt for debug messages
+    // begin    added by PeterSt
+    copter.call_run_counter++;                                  // for debug messages
+    // loiter navi needs to now, if it's in MEASUREMENT flightmode, so we can restrict maximum horizontal speed
+#if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    loiter_nav->is_measurement_mode = copter.control_mode == control_mode_t::MEASUREMENT;
+#endif // IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    // end
 
     LoiterModeState loiter_state;
 
@@ -216,6 +222,7 @@ void Copter::ModeLoiter::run()
 
         // run loiter controller
         loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
+        // CONTINUE HERE
 
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
