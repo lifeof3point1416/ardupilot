@@ -60,6 +60,7 @@ enum AltCtrlMode : uint8_t {
 #define MEASUREMENT_BEHAVIOR_SEMI_GUIDED            2       // initially as loiter, then forward flight is triggered manually
 #define MEASUREMENT_BEHAVIOR_GUIDED                 3       // behave as in guided
 
+// set max horizontal speed for MEASUREMENT flight mode
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT      true    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED            200     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
