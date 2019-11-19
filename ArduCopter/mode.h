@@ -1266,6 +1266,7 @@ protected:
 
     const char *name() const override { return "MEASUREMENT"; }
     const char *name4() const override { return "MEAS"; }
+    bool is_started_ground_profile_acquisition = false;
 
 private:
 

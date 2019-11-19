@@ -47,6 +47,8 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     }
 
     copter.ground_profile_acquisition->init();
+
+    is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
     // CONTINUE HERE
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
@@ -191,6 +193,20 @@ void Copter::ModeMeasurement::loiterlike_run()
         break;
 
     case Loiter_Flying:
+
+        // PeterSt:
+        
+        if (!is_started_ground_profile_acquisition) {
+            // start Ground Profile Acquisition
+            copter.ground_profile_acquisition->start(ahrs.yaw_sensor);
+            is_started_ground_profile_acquisition = true;
+        }
+
+        //  TODO: prio 8: next point for Ground Profile Acquisition here
+        // CONTINUE HERE
+        #error "not implemented yet"
+        copter.ground_profile_acquisition->scan_point(copter.rangefinder2_state.dist_cm, 
+            "get_absolute_position()");
 
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);

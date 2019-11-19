@@ -985,5 +985,22 @@ bool AC_GroundProfileAcquisition::init(void) {
     return true;
 }
 
+// _heading in centi degrees
+bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
+    // TODO: check value
+    if (_heading > 36000) {
+        // invalid value
+        return false;
+    }
+    main_direction = _heading;                              // set main direction of the current measurement flight
+
+    #if IS_PRINT_GPA_TESTS
+    hal.console->printf("main_direction: %" PRIu16 " (hal.console)\n", main_direction);
+    printf("main_direction: %" PRIu16 " (printf)\n", main_direction);
+    #endif // IS_PRINT_GPA_TESTS
+
+    return true;
+}
+
 #endif // 1 OR 0
 #endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
