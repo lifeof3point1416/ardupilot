@@ -34,6 +34,24 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     #error This behavior for flightmode MEASUREMENT is not implemented
 #endif // MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER 
 
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+    // init FFC
+    // TODO: ...
+    #if !IS_TEST_FFC
+        #error not implemented yet
+    #endif // !IS_TEST_FFC
+    // TODO: prio 7: find out: is this the right place to init gpa?
+    // ground_profile_acquisition = AC_GroundProfileAcquisition();
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+    copter.ground_profile_acquisition = new AC_GroundProfileAcquisition();
+    if (copter.ground_profile_acquisition == nullptr) {
+        AP_HAL::panic("Unable to allocate GroundProfileAcquisition");
+    }
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+    copter.ground_profile_acquisition->init();
+    // CONTINUE HERE
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+
     return ret;
 }
 
@@ -78,9 +96,9 @@ void Copter::ModeMeasurement::run()
     // TODO: implement perhaps
     #error This behavior for flightmode MEASUREMENT is not implemented
     // run angle controller
-#if 1   // begin Copter::ModeGuided::angle_control_run(), 0 --> direct call; 1 --> reimplementation
+ #if 1   // begin Copter::ModeGuided::angle_control_run(), 0 --> direct call; 1 --> reimplementation
     Copter::ModeGuided::angle_control_run();
-#else 
+ #else 
     // copied Copter::ModeGuided::angle_control_run() from mode_guided.cpp, so we can adjust things
     // if not auto armed or motors not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !ap.auto_armed || !motors->get_interlock() || (ap.land_complete && guided_angle_state.climb_rate_cms <= 0.0f)) {
@@ -140,10 +158,9 @@ void Copter::ModeMeasurement::run()
     // call position controller
     pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false);
     pos_control->update_z_controller();
-#endif // end Copter::ModeGuided::angle_control_run()
+ #endif // end Copter::ModeGuided::angle_control_run()
 
 #else
-    // TODO: throw compiler error
     #error This behavior for flightmode MEASUREMENT is unknown
 #endif  // MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
 }

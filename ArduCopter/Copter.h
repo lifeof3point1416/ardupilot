@@ -93,6 +93,24 @@
 #include "AP_Rally.h"           // Rally point library
 #include "AP_Arming.h"
 
+// features added by PeterSt
+#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
+ #if !IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION
+  // the way it should be
+  // note that AC_GroundProfileAcquisition should be added to build paths
+  //    see https://discuss.ardupilot.org/t/add-new-library/18236/6 on how to do that
+  #include <AC_GroundProfileAcquisition/AC_GroundProfileAcquisition.h>
+ #else
+  #if IS_USE_WORKAROUND_HOST_FILE_GPA
+   // via Rangefinder.h
+   #if RANGEFINDER_ENABLED != ENABLED
+    #error "GroundProfileAcquisition is defined in hostfile Rangefinder.h, Rangefinder must be enabled!"
+   #endif // RANGEFINDER_ENABLED != ENABLED
+  #else 
+   #include <GroundProfileAcquisition_Workaround.h>
+  #endif // IS_USE_WORKAROUND_HOST_FILE_GPA
+ #endif // !IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION
+#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 // libraries which are dependent on #defines in defines.h and/or config.h
 #if BEACON_ENABLED == ENABLED
  #include <AP_Beacon/AP_Beacon.h>
@@ -513,6 +531,11 @@ private:
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;
 #endif
+
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC                      // PeterSt 
+    // AC_GroundProfileAcquisition &ground_profile_acquisition;                 // use reference?
+    AC_GroundProfileAcquisition *ground_profile_acquisition;
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     // System Timers
     // --------------

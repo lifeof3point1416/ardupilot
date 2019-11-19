@@ -269,7 +269,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // BEGIN new
         // TODO: prio 9: test this
         // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
-        //  very steep slope,
+        //  very steep downward slope,
         //  overwrite with dwn rangefinder, if necessary
         #if IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
         if (rangefinder_state_alt_cm < IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND) {
@@ -282,8 +282,11 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
       #endif // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
 
      #elif (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_FFC
-        // TODO: prio 7: implement ffc (should be nothing inhere, ffc is implemented in run_z_controller)
+        // TODO: prio 7: implement ffc (should be nothing in here, ffc is implemented in run_z_controller)
+      #if !IS_TEST_FFC
         #error not implemented yet
+      #endif // !IS_TEST_FFC
+      rangefinder_alt_cm = rangefinder_state_alt_cm;    // without this line this causes a compile error: var not used
      #else
         #error unknown altitude control for flightmode MEASUREMENT
      #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID

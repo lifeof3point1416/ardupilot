@@ -641,6 +641,15 @@ void Copter::allocate_motors(void)
     }
     AP_Param::load_object_from_eeprom(loiter_nav, loiter_nav->var_info);
 
+    // PeterSt
+    // TODO: prio 7: this right for init of GPA?
+// #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+//     ground_profile_acquisition = new AC_GroundProfileAcquisition();
+//     if (ground_profile_acquisition == nullptr) {
+//         AP_HAL::panic("Unable to allocate GroundProfileAcquisition");
+//     }
+// #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+
 #if MODE_CIRCLE_ENABLED == ENABLED
     circle_nav = new AC_Circle(inertial_nav, *ahrs_view, *pos_control);
     if (circle_nav == nullptr) {

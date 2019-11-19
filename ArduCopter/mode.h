@@ -1259,6 +1259,7 @@ public:
     bool allows_arming(bool from_gcs) const override { return from_gcs; }
     bool is_autopilot() const override { return true; }
     // int call_run_counter = 0;                                               // public for Attitude.cpp
+    // PeterSt: moved declaration of AC_GroundProfileAcquisition to Copter.h
 
 protected:
 

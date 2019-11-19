@@ -20,6 +20,8 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
+#include "AnticipatingAltCtrlDefines.h"                 // PeterSt
+
 // Maximum number of range finder instances available on this platform
 #define RANGEFINDER_MAX_INSTANCES 2
 #define RANGEFINDER_GROUND_CLEARANCE_CM_DEFAULT 10
@@ -185,3 +187,28 @@ private:
 
     bool _add_backend(AP_RangeFinder_Backend *driver);
 };
+
+///// Temporary workaround for AC_GroundProfileAcquisition here
+// couldn't add AC_GroundProfileAcquisition to waf successfully, yet
+// definition part is in RangeFinder.cpp
+
+#if IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
+#if 1   // in case we want to disable this definition manually
+
+class AC_GroundProfileAcquisition {
+
+public:
+
+    AC_GroundProfileAcquisition();
+    bool init();
+
+protected:
+
+private:
+
+    int16_t ground_profile[GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE];
+
+};
+
+#endif // 1 OR 0
+#endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA

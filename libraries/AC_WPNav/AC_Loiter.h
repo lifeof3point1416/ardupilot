@@ -10,7 +10,7 @@
 #include <AC_Avoidance/AC_Avoid.h>
 
 #include <DebugDefines.h>                                   // by PeterSt
-#include <AnticipatingAltCtrlDefines.h>                     // by PeterSt
+#include <AnticipatingAltCtrlDefines.h>                     // by PeterSt for max horizontal speed
 
 class AC_Loiter
 {

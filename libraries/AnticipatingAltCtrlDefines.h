@@ -12,6 +12,7 @@ invoced in AC/defines.h
 #pragma once
 
 #include <AP_Math/rotations.h>            // for rangefinder rotations
+#include <DebugDefines.h>
 //#include "rotations.h"            // for rangefinder rotations
 // #include <AnticipatingAltCtrlModes.h>
 
@@ -65,11 +66,19 @@ enum AltCtrlMode : uint8_t {
                                                             //  GUIDED-like speed navigation
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED            200     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
+// for ground profile acquisition
+#define IS_GROUND_PROFILE_ACQUISITION_ENABLED       true                // enable AC_GroundProfileAcquisition lib
+#define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // problems with compiling new lib
+#define IS_USE_WORKAROUND_HOST_FILE_GPA             true    // true: host file, false: GroundProfileAcquisition_Workaround.h
+#define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
+#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // min { int16_t }
+
 // actual parameter definitions
 
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           AltCtrlMode::EXTENDED_PID // used altitude control method
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           EXTENDED_PID // used altitude control method
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
@@ -92,3 +101,9 @@ enum AltCtrlMode : uint8_t {
 
 #define RANGEFINDER_SIN_ANGLE_FORWARD_FACING        (sinf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
 #define RANGEFINDER_COS_ANGLE_FORWARD_FACING        (cosf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
+
+/////
+
+#if (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC) && (!IS_TEST_FFC)
+    #error ALT_CTRL_MODE_FFC is not implemented yet, only allowed for tests
+#endif 

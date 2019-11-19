@@ -952,3 +952,38 @@ MAV_DISTANCE_SENSOR RangeFinder::get_mav_distance_sensor_type_orient(enum Rotati
 }
 
 RangeFinder *RangeFinder::_singleton;
+
+///// Temporary workaround for AC_GroundProfileAcquisition here
+// couldn't add AC_GroundProfileAcquisition to waf successfully, yet
+// definition part is in RangeFinder.cpp
+
+#if IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
+#if 1  // in case we want to disable this definition manually
+
+// extern const AP_HAL::HAL& hal;   // already defined in host file RangeFinder.cpp
+
+
+AC_GroundProfileAcquisition::AC_GroundProfileAcquisition(void) {
+    ;
+}
+
+bool AC_GroundProfileAcquisition::init(void) {
+    // TODO: ...
+    // init variables
+    int i;
+    for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
+        ground_profile[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    }
+
+    #if IS_PRINT_GPA_TESTS
+    hal.console->printf("GroundProfileAcquisition after init: ground_profile[0]: %" PRIi16 "\n",
+        ground_profile[0]);
+    #endif // IS_PRINT_GPA_TESTS
+
+    // check rangefinders???
+
+    return true;
+}
+
+#endif // 1 OR 0
+#endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
