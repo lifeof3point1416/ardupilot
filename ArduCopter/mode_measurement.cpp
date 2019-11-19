@@ -36,23 +36,204 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 
 #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
     // init FFC
-    // TODO: ...
     #if !IS_TEST_FFC
+        // for now: only for testing
         #error not implemented yet
     #endif // !IS_TEST_FFC
-    // TODO: prio 7: find out: is this the right place to init gpa?
-    // ground_profile_acquisition = AC_GroundProfileAcquisition();
-#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+
     copter.ground_profile_acquisition = new AC_GroundProfileAcquisition();
     if (copter.ground_profile_acquisition == nullptr) {
         AP_HAL::panic("Unable to allocate GroundProfileAcquisition");
     }
-#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+
     copter.ground_profile_acquisition->init();
     // CONTINUE HERE
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     return ret;
+}
+
+// for MEASUREMENT mode, run function copied from LOITER, with some features added
+// should be called at 100hz or more
+void Copter::ModeMeasurement::loiterlike_run()
+{
+    // begin    added by PeterSt
+    copter.call_run_counter++;                                  // for debug messages
+    // loiter navi needs to now, if it's in MEASUREMENT flightmode, so we can restrict maximum horizontal speed
+#if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    loiter_nav->is_measurement_mode = copter.control_mode == control_mode_t::MEASUREMENT;
+#endif // IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
+    // end
+
+    LoiterModeState loiter_state;
+
+    float target_roll, target_pitch;
+    float target_yaw_rate = 0.0f;
+    float target_climb_rate = 0.0f;
+    float takeoff_climb_rate = 0.0f;
+
+    // initialize vertical speed and acceleration
+    pos_control->set_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
+    pos_control->set_accel_z(g.pilot_accel_z);
+
+    // process pilot inputs unless we are in radio failsafe
+    if (!copter.failsafe.radio) {
+        // apply SIMPLE mode transform to pilot inputs
+        update_simple_mode();
+
+        // convert pilot input to lean angles
+        get_pilot_desired_lean_angles(target_roll, target_pitch, loiter_nav->get_angle_max_cd(), attitude_control->get_althold_lean_angle_max());
+
+        // process pilot's roll and pitch input
+        loiter_nav->set_pilot_desired_acceleration(target_roll, target_pitch, G_Dt);
+
+        // get pilot's desired yaw rate
+        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+
+        // get pilot desired climb rate
+        target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+        target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+    } else {
+        // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
+        loiter_nav->clear_pilot_desired_acceleration();
+    }
+
+    // relax loiter target if we might be landed
+    if (ap.land_complete_maybe) {
+        loiter_nav->soften_for_landing();
+    }
+
+    // Loiter State Machine Determination
+    if (!motors->armed() || !motors->get_interlock()) {
+        loiter_state = Loiter_MotorStopped;
+    } else if (takeoff.running() || takeoff.triggered(target_climb_rate)) {
+        loiter_state = Loiter_Takeoff;
+    } else if (!ap.auto_armed || ap.land_complete) {
+        loiter_state = Loiter_Landed;
+    } else {
+        loiter_state = Loiter_Flying;
+    }
+
+    // Loiter State Machine
+    switch (loiter_state) {
+
+    case Loiter_MotorStopped:
+
+        motors->set_desired_spool_state(AP_Motors::DESIRED_SHUT_DOWN);
+#if FRAME_CONFIG == HELI_FRAME
+        if (!motors->get_interlock() && ap.land_complete) {
+            loiter_nav->init_target();
+            attitude_control->reset_rate_controller_I_terms();
+            attitude_control->set_yaw_target_to_current_heading();
+            pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
+        } else {
+        // force descent rate and call position controller
+            pos_control->set_alt_target_from_climb_rate(-abs(g.land_speed), G_Dt, false);
+            if (ap.land_complete_maybe) {
+                pos_control->relax_alt_hold_controllers(0.0f);
+            }
+        }
+#else
+        loiter_nav->init_target();
+        attitude_control->reset_rate_controller_I_terms();
+        attitude_control->set_yaw_target_to_current_heading();
+        pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
+#endif
+        loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
+        pos_control->update_z_controller();
+        break;
+
+    case Loiter_Takeoff:
+        // set motors to full range
+        motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
+
+        // initiate take-off
+        if (!takeoff.running()) {
+            takeoff.start(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
+            // indicate we are taking off
+            set_land_complete(false);
+            // clear i term when we're taking off
+            set_throttle_takeoff();
+        }
+
+        // get takeoff adjusted pilot and takeoff climb rates
+        takeoff.get_climb_rates(target_climb_rate, takeoff_climb_rate);
+
+        // get avoidance adjusted climb rate
+        target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
+
+        // run loiter controller
+        loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
+
+        // call attitude controller
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
+
+        // update altitude target and call position controller
+        pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
+        pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
+        pos_control->update_z_controller();
+        break;
+
+    case Loiter_Landed:
+        // set motors to spin-when-armed if throttle below deadzone, otherwise full range (but motors will only spin at min throttle)
+        if (target_climb_rate < 0.0f) {
+            motors->set_desired_spool_state(AP_Motors::DESIRED_SPIN_WHEN_ARMED);
+        } else {
+            motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
+        }
+        loiter_nav->init_target();
+        attitude_control->reset_rate_controller_I_terms();
+        attitude_control->set_yaw_target_to_current_heading();
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0, 0, 0);
+        pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
+        pos_control->update_z_controller();
+        break;
+
+    case Loiter_Flying:
+
+        // set motors to full range
+        motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
+
+#if PRECISION_LANDING == ENABLED
+        if (do_precision_loiter()) {
+            precision_loiter_xy();
+        }
+#endif
+
+        // run loiter controller
+        loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
+        // CONTINUE HERE
+
+        // call attitude controller
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
+
+        // adjust climb rate using rangefinder
+        #if IS_PRINT_VALUE_LOITER_ALT_TARGET    // PeterSt added some debug printouts
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("%s pos_control->get_alt_target(): %f\n", name4(), pos_control->get_alt_target());
+                hal.console->printf("target_climb_rate before:           %f\n", target_climb_rate);
+            }
+        #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
+        // PSt: pos_control->get_alt_target() is probably an absolute altitude (ref to home position)
+        //  adjust target_climb_rate according to altitude over ground
+        target_climb_rate = get_surface_tracking_climb_rate(target_climb_rate, pos_control->get_alt_target(), G_Dt);
+        
+        #if IS_PRINT_VALUE_LOITER_ALT_TARGET    // PeterSt added some debug printouts
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("%s pos_control->get_alt_target(): %f\n", name4(), pos_control->get_alt_target());
+                hal.console->printf("target_climb_rate after:            %f\n", target_climb_rate);
+            }
+        #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
+
+        // get avoidance adjusted climb rate
+        target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
+
+        // update altitude target and call position controller
+        pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
+        pos_control->update_z_controller();
+        break;
+    }
 }
 
 // guided_run - runs the guided controller
@@ -89,7 +270,8 @@ void Copter::ModeMeasurement::run()
     #endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
-    Copter::ModeLoiter::run();
+    // Copter::ModeLoiter::run();
+    Copter::ModeMeasurement::loiterlike_run();
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_GUIDED

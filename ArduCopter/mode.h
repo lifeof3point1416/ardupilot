@@ -1251,14 +1251,15 @@ public:
     // inherit constructor
     using Copter::ModeLoiter::Mode;
 
-    bool init(bool ignore_checks) override;                                 // TODO: prio 7 implement
-    void run() override;                                                    // TODO: prio 7 implement
+    bool init(bool ignore_checks) override;                         // TODO: prio 7 implement
+    void run() override;                                            // TODO: prio 7 implement
+    void loiterlike_run();                                          // copied from LOITER plus MEASUREMENT fts.
 
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override { return from_gcs; }
     bool is_autopilot() const override { return true; }
-    // int call_run_counter = 0;                                               // public for Attitude.cpp
+    // int call_run_counter = 0;                                    // public for Attitude.cpp
     // PeterSt: moved declaration of AC_GroundProfileAcquisition to Copter.h
 
 protected:
