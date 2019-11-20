@@ -192,6 +192,9 @@ private:
 
 #include "AnticipatingAltCtrlDefines.h"                 // PeterSt
 
+#define HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(angle) ( ( (9000 - ((angle) * DEGX100)) >= 0) ? \
+    (9000 - ((angle) * DEGX100)) : (9000 - ((angle) * DEGX100) + 36000) )
+
 #if IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
 #if 1   // in case we want to disable this definition manually
 
@@ -201,8 +204,13 @@ public:
 
     AC_GroundProfileAcquisition(void);
     bool init(void);
-    bool start(uint16_t _heading);                          // start scanning with the current orientation
+    // start scanning with the current orientation and set position_neu_cm as reference point for absolute position
+    bool start(uint16_t _heading, Vector3f position_neu_cm);                      
     int scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
+    // int scan_point(int16_t dwn_rangefinder_dist_cm, int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
+
+    //int get_1d_x(Vector3f position_neu_cm);
+    Vector2<int> get_main_direction_coo(Vector3f position_neu_cm);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // TODO: think about return value: int or float?
@@ -215,7 +223,8 @@ private:
 
     int16_t ground_profile[GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE];
     uint16_t main_direction;                                    // heading in centi degrees [c°]
-
+    // position_neu_cm of starting point, this will be 0 for ground_profile
+    Vector3f start_position_cm;                                 
 };
 
 #endif // 1 OR 0

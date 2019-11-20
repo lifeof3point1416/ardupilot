@@ -197,9 +197,14 @@ void Copter::ModeMeasurement::loiterlike_run()
         // PeterSt:
         
 #if IS_GROUND_PROFILE_ACQUISITION_ENABLED
+    // NEU relative to home position ("absolute position" with origin in home position, in contrast to
+        //  altitude over ground), all in cm
+        Vector3f position_neu;
+        position_neu = inertial_nav.get_position();
+
         if (!is_started_ground_profile_acquisition) {
             // start Ground Profile Acquisition
-            copter.ground_profile_acquisition->start(ahrs.yaw_sensor);
+            copter.ground_profile_acquisition->start(ahrs.yaw_sensor, position_neu);
             is_started_ground_profile_acquisition = true;
         }
 
@@ -209,11 +214,6 @@ void Copter::ModeMeasurement::loiterlike_run()
             #error "not implemented yet"
         #endif // IS_TEST_FFC
 
-        // NEU relative to home position ("absolute position" with origin in home position, in contrast to
-        //  altitude over ground), all in cm
-        Vector3f position_neu;
-        position_neu = inertial_nav.get_position();
-
         #if IS_PRINT_GPA_TESTS
             if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
                 hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
@@ -221,6 +221,8 @@ void Copter::ModeMeasurement::loiterlike_run()
             }
         #endif // IS_PRINT_GPA_TESTS
         copter.ground_profile_acquisition->scan_point(copter.rangefinder2_state.dist_cm, position_neu);
+        // copter.ground_profile_acquisition->scan_point(copter.rangefinder_state.alt_cm,
+        //      copter.rangefinder2_state.dist_cm, position_neu);
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 
         // set motors to full range

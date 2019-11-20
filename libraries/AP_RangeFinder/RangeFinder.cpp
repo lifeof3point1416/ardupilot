@@ -994,7 +994,7 @@ bool AC_GroundProfileAcquisition::init(void) {
 // start scanning, use UAV's current yaw as main main_direction (in our 2D world)
 // _heading in centi degrees
 // return: successfully started?
-bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
+bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu_cm) {
     // check value
     if (_heading > 36000) {
         // invalid value
@@ -1007,9 +1007,39 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
     // printf("main_direction: %" PRIu16 " (printf)\n", main_direction);
     #endif // IS_PRINT_GPA_TESTS
 
-    // TODO: prio 8: also set absolute position to "start" position
+    // also set absolute position to "start" position
+    start_position_cm = position_neu_cm;
 
     return true;
+}
+
+// get coordinates in main direction space,
+//  of position_neu_cm along this->main_direction, origin at this->start_position_cm
+//  can be interpreted as 1-dimensional position, y should be as low as possible
+// return: x-coordiate [cm]
+//int AC_GroundProfileAcquisition::get_1d_x(Vector3f position_neu_cm) {
+Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f position_neu_cm) {
+    // goal is to get x (1D variable) of a point P is specified by position_neu_cm
+    
+    // angle of the point P to North (CCW), of main_direction to point P, in ° respectively
+    float alpha_p, alpha_x;
+    alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.y, position_neu_cm.x)) / 100;
+    alpha_x = (main_direction/100) - alpha_p;
+
+    float dist_o_p; // distance between origin (start_position_cm) and P
+    dist_o_p = hypotf(position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y);
+
+    float x_p, y_p; // x coordinate in 1D (requested output), y coo. (error or distance to x-axis)
+    x_p = cosf(alpha_x) * dist_o_p;
+    y_p = sinf(alpha_x) * dist_o_p;
+
+    
+
+    //return (int) x_p;
+    Vector2<int> ret;
+    ret.x = x_p;
+    ret.y = y_p;
+    return ret;
 }
 
 // scan a point of the ground profile, using forward facing rangefinder value and "absolute position"
@@ -1018,17 +1048,61 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
 // position_neu: .x: west of home position in cm, .y: south of home position in cm, .z: up of home
 // return: ground_profile index of the new point that has been scanned, -1 if it hasn't been stored
 int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
-    // TODO: implement this function
+// int AC_GroundProfileAcquisition::scan_point(int16_t dwn_rangefinder_dist_cm, 
+//     int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
+    // cf. prototype simulator (in python): AnticipatingFFC.set_future_profile_point
 
-    // TODO: calculate 2D coordinates (compensate difference from main_direction, check 2D validity)
+    /// TODO: calculate 1D horizontal coordinates (compensate difference from main_direction, check 2D validity)
     //      convert into integers
+    // get x
+    Vector2<int> main_dir_coo;
+    main_dir_coo = get_main_direction_coo(position_neu_cm);
+    int x_p, y_p;               // current position at P
+    x_p = main_dir_coo.x;
+    y_p = main_dir_coo.y;
+    // TODO: prio 7: check y_p
+    if (y_p > 100) {
+        #if 0
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "far from GPA axis! %f cm", 
+            y_p);
+        #endif // 1
+        #if 1
+        hal.console->printf("far from GPA axis! %d cm\n", y_p);
+        #endif // 1
 
-    // TODO: calculate array index (for ground_profile)
-    //      check if this is in array range
+        return -1;
+    }
 
-    // TODO: insert value (hard or soft, using a filter, check for outliers)
+    // check if this is in array range
+    // TODO: prio 5: think about some feedback, perhaps different return values? 
+    if (x_p < 0) {
+        // vorwaerts immer, rueckwaerts nimmer ;)
+        return -1;
+    } else if (x_p > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
+        // too big for the array
+        return -1;
+    }
 
-    return -1;  // return index
+    /// TODO: calculate absolute position of the future point to be scanned (called F)
+    // int16_t h1;     // altitude over ground for current position                [cm]
+    int16_t h2;     // altitude over ground for projected future point F        [cm]
+    int16_t dx2;    // horizontal distance from current position P to F         [cm]
+    // h1  = dwn_rangefinder_dist_cm;
+    h2  = RANGEFINDER_COS_ANGLE_FORWARD_FACING * fwd_rangefinder_dist_cm;
+    dx2 = RANGEFINDER_SIN_ANGLE_FORWARD_FACING * fwd_rangefinder_dist_cm;
+    int16_t x_f, y_f;   // position of F with respect to start_position_neu in  [cm]
+    x_f = (x_p + dx2) / 1;      // 1 cm is for 1 array cell    
+    y_f = y_p - h2;
+    // calculate array index (for ground_profile)
+    int ground_profile_index;
+    ground_profile_index = x_f;
+
+    /// insert value (hard or soft, using a filter, check for outliers)
+    // hard insert, not robust against outliers!
+    // TODO: prio 6: implement soft insert
+    ground_profile[ground_profile_index] = y_f;
+
+    return ground_profile_index;
 }
 
 #endif // 1 OR 0
