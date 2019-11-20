@@ -202,6 +202,12 @@ public:
     AC_GroundProfileAcquisition(void);
     bool init(void);
     bool start(uint16_t _heading);                          // start scanning with the current orientation
+    int scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
+    // get first 3 derivations of ground profile at position_neu_cm
+    //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    // TODO: think about return value: int or float?
+    //  internally use int, because it is faster
+    Vector3f get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
 
 protected:
 

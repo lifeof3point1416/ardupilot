@@ -953,6 +953,10 @@ MAV_DISTANCE_SENSOR RangeFinder::get_mav_distance_sensor_type_orient(enum Rotati
 
 RangeFinder *RangeFinder::_singleton;
 
+
+
+
+
 ///// Temporary workaround for AC_GroundProfileAcquisition here
 // couldn't add AC_GroundProfileAcquisition to waf successfully, yet
 // definition part is in RangeFinder.cpp
@@ -967,6 +971,8 @@ AC_GroundProfileAcquisition::AC_GroundProfileAcquisition(void) {
     ;
 }
 
+// init array map for ground profile points to be scanned
+// return: successfully initialized?
 bool AC_GroundProfileAcquisition::init(void) {
     // TODO: ...
     // init variables
@@ -985,9 +991,11 @@ bool AC_GroundProfileAcquisition::init(void) {
     return true;
 }
 
+// start scanning, use UAV's current yaw as main main_direction (in our 2D world)
 // _heading in centi degrees
+// return: successfully started?
 bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
-    // TODO: check value
+    // check value
     if (_heading > 36000) {
         // invalid value
         return false;
@@ -996,10 +1004,31 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading) {
 
     #if IS_PRINT_GPA_TESTS
     hal.console->printf("main_direction: %" PRIu16 " (hal.console)\n", main_direction);
-    printf("main_direction: %" PRIu16 " (printf)\n", main_direction);
+    // printf("main_direction: %" PRIu16 " (printf)\n", main_direction);
     #endif // IS_PRINT_GPA_TESTS
 
+    // TODO: prio 8: also set absolute position to "start" position
+
     return true;
+}
+
+// scan a point of the ground profile, using forward facing rangefinder value and "absolute position"
+//  (with regard to the point of start())
+// fwd_rangefinder_dist_cm in cm
+// position_neu: .x: west of home position in cm, .y: south of home position in cm, .z: up of home
+// return: ground_profile index of the new point that has been scanned, -1 if it hasn't been stored
+int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
+    // TODO: implement this function
+
+    // TODO: calculate 2D coordinates (compensate difference from main_direction, check 2D validity)
+    //      convert into integers
+
+    // TODO: calculate array index (for ground_profile)
+    //      check if this is in array range
+
+    // TODO: insert value (hard or soft, using a filter, check for outliers)
+
+    return -1;  // return index
 }
 
 #endif // 1 OR 0

@@ -100,13 +100,13 @@
   // note that AC_GroundProfileAcquisition should be added to build paths
   //    see https://discuss.ardupilot.org/t/add-new-library/18236/6 on how to do that
   #include <AC_GroundProfileAcquisition/AC_GroundProfileAcquisition.h>
- #else
+ #else // IS_GROUND_PROFILE_ACQUISITION_ENABLED
   #if IS_USE_WORKAROUND_HOST_FILE_GPA
-   // via Rangefinder.h
+   // via hostfile Rangefinder.h
    #if RANGEFINDER_ENABLED != ENABLED
     #error "GroundProfileAcquisition is defined in hostfile Rangefinder.h, Rangefinder must be enabled!"
    #endif // RANGEFINDER_ENABLED != ENABLED
-  #else 
+  #else  // IS_USE_WORKAROUND_HOST_FILE_GPA
    #include <GroundProfileAcquisition_Workaround.h>
   #endif // IS_USE_WORKAROUND_HOST_FILE_GPA
  #endif // !IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION

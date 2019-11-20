@@ -67,7 +67,10 @@ enum AltCtrlMode : uint8_t {
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED            200     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition
-#define IS_GROUND_PROFILE_ACQUISITION_ENABLED       true                // enable AC_GroundProfileAcquisition lib
+//  overwrite IS_GROUND_PROFILE_ACQUISITION_ENABLED with GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED?
+#define IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE      false       
+#define GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED       true
+
 #define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // problems with compiling new lib
 #define IS_USE_WORKAROUND_HOST_FILE_GPA             true    // true: host file, false: GroundProfileAcquisition_Workaround.h
 #define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
@@ -102,8 +105,20 @@ enum AltCtrlMode : uint8_t {
 #define RANGEFINDER_SIN_ANGLE_FORWARD_FACING        (sinf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
 #define RANGEFINDER_COS_ANGLE_FORWARD_FACING        (cosf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
 
-/////
-
-#if (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC) && (!IS_TEST_FFC)
-    #error ALT_CTRL_MODE_FFC is not implemented yet, only allowed for tests
+// enable AC_GroundProfileAcquisition lib?
+#if IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE
+    #define IS_GROUND_PROFILE_ACQUISITION_ENABLED       GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED                
+#else
+    #define IS_GROUND_PROFILE_ACQUISITION_ENABLED       (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)           
+#endif // IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE
+//
+///// asserts
+//
+// TODO: remove the following assert if FFC is fully implemented
+#if ((MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC) && (!IS_TEST_FFC))
+    #error "ALT_CTRL_MODE_FFC is not implemented yet, only allowed for tests"
 #endif 
+
+#if ((MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC) && !IS_GROUND_PROFILE_ACQUISITION_ENABLED)
+    #error "for Feed Forward Control, Ground Profile Acquisition must be enabled, but it is not enabled."
+#endif

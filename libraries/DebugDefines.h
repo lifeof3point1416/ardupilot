@@ -12,7 +12,8 @@ TODO (Prio 3): Find proper way to include this
 
 
 // debug switches
-#define IS_DO_VERBOSE_DEBUG_PRINTOUTS               1
+#define IS_DO_VERBOSE_DEBUG_PRINTOUTS               0           // these will be a lot of printouts!
+#define IS_DO_TEMPORARY_DEBUG_PRINTOUTS             1           // replace with IS_DO_VERBOSE_DEBUG_PRINTOUTS, if done
 #define IS_PRINT_REPEATET_GCS_MESSAGE               1           // print message via GCS message, repeatedly
 #define IS_PRINT_INIT_GCS_MESSAGE                   1           // print init message via GCS message
 #define IS_PRINT_INIT_PRINTF_MESSAGE                1           // print init message via printf
@@ -35,7 +36,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-19 15:58+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-11-20 13:36+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 //                                                                  didn't update LAST_CODE_CHANGE

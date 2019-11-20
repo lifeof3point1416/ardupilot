@@ -60,7 +60,7 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 void Copter::ModeMeasurement::loiterlike_run()
 {
     // begin    added by PeterSt
-    copter.call_run_counter++;                                  // for debug messages
+    // copter.call_run_counter++;                                  // for debug messages
     // loiter navi needs to now, if it's in MEASUREMENT flightmode, so we can restrict maximum horizontal speed
 #if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
     loiter_nav->is_measurement_mode = copter.control_mode == control_mode_t::MEASUREMENT;
@@ -196,6 +196,7 @@ void Copter::ModeMeasurement::loiterlike_run()
 
         // PeterSt:
         
+#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
         if (!is_started_ground_profile_acquisition) {
             // start Ground Profile Acquisition
             copter.ground_profile_acquisition->start(ahrs.yaw_sensor);
@@ -204,9 +205,23 @@ void Copter::ModeMeasurement::loiterlike_run()
 
         //  TODO: prio 8: next point for Ground Profile Acquisition here
         // CONTINUE HERE
-        #error "not implemented yet"
-        copter.ground_profile_acquisition->scan_point(copter.rangefinder2_state.dist_cm, 
-            "get_absolute_position()");
+        #if !IS_TEST_FFC
+            #error "not implemented yet"
+        #endif // IS_TEST_FFC
+
+        // NEU relative to home position ("absolute position" with origin in home position, in contrast to
+        //  altitude over ground), all in cm
+        Vector3f position_neu;
+        position_neu = inertial_nav.get_position();
+
+        #if IS_PRINT_GPA_TESTS
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
+                    position_neu.x, position_neu.y, position_neu.z);
+            }
+        #endif // IS_PRINT_GPA_TESTS
+        copter.ground_profile_acquisition->scan_point(copter.rangefinder2_state.dist_cm, position_neu);
+#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
