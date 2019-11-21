@@ -1137,17 +1137,17 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 
         #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: x_f < 0, x_f = %d\n", x_p);
+            hal.console->printf("GPA debug: x_f < 0, x_f = %d\n", x_f);
         }
         #endif // IS_DEBUG_GPA
 
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
-    } else if (x_f > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
+    } else if (x_f >= GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
         // too big for the array
         
         #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: x_f too big for array, x_f = %d\n", x_p);
+            hal.console->printf("GPA debug: x_f too big for array, x_f = %d\n", x_f);
         }
         #endif // IS_DEBUG_GPA
 
