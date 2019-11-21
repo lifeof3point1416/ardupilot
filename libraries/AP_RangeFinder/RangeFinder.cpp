@@ -995,6 +995,11 @@ bool AC_GroundProfileAcquisition::init(void) {
 // _heading in centi degrees
 // return: successfully started?
 bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu_cm) {
+// bool AC_GroundProfileAcquisition::start(int _heading, Vector3f position_neu_cm) {
+    #if IS_DEBUG_GPA
+    hal.console->printf("Calling start!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!\n");
+    #endif // IS_DEBUG_GPA
+
     // check value
     if (_heading > 36000) {
         // invalid value
@@ -1030,15 +1035,32 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     
     // angle of the point P to North (CCW), of main_direction to point P, in ° respectively
     float alpha_p, alpha_x;
-    alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.y, position_neu_cm.x)) / 100;
-    alpha_x = (main_direction/100) - alpha_p;
+    // wrong:
+    //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.y, position_neu_cm.x)) / 100;
+    // correct: "x is y, and y is x", because of NEU coo: x - North (up | abscisse) , y - East (right | ordinate)
+    // wrong: using "absolute value", not difference!
+    //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.x, position_neu_cm.y)) / 100;
+    alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(
+        position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100;
+    alpha_x = ( ((float) main_direction)/100.0f) - alpha_p;
 
     float dist_o_p; // distance between origin (start_position_cm) and P
     dist_o_p = hypotf(position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y);
 
+    #if IS_DEBUG_GPA
+    uint32_t _micros = AP_HAL::micros();
+    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+        hal.console->printf("GPA: alpha_p: %6.2f deg, alpha_x: %6.2f deg\n", alpha_p, alpha_x);
+        hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
+        hal.console->printf("GPA: main_direction/100.0f: %6.2f deg\n", main_direction/100.0f);
+        hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
+        hal.console->printf("GPA: dist_o_p: %8f cm\n", dist_o_p);
+    }
+    #endif // IS_DEBUG_GPA
+
     float x_p, y_p; // x coordinate in 1D (requested output), y coo. (error or distance to x-axis)
-    x_p = cosf(alpha_x) * dist_o_p;
-    y_p = sinf(alpha_x) * dist_o_p;
+    x_p = cosf(radians(alpha_x)) * dist_o_p;
+    y_p = sinf(radians(alpha_x)) * dist_o_p;
 
     //return (int) x_p;
     Vector2<int> ret;
@@ -1050,7 +1072,7 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 // scan a point of the ground profile, using forward facing rangefinder value and "absolute position"
 //  (with regard to the position of start())
 // fwd_rangefinder_dist_cm in cm
-// position_neu: .x: west of home position in cm, .y: south of home position in cm, .z: up of home
+// position_neu: .x: north of home position in cm, .y: east of home position in cm, .z: up of home
 // return: ground_profile index of the new point that has been scanned, -1 if it hasn't been stored
 int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
 // int AC_GroundProfileAcquisition::scan_point(int16_t dwn_rangefinder_dist_cm, 
@@ -1087,37 +1109,12 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         #endif // 1
 
         #if IS_DEBUG_GPA
-        uint32_t _micros = AP_HAL::micros();
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
             hal.console->printf("GPA: far from GPA axis! %d cm\n", y_p);
         }
         #endif // IS_DEBUG_GPA
 
         return ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED;
-    }
-
-    // check if this is in array range
-    // TODO: prio 5: think about some feedback, perhaps different return values? 
-    if (x_p < 0) {
-        // vorwaerts immer, rueckwaerts nimmer ;)
-
-        #if IS_DEBUG_GPA
-        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: x_p < 0, x_p = %d\n", x_p);
-        }
-        #endif // IS_DEBUG_GPA
-
-        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
-    } else if (x_p > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
-        // too big for the array
-        
-        #if IS_DEBUG_GPA
-        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: x_p too big for array, x_p = %d\n", x_p);
-        }
-        #endif // IS_DEBUG_GPA
-
-        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
     }
 
     /// TODO: calculate absolute position of the future point to be scanned (called F)
@@ -1133,6 +1130,29 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     // calculate array index (for ground_profile)
     int ground_profile_index;
     ground_profile_index = x_f;
+
+    // check if this is in array range
+    if (x_f < 0) {
+        // vorwaerts immer, rueckwaerts nimmer ;)
+
+        #if IS_DEBUG_GPA
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: x_f < 0, x_f = %d\n", x_p);
+        }
+        #endif // IS_DEBUG_GPA
+
+        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
+    } else if (x_f > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
+        // too big for the array
+        
+        #if IS_DEBUG_GPA
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: x_f too big for array, x_f = %d\n", x_p);
+        }
+        #endif // IS_DEBUG_GPA
+
+        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
+    }
 
     /// insert value (hard or soft, using a filter, check for outliers)
     // hard insert, not robust against outliers!

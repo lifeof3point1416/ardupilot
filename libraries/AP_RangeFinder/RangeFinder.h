@@ -206,6 +206,7 @@ public:
     bool init(void);
     // start scanning with the current orientation and set position_neu_cm as reference point for absolute position
     bool start(uint16_t _heading, Vector3f position_neu_cm);                      
+    // bool start(int _heading, Vector3f position_neu_cm);                      
     int scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
     // int scan_point(int16_t dwn_rangefinder_dist_cm, int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 
@@ -232,7 +233,8 @@ protected:
 private:
 
     int16_t ground_profile[GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE];
-    uint16_t main_direction;                                    // heading in centi degrees [c°]
+    uint16_t main_direction = 36000;                                    // heading in centi degrees [c°]
+    // int main_direction = 36000;                                    // heading in centi degrees [c°]
     // position_neu_cm of starting point, this will be 0 for ground_profile
     Vector3f start_position_cm;                                 
 };
