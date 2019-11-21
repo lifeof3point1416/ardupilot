@@ -66,15 +66,38 @@ enum AltCtrlMode : uint8_t {
                                                             //  GUIDED-like speed navigation
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED            200     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
-// for ground profile acquisition
-//  overwrite IS_GROUND_PROFILE_ACQUISITION_ENABLED with GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED?
+// for ground profile acquisition (GPA)
+//  overwrite IS_GROUND_PROFILE_ACQUISITION_ENABLED with GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED ?
 #define IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE      false       
 #define GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED       true
 
-#define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // problems with compiling new lib
-#define IS_USE_WORKAROUND_HOST_FILE_GPA             true    // true: host file, false: GroundProfileAcquisition_Workaround.h
+#define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // had problems with compiling new lib
+// true: host file, false: GroundProfileAcquisition_Workaround.h
+#define IS_USE_WORKAROUND_HOST_FILE_GPA                     true
+
 #define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
-#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // min { int16_t }
+#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
+
+#define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM    100     // otherwise: don't store in GPA, send warning
+#define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL       true
+//#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (10*1000000)    // wait at least this timespan for next msg
+#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (2*1000000)    // shorter for debug mode
+
+// returns true after (N*1.05) s (exactly 1<<20 us), but only of the tick before hasn't been triggering
+//  usage for triggering eventy every ca. N seconds, eg. debug printout
+//  using barrel shifter instead of int division to be faster on arm processors
+//  using millis would be even better
+//  sometimes it is triggered twice, but not very often ==> not reliable
+//  usage: if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, AP_HAL::micros(), 400)) {...}
+#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(N, micros, freq) (   \
+    ( ((( (micros) >> 10) >> 7) & 0b111) / N == 0 ) && ( ((( (micros - ((1<<20)/freq)) >> 10) >> 7) & 0b111) / N != 0 ) \
+)
+
+// use analogue to ~_MICROS, but this is not as reliable
+#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MILLIS(N, millis, freq) (   \
+    ( (( (millis) >> 7) & 0b111) / N == 0 ) && ( (( (millis - ((1<<10)/freq)) >> 7) & 0b111) / N != 0 ) \
+)
+
 
 // actual parameter definitions
 

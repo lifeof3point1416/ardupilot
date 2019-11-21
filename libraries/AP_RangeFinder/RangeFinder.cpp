@@ -1010,6 +1010,13 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
     // also set absolute position to "start" position
     start_position_cm = position_neu_cm;
 
+    #if IS_DEBUG_GPA
+    hal.console->printf("GPA: called start()\n");
+    hal.console->printf("GPA: start_position_cm (NEU): x: %8f cm, y: %8f cm, z: %8f cm\n",
+        start_position_cm.x, start_position_cm.y, start_position_cm.z);
+    hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
+    #endif 
+
     return true;
 }
 
@@ -1033,8 +1040,6 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     x_p = cosf(alpha_x) * dist_o_p;
     y_p = sinf(alpha_x) * dist_o_p;
 
-    
-
     //return (int) x_p;
     Vector2<int> ret;
     ret.x = x_p;
@@ -1043,13 +1048,14 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 }
 
 // scan a point of the ground profile, using forward facing rangefinder value and "absolute position"
-//  (with regard to the point of start())
+//  (with regard to the position of start())
 // fwd_rangefinder_dist_cm in cm
 // position_neu: .x: west of home position in cm, .y: south of home position in cm, .z: up of home
 // return: ground_profile index of the new point that has been scanned, -1 if it hasn't been stored
 int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
 // int AC_GroundProfileAcquisition::scan_point(int16_t dwn_rangefinder_dist_cm, 
 //     int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
+
     // cf. prototype simulator (in python): AnticipatingFFC.set_future_profile_point
 
     /// TODO: calculate 1D horizontal coordinates (compensate difference from main_direction, check 2D validity)
@@ -1060,27 +1066,44 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     int x_p, y_p;               // current position at P
     x_p = main_dir_coo.x;
     y_p = main_dir_coo.y;
-    // TODO: prio 7: check y_p
-    if (y_p > 100) {
+    // check y_p
+    if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
         #if 0
         gcs().send_text(MAV_SEVERITY_CRITICAL, "far from GPA axis! %f cm", 
             y_p);
         #endif // 1
-        #if 1
-        hal.console->printf("far from GPA axis! %d cm\n", y_p);
-        #endif // 1
+        #if IS_DEBUG_GPA
+        uint32_t _micros = AP_HAL::micros();
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA: far from GPA axis! %d cm\n", y_p);
+        }
+        #endif // IS_DEBUG_GPA
 
-        return -1;
+        return ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED;
     }
+    #if IS_DEBUG_GPA
+    uint32_t _micros = AP_HAL::micros();
+    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+        hal.console->printf("GPA: scan_point:\n");
+        hal.console->printf("GPA: AP_HAL::micros: %" PRIu32 "\n", _micros);
+        hal.console->printf("GPA: x_p: %d, y_p: %d\n", x_p, y_p);
+    }
+    #endif // IS_DEBUG_GPA
 
     // check if this is in array range
     // TODO: prio 5: think about some feedback, perhaps different return values? 
     if (x_p < 0) {
         // vorwaerts immer, rueckwaerts nimmer ;)
-        return -1;
+        #if IS_DEBUG_GPA
+        // hal.console->printf("GPA debug: x_p < 0, x_p = %d\n", x_p);
+        #endif // IS_DEBUG_GPA
+        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
     } else if (x_p > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
         // too big for the array
-        return -1;
+        #if IS_DEBUG_GPA
+        // hal.console->printf("GPA debug: x_p too big for array, x_p = %d\n", x_p);
+        #endif // IS_DEBUG_GPA
+        return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
     }
 
     /// TODO: calculate absolute position of the future point to be scanned (called F)

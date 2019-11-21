@@ -46,6 +46,7 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
         AP_HAL::panic("Unable to allocate GroundProfileAcquisition");
     }
 
+    last_scan_point_return_value = AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_NOT_INITIALIZED;
     copter.ground_profile_acquisition->init();
 
     is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
@@ -53,6 +54,52 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     return ret;
+}
+
+// return values of AC_GroundProfileAcquisition::scan_point(...) must be >= 0, of not: handle return value
+//  by sending a MAVLink message
+// return: is this value known?
+bool Copter::ModeMeasurement::handle_invalid_ground_profile_acquisition_index(int scan_point_return_value) {
+    // first check timeout for invalid return value messages, to avoid spamming
+    if (AP_HAL::micros() < send_message_scan_point_error_timeout) {
+        // still in message timeout, check if scan_point_return_value is known
+        switch (scan_point_return_value) {
+        case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_NOT_INITIALIZED:
+        case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE:
+        case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH:
+        case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED:
+            return true;
+        default:
+            return false;    
+        }
+    }
+
+    switch (scan_point_return_value) {
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_NOT_INITIALIZED:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, variable uninitialized", 
+            scan_point_return_value);
+        break;
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, couldn't store point, index < 0", 
+            scan_point_return_value);
+        break;
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, couldn't store point, index too high", 
+            scan_point_return_value);
+        break;
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, didn't store point, deviation from main_direction too high", 
+            scan_point_return_value);
+        break;
+    default:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, unknown error status", 
+            scan_point_return_value);
+        return false;
+    }
+    // here only if default case didn't match ==> here if scan_point_return_value was known
+    // message has been sent ==> set timeout
+    send_message_scan_point_error_timeout = AP_HAL::micros() + MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC;
+    return true;
 }
 
 // for MEASUREMENT mode, run function copied from LOITER, with some features added
@@ -220,7 +267,15 @@ void Copter::ModeMeasurement::loiterlike_run()
                     position_neu.x, position_neu.y, position_neu.z);
             }
         #endif // IS_PRINT_GPA_TESTS
-        copter.ground_profile_acquisition->scan_point(copter.rangefinder2_state.dist_cm, position_neu);
+        last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
+            copter.rangefinder2_state.dist_cm, position_neu);
+        if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {
+            // TODO: prio 8: send message
+            #if IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+                handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
+            #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+        }
+        // no need for dwn rangefinder, TODO: prio 4: remove the following commented line
         // copter.ground_profile_acquisition->scan_point(copter.rangefinder_state.alt_cm,
         //      copter.rangefinder2_state.dist_cm, position_neu);
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED

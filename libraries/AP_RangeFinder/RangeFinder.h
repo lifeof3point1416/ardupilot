@@ -217,6 +217,16 @@ public:
     //  internally use int, because it is faster
     Vector3f get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
 
+    // note that these enums must be negative, because any positive return value of scan_point(...) is
+    //  considered valid
+    enum ScanPointInvalidReturnValue {
+        ScanPointInvalidReturnValue_NOT_INITIALIZED = -1,
+        ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE = -2,
+        ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH = -3,
+        ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED = -4,
+    };
+    bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
+
 protected:
 
 private:

@@ -216,9 +216,10 @@ void AC_Loiter::update(float ekfGndSpdLimit, float ekfNavVelGainScaler)
         dt = 0.0f;
     }
 
-    // TODO: CONTNINUE HERE
     // PeterSt:
     // begin max speed check
+    // I don't think it would make sense to reimplement all of this in "AC_Measurement", because it is
+    //  a separate Loiter library, in constrast to the mere "run()", which is just a flightmode feature
 #if IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT
     //if (copter.control_mode == control_mode_t::MEASUREMENT) {
     if (is_measurement_mode) {
