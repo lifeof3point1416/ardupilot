@@ -241,8 +241,7 @@ void Copter::ModeMeasurement::loiterlike_run()
 
     case Loiter_Flying:
 
-        // PeterSt:
-        
+        // PeterSt:       
 #if IS_GROUND_PROFILE_ACQUISITION_ENABLED
     // NEU relative to home position ("absolute position" with origin in home position, in contrast to
         //  altitude over ground), all in cm
@@ -267,6 +266,7 @@ void Copter::ModeMeasurement::loiterlike_run()
                     position_neu.x, position_neu.y, position_neu.z);
             }
         #endif // IS_PRINT_GPA_TESTS
+        
         last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
             copter.rangefinder2_state.dist_cm, position_neu);
         if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {

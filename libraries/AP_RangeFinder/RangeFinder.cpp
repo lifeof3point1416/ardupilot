@@ -1066,12 +1066,26 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     int x_p, y_p;               // current position at P
     x_p = main_dir_coo.x;
     y_p = main_dir_coo.y;
+    
+    #if IS_DEBUG_GPA
+    uint32_t _micros = AP_HAL::micros();
+    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+        hal.console->printf("----\nGPA: AP_HAL::micros: %" PRIu32 "\n", _micros);
+        hal.console->printf("GPA: scan_point:\n");
+        hal.console->printf("GPA: x_p: %d, y_p: %d\n", x_p, y_p);
+        //
+        hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
+                    position_neu_cm.x, position_neu_cm.y, position_neu_cm.z);
+    }
+    #endif // IS_DEBUG_GPA
+
     // check y_p
     if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
         #if 0
         gcs().send_text(MAV_SEVERITY_CRITICAL, "far from GPA axis! %f cm", 
             y_p);
         #endif // 1
+
         #if IS_DEBUG_GPA
         uint32_t _micros = AP_HAL::micros();
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
@@ -1081,28 +1095,28 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 
         return ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED;
     }
-    #if IS_DEBUG_GPA
-    uint32_t _micros = AP_HAL::micros();
-    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-        hal.console->printf("GPA: scan_point:\n");
-        hal.console->printf("GPA: AP_HAL::micros: %" PRIu32 "\n", _micros);
-        hal.console->printf("GPA: x_p: %d, y_p: %d\n", x_p, y_p);
-    }
-    #endif // IS_DEBUG_GPA
 
     // check if this is in array range
     // TODO: prio 5: think about some feedback, perhaps different return values? 
     if (x_p < 0) {
         // vorwaerts immer, rueckwaerts nimmer ;)
+
         #if IS_DEBUG_GPA
-        // hal.console->printf("GPA debug: x_p < 0, x_p = %d\n", x_p);
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: x_p < 0, x_p = %d\n", x_p);
+        }
         #endif // IS_DEBUG_GPA
+
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
     } else if (x_p > GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
         // too big for the array
+        
         #if IS_DEBUG_GPA
-        // hal.console->printf("GPA debug: x_p too big for array, x_p = %d\n", x_p);
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: x_p too big for array, x_p = %d\n", x_p);
+        }
         #endif // IS_DEBUG_GPA
+
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
     }
 
