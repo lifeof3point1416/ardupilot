@@ -64,7 +64,7 @@ enum AltCtrlMode : uint8_t {
 // set max horizontal speed for MEASUREMENT flight mode
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT      true    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
-#define MAX_MEASUREMENT_HORIZONTAL_SPEED            200     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define MAX_MEASUREMENT_HORIZONTAL_SPEED            100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition (GPA)
 //  overwrite IS_GROUND_PROFILE_ACQUISITION_ENABLED with GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED ?
@@ -103,8 +103,8 @@ enum AltCtrlMode : uint8_t {
 
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           AltCtrlMode::EXTENDED_PID // used altitude control method
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           EXTENDED_PID // used altitude control method
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
