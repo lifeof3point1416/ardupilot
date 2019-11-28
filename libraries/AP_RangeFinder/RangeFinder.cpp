@@ -1073,19 +1073,17 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 //  (with regard to the position of start())
 // fwd_rangefinder_dist_cm in cm
 // position_neu: .x: north of home position in cm, .y: east of home position in cm, .z: up of home
-// return: ground_profile index of the new point that has been scanned, -1 if it hasn't been stored
+// return: ground_profile index of the new point that has been scanned, negative if it hasn't been stored
 int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
 // int AC_GroundProfileAcquisition::scan_point(int16_t dwn_rangefinder_dist_cm, 
 //     int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
 
     // cf. prototype simulator (in python): AnticipatingFFC.set_future_profile_point
 
-    /// TODO: calculate 1D horizontal coordinates (compensate difference from main_direction, check 2D validity)
-    //      convert into integers
-    // get x
+    // transform UAV coordinates (point P) from NEU-home-position-space into main_direction-space
     Vector2<int> main_dir_coo;
     main_dir_coo = get_main_direction_coo(position_neu_cm);
-    int x_p, y_p;               // current position at P
+    int x_p, y_p;               // current position of the UAV at point P(x_p|y_p)
     x_p = main_dir_coo.x;
     y_p = main_dir_coo.y;
     
@@ -1101,7 +1099,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
     #endif // IS_DEBUG_GPA
 
-    // check y_p
+    // check y_p (distance from main_direction line)
     if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
         #if 0
         gcs().send_text(MAV_SEVERITY_CRITICAL, "far from GPA axis! %f cm", 
@@ -1117,7 +1115,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         return ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED;
     }
 
-    /// TODO: calculate absolute position of the future point to be scanned (called F)
+    /// calculate absolute position of the future point to be scanned (called F)
     // int16_t h1;     // altitude over ground for current position                [cm]
     int16_t h2;     // altitude over ground for projected future point F        [cm]
     int16_t dx2;    // horizontal distance from current position P to F         [cm]
@@ -1129,9 +1127,13 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     y_f = y_p - h2;
     // calculate array index (for ground_profile)
     int ground_profile_index;
+
+    // use "hard" insert
     ground_profile_index = x_f;
 
-    // check if this is in array range
+    // TODO: prio 7: implement "soft" insert
+
+    // check if index is in array range
     if (x_f < 0) {
         // vorwaerts immer, rueckwaerts nimmer ;)
 
@@ -1154,9 +1156,19 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
     }
 
+    // check if value is in range
+    if ((y_f <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < y_f)) {
+        #if IS_DEBUG_GPA
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: y_f out of range, y_f = %d\n", y_f);
+        }
+        #endif // IS_DEBUG_GPA
+        return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
+    }
+
     /// insert value (hard or soft, using a filter, check for outliers)
     // hard insert, not robust against outliers!
-    // TODO: prio 6: implement soft insert
+    // TODO: prio 7: implement soft insert
     ground_profile[ground_profile_index] = y_f;
 
     return ground_profile_index;

@@ -19,6 +19,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     call_conter_Copter_ModeMeasurement_init++;
 #endif // IS_TEST_MEASUREMENT_INSTANCE_INIT
 
+#if IS_PRINT_ALT_CTRL_METHOD_IN_MEASUREMENT
+    gcs().send_text(MAV_SEVERITY_INFO, "%s in " MEASUREMENT_NAME_OF_ALTITUDE_CONTROL_MODE " alt ctrl mode", name4());
+#endif // IS_PRINT_ALT_CTRL_METHOD_IN_MEASUREMENT
+
     bool ret = false;
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
@@ -266,6 +270,16 @@ void Copter::ModeMeasurement::loiterlike_run()
                     position_neu.x, position_neu.y, position_neu.z);
             }
         #endif // IS_PRINT_GPA_TESTS
+        #if IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
+            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+                hal.console->printf("map, ground_profile: [");
+                int i;
+                for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
+                    hal.console->printf("%hd, ", copter.ground_profile_acquisition->get_ground_profile_datum(i));
+                }
+                hal.console->printf("]\n\n");
+            }
+        #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
         
         last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
             copter.rangefinder2_state.dist_cm, position_neu);

@@ -26,7 +26,9 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
+// #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
+// for test in SITL, b/c SITL can only simulate 0° rangefinders
+#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        0      // 0° is downwards, 
 
 // rotation can be set in MissionPlanner: MP-->Config/Tuning/Full Param List
 //                     in MAVProxy: param set RNGFND_ORIENT 0    # for ROTATION_NONE
@@ -55,6 +57,10 @@ enum AltCtrlMode : uint8_t {
 #define ALT_CTRL_MODE_STANDARD_PID                  1
 #define ALT_CTRL_MODE_EXTENDED_PID                  2
 #define ALT_CTRL_MODE_FFC                           3
+// alt ctrl mode names for debug printouts
+#define ALT_CTRL_MODE_NAME_STANDARD_PID             "STANDARD_PID"
+#define ALT_CTRL_MODE_NAME_EXTENDED_PID             "EXTENDED_PID"
+#define ALT_CTRL_MODE_NAME_FFC                      "FFC"
 
 // specify behavior of MEASUREMENT flight mode
 #define MEASUREMENT_BEHAVIOR_LOITER                 1       // as loiter, but with new altitude controller
@@ -76,35 +82,21 @@ enum AltCtrlMode : uint8_t {
 #define IS_USE_WORKAROUND_HOST_FILE_GPA                     true
 
 #define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
-#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
+#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            INT16_MIN    // write this value if no data available, b/c 0 cm is a valid datum
+//#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
 
 #define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM    100     // otherwise: don't store in GPA, send warning
 #define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL       true
 //#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (10*1000000)    // wait at least this timespan for next msg
 #define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (2*1000000)    // shorter for debug mode
 
-// returns true after (N*1.05) s (exactly 1<<20 us), but only of the tick before hasn't been triggering
-//  usage for triggering eventy every ca. N seconds, eg. debug printout
-//  using barrel shifter instead of int division to be faster on arm processors
-//  using millis would be even better
-//  sometimes it is triggered twice, but not very often ==> not reliable
-//  usage: if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, AP_HAL::micros(), 400)) {...}
-#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(N, micros, freq) (   \
-    ( ((( (micros) >> 10) >> 7) & 0b111) / N == 0 ) && ( ((( (micros - ((1<<20)/freq)) >> 10) >> 7) & 0b111) / N != 0 ) \
-)
-
-// use analogue to ~_MICROS, but this is not as reliable
-#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MILLIS(N, millis, freq) (   \
-    ( (( (millis) >> 7) & 0b111) / N == 0 ) && ( (( (millis - ((1<<10)/freq)) >> 7) & 0b111) / N != 0 ) \
-)
-
 
 // actual parameter definitions
 
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           AltCtrlMode::EXTENDED_PID // used altitude control method
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           EXTENDED_PID // used altitude control method
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
@@ -120,6 +112,20 @@ enum AltCtrlMode : uint8_t {
 ///// calculated parameters - DO NOT CHANGE from here on, if you just want to adjust the parameters
 //
 
+// returns true after (N*1.05) s (exactly 1<<20 us), but only of the tick before hasn't been triggering
+//  usage for triggering eventy every ca. N seconds, eg. debug printout 
+//  using barrel shifter instead of int division to be faster on arm processors
+//  sometimes it is triggered twice, but not very often ==> not reliable
+//  usage: if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, AP_HAL::micros(), 400)) {...}
+#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(N, micros, freq) (   \
+    ( ((( (micros) >> 10) >> 7) & 0b111) / N == 0 ) && ( ((( (micros - ((1<<20)/freq)) >> 10) >> 7) & 0b111) / N != 0 ) \
+)
+
+// use analogue to ~_MICROS, but this is not as reliable
+#define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MILLIS(N, millis, freq) (   \
+    ( (( (millis) >> 7) & 0b111) / N == 0 ) && ( (( (millis - ((1<<10)/freq)) >> 7) & 0b111) / N != 0 ) \
+)
+
 // how much do we want to shift the rangefinder value into the future
 //  by interpolating dwn and fwd facing rangefinders with a weight
 //  this time controls the weight
@@ -127,6 +133,17 @@ enum AltCtrlMode : uint8_t {
 
 #define RANGEFINDER_SIN_ANGLE_FORWARD_FACING        (sinf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
 #define RANGEFINDER_COS_ANGLE_FORWARD_FACING        (cosf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
+
+// set name string of alt ctrl
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID
+    #define MEASUREMENT_NAME_OF_ALTITUDE_CONTROL_MODE   ALT_CTRL_MODE_NAME_STANDARD_PID
+#elif MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_EXTENDED_PID
+    #define MEASUREMENT_NAME_OF_ALTITUDE_CONTROL_MODE   ALT_CTRL_MODE_NAME_EXTENDED_PID
+#elif MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+    #define MEASUREMENT_NAME_OF_ALTITUDE_CONTROL_MODE   ALT_CTRL_MODE_NAME_FFC
+#else
+    #error "UNKNOWN MEASUREMENT_ALTITUDE_CONTROL_MODE"
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID  
 
 // enable AC_GroundProfileAcquisition lib?
 #if IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE

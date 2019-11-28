@@ -225,8 +225,10 @@ public:
         ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE = -2,
         ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH = -3,
         ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED = -4,
+        ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE = -5,
     };
     bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
+    int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
 
 protected:
 
