@@ -1124,6 +1124,17 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     dx2 = RANGEFINDER_SIN_ANGLE_FORWARD_FACING * fwd_rangefinder_dist_cm;
     int16_t x_f, y_f;   // position of F with respect to start_position_neu in  [cm]
     x_f = (x_p + dx2) / 1;      // 1 cm is for 1 array cell    
+
+    // pre check if value is in range (as overflow couldn't be detected)
+    if (((y_p - h2) <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < (y_p - h2))) {
+        #if IS_DEBUG_GPA
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+            hal.console->printf("GPA debug: (y_p - h2) out of range, (y_p - h2) = %d\n", (y_p - h2));
+        }
+        #endif // IS_DEBUG_GPA
+        return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
+    }
+
     y_f = y_p - h2;
     // calculate array index (for ground_profile)
     int ground_profile_index;
