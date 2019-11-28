@@ -1041,7 +1041,7 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     // wrong: using "absolute value", not difference!
     //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.x, position_neu_cm.y)) / 100;
     alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(
-        position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100;
+        position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100.0f;
     alpha_x = ( ((float) main_direction)/100.0f) - alpha_p;
 
     float dist_o_p; // distance between origin (start_position_cm) and P
@@ -1083,9 +1083,11 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     // transform UAV coordinates (point P) from NEU-home-position-space into main_direction-space
     Vector2<int> main_dir_coo;
     main_dir_coo = get_main_direction_coo(position_neu_cm);
-    int x_p, y_p;               // current position of the UAV at point P(x_p|y_p)
+    int x_p, y_p;               // current position of the UAV at point P(x_p|y_p) in main_direction-space
     x_p = main_dir_coo.x;
     y_p = main_dir_coo.y;
+    int z_p;                    // altitude in home-position-space
+    z_p = (int) roundf(position_neu_cm.z);
     
     #if IS_DEBUG_GPA
     uint32_t _micros = AP_HAL::micros();
@@ -1122,20 +1124,23 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     // h1  = dwn_rangefinder_dist_cm;
     h2  = RANGEFINDER_COS_ANGLE_FORWARD_FACING * fwd_rangefinder_dist_cm;
     dx2 = RANGEFINDER_SIN_ANGLE_FORWARD_FACING * fwd_rangefinder_dist_cm;
-    int16_t x_f, y_f;   // position of F with respect to start_position_neu in  [cm]
+    int16_t x_f, z_f;   // position of F with respect to start_position_neu in  [cm] in main_direction space
     x_f = (x_p + dx2) / 1;      // 1 cm is for 1 array cell    
 
+    // TODO: prio 9: fix this error y_p vs. z_p
+
     // pre check if value is in range (as overflow couldn't be detected)
-    if (((y_p - h2) <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < (y_p - h2))) {
+    if (((z_p - h2) <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < (z_p - h2))) {
         #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: (y_p - h2) out of range, (y_p - h2) = %d\n", (y_p - h2));
+            hal.console->printf("GPA debug: (z_p - h2) out of range, (z_p - h2) = %d\n", (z_p - h2));
         }
         #endif // IS_DEBUG_GPA
         return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
     }
+    // y_f = y_p - h2;  WRONG! 
+    z_f = z_p - h2;
 
-    y_f = y_p - h2;
     // calculate array index (for ground_profile)
     int ground_profile_index;
 
@@ -1168,10 +1173,12 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
 
     // check if value is in range
-    if ((y_f <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < y_f)) {
+    //if ((z_f <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < z_f)) {
+    // int16_t is implicitly constraining to INT16_MAX, if value is too high, precheck will detect this
+    if (z_f <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) {      
         #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
-            hal.console->printf("GPA debug: y_f out of range, y_f = %d\n", y_f);
+            hal.console->printf("GPA debug: z_f out of range, z_f = %d\n", z_f);
         }
         #endif // IS_DEBUG_GPA
         return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
@@ -1180,7 +1187,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     /// insert value (hard or soft, using a filter, check for outliers)
     // hard insert, not robust against outliers!
     // TODO: prio 7: implement soft insert
-    ground_profile[ground_profile_index] = y_f;
+    ground_profile[ground_profile_index] = z_f;
 
     return ground_profile_index;
 }
