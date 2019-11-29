@@ -1153,6 +1153,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
     z_f -= ground_profile_offset;
 #endif // IS_USE_GPA_MAP_OFFSET
+    // not sure why sometimes index 0 has a value != 0... perhaps
 
     // calculate array index (for ground_profile)
     int ground_profile_index;

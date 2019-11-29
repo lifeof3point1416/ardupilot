@@ -662,6 +662,11 @@ void AC_PosControl::set_accel_xy(float accel_cmss)
 /// set_speed_xy - set horizontal speed maximum in cm/s
 void AC_PosControl::set_speed_xy(float speed_cms)
 {
+    #if IS_DEBUG_MAX_HORIZONTAL_SPEED
+    hal.console->printf("AC_PosControl::set_speed_xy(speed_cms = %f)\n", speed_cms);
+    hal.console->printf("\t(fabsf(_speed_cms-speed_cms) > 1.0f)? %s\n", 
+        (fabsf(_speed_cms-speed_cms) > 1.0f) ? "true" : "false");
+    #endif // IS_DEBUG_MAX_HORIZONTAL_SPEED
     if (fabsf(_speed_cms-speed_cms) > 1.0f) {
         _speed_cms = speed_cms;
         _flags.recalc_leash_xy = true;

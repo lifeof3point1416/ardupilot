@@ -22,6 +22,7 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_REPEATET_MESSAGE_IN_MEASUREMENT    1           // only sends gcs message in flightmode MEASUREMENT
 #define IS_TEST_MEASUREMENT_INSTANCE_INIT           1           
 #define IS_PRINT_ALT_CTRL_METHOD_IN_MEASUREMENT     1           // at start
+#define IS_DEBUG_MAX_HORIZONTAL_SPEED               000         // spamming console
 // print some values in a mavlink message if desired in interval: PRINT_MESSAGE_VALUE_INTERVAL
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     00
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     00
@@ -39,7 +40,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-29 13:00+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-11-29 19:35+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 //                                                                  didn't update LAST_CODE_CHANGE

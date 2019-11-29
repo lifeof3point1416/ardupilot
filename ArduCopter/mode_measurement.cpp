@@ -27,12 +27,20 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 
 #if MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_LOITER
     ret = Copter::ModeLoiter::init(ignore_checks);
+    #if IS_DEBUG_MAX_HORIZONTAL_SPEED
+    hal.console->printf("set_speed_xy from ModeMeasurement::init()\n");
+    #endif // IS_DEBUG_MAX_HORIZONTAL_SPEED
+    pos_control->set_speed_xy((float) MAX_MEASUREMENT_HORIZONTAL_SPEED);
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented
+    // pos_control->set_speed_xy(MAX_MEASUREMENT_HORIZONTAL_SPEED);
+    // use wp_nav->set_speed_xy ?
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented
     // start in angle control mode
     // TODO: really start in this mode angle control mode?
+    // pos_control->set_speed_xy(MAX_MEASUREMENT_HORIZONTAL_SPEED);
+    // use wp_nav->set_speed_xy ?
     Copter::ModeGuided::angle_control_start();
 #else 
     #error This behavior for flightmode MEASUREMENT is not implemented
@@ -166,6 +174,13 @@ void Copter::ModeMeasurement::loiterlike_run()
     } else {
         loiter_state = Loiter_Flying;
     }
+
+#if IS_DEBUG_MAX_HORIZONTAL_SPEED
+    uint32_t _micros = AP_HAL::micros();
+    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(10, _micros, 400)) {
+        hal.console->printf("MEAS: pos_control->get_speed_xy(): %f\n", pos_control->get_speed_xy());
+    }
+#endif // IS_DEBUG_MAX_HORIZONTAL_SPEED
 
     // Loiter State Machine
     switch (loiter_state) {
