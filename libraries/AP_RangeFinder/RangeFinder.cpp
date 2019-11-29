@@ -996,9 +996,9 @@ bool AC_GroundProfileAcquisition::init(void) {
 // return: successfully started?
 bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu_cm) {
 // bool AC_GroundProfileAcquisition::start(int _heading, Vector3f position_neu_cm) {
-    #if IS_DEBUG_GPA
+#if IS_DEBUG_GPA
     hal.console->printf("Calling start!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!\n");
-    #endif // IS_DEBUG_GPA
+#endif // IS_DEBUG_GPA
 
     // check value
     if (_heading > 36000) {
@@ -1007,20 +1007,27 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
     }
     main_direction = _heading;                              // set main direction of the current measurement flight
 
-    #if IS_PRINT_GPA_TESTS
+#if IS_PRINT_GPA_TESTS
     hal.console->printf("main_direction: %" PRIu16 " (hal.console)\n", main_direction);
     // printf("main_direction: %" PRIu16 " (printf)\n", main_direction);
-    #endif // IS_PRINT_GPA_TESTS
+#endif // IS_PRINT_GPA_TESTS
 
     // also set absolute position to "start" position
     start_position_cm = position_neu_cm;
+    // add offset to altitude if applicable, so that the first value of the GPA map is 0
+    //  ==> ground_profile[0] should be 0
+    //  usually it starts with the distance of initial altitude and rangefinder value 
+    //  (distance of rangefinder to arbitrary origin of body frame)
+// #if IS_USE_GPA_MAP_OFFSET
+//     start_position_cm.z
+// #endif // IS_USE_GPA_MAP_OFFSET
 
-    #if IS_DEBUG_GPA
+#if IS_DEBUG_GPA
     hal.console->printf("GPA: called start()\n");
     hal.console->printf("GPA: start_position_cm (NEU): x: %8f cm, y: %8f cm, z: %8f cm\n",
         start_position_cm.x, start_position_cm.y, start_position_cm.z);
     hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
-    #endif 
+#endif 
 
     return true;
 }
@@ -1127,8 +1134,6 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     int16_t x_f, z_f;   // position of F with respect to start_position_neu in  [cm] in main_direction space
     x_f = (x_p + dx2) / 1;      // 1 cm is for 1 array cell    
 
-    // TODO: prio 9: fix this error y_p vs. z_p
-
     // pre check if value is in range (as overflow couldn't be detected)
     if (((z_p - h2) <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < (z_p - h2))) {
         #if IS_DEBUG_GPA
@@ -1140,6 +1145,14 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
     // y_f = y_p - h2;  WRONG! 
     z_f = z_p - h2;
+#if IS_USE_GPA_MAP_OFFSET
+    // an additional conditional branch for every cycle :/
+    if (!is_ground_profile_offset_set) {
+        ground_profile_offset = z_f;
+        is_ground_profile_offset_set = true;
+    }
+    z_f -= ground_profile_offset;
+#endif // IS_USE_GPA_MAP_OFFSET
 
     // calculate array index (for ground_profile)
     int ground_profile_index;

@@ -239,6 +239,10 @@ private:
     // int main_direction = 36000;                                    // heading in centi degrees [c°]
     // position_neu_cm of starting point, this will be 0 for ground_profile
     Vector3f start_position_cm;                                 
+#if IS_USE_GPA_MAP_OFFSET
+    int16_t ground_profile_offset = 0;                              // [cm] so that first value in map is 0
+    bool is_ground_profile_offset_set = false;
+#endif // IS_USE_GPA_MAP_OFFSET
 };
 
 #endif // 1 OR 0

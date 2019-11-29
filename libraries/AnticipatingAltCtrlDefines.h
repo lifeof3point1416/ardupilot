@@ -73,6 +73,7 @@ enum AltCtrlMode : uint8_t {
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED            100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition (GPA)
+
 //  overwrite IS_GROUND_PROFILE_ACQUISITION_ENABLED with GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED ?
 #define IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE      false       
 #define GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED       true
@@ -84,6 +85,7 @@ enum AltCtrlMode : uint8_t {
 #define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
 #define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            INT16_MIN    // write this value if no data available, b/c 0 cm is a valid datum
 //#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
+#define IS_USE_GPA_MAP_OFFSET                               true        // so that first GPA map value is set to 0
 
 #define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM    100     // otherwise: don't store in GPA, send warning
 #define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL       true
