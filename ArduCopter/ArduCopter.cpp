@@ -192,6 +192,11 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #ifdef USERHOOK_SUPERSLOWLOOP
     SCHED_TASK(userhook_SuperSlowLoop, 1,   75),
 #endif
+// begin added by PeterSt
+#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
+    SCHED_TASK(update_ground_profile_acquisition,   100,    100),
+#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
+// end
     SCHED_TASK_CLASS(AP_Button,            &copter.g2.button,           update,           5, 100),
 #if STATS_ENABLED == ENABLED
     SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100),

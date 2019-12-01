@@ -1261,16 +1261,17 @@ public:
     bool is_autopilot() const override { return true; }
     // int call_run_counter = 0;                                    // public for Attitude.cpp
     // PeterSt: moved declaration of AC_GroundProfileAcquisition to Copter.h
+    bool handle_invalid_ground_profile_acquisition_index(int scan_point_return_value);
 
 protected:
 
     const char *name() const override { return "MEASUREMENT"; }
     const char *name4() const override { return "MEAS"; }
-    bool is_started_ground_profile_acquisition = false;
-    int last_scan_point_return_value;                               // init value in ::init()!
-    // send messages only after this point of time [us], to avoid spamming messages
+    // TODO: remove unneaded, commented declarations
+    // bool is_started_ground_profile_acquisition = false;
+    // int last_scan_point_return_value;                               // init value in ::init()!
+    // // send messages only after this point of time [us], to avoid spamming messages
     uint32_t send_message_scan_point_error_timeout = 0;
-    bool handle_invalid_ground_profile_acquisition_index(int scan_point_return_value);
 
 private:
 

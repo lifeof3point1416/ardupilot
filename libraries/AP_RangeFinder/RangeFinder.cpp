@@ -1056,11 +1056,9 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 
     #if IS_DEBUG_GPA
     uint32_t _micros = AP_HAL::micros();
-    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
+    if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(5, _micros, 400)) {
         hal.console->printf("GPA: alpha_p: %6.2f deg, alpha_x: %6.2f deg\n", alpha_p, alpha_x);
-        hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
         hal.console->printf("GPA: main_direction/100.0f: %6.2f deg\n", main_direction/100.0f);
-        hal.console->printf("GPA: main_direction: %hu c°\n", main_direction);
         hal.console->printf("GPA: dist_o_p: %8f cm\n", dist_o_p);
     }
     #endif // IS_DEBUG_GPA

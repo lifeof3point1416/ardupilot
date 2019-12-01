@@ -101,6 +101,101 @@ bool Copter::rangefinder_alt_ok()
     return (rangefinder_state.enabled && rangefinder_state.alt_healthy);
 }
 
+// Ground Profile Acquisition related function by PeterSt
+
+void Copter::update_ground_profile_acquisition(void) {
+#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
+    call_update_gpa_counter++;
+    // GPA is only necessary in MEASUREMENT flightmode
+    if (copter.control_mode != control_mode_t::MEASUREMENT) {
+        return;
+    }
+    // NEU relative to home position ("absolute position" with origin in home position, in contrast to
+    //  altitude over ground), all in cm
+    Vector3f position_neu;
+    position_neu = inertial_nav.get_position();
+
+    // start Ground Profile Acquisition, if not started yet
+    if (!is_started_ground_profile_acquisition) {
+        copter.ground_profile_acquisition->start(ahrs.yaw_sensor, position_neu);
+        is_started_ground_profile_acquisition = true;
+    }
+
+    // CONTINUE HERE
+    #if !IS_TEST_FFC
+        #error "not implemented yet"
+    #endif // IS_TEST_FFC
+
+    #if IS_PRINT_GPA_TESTS
+        if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+            hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
+                position_neu.x, position_neu.y, position_neu.z);
+        }
+    #endif // IS_PRINT_GPA_TESTS
+
+    #if IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
+        if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+            hal.console->printf("map, ground_profile: [");
+            int i;
+            for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
+                hal.console->printf("%hd, ", copter.ground_profile_acquisition->get_ground_profile_datum(i));
+            }
+            hal.console->printf("]\n\n");
+        }
+    #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
+
+    #if IS_PRINT_GPA_MAP_AS_MESSAGE
+    if (copter.call_update_gpa_counter % (30 * 100) == 1) {
+        #if IS_PRINT_GPA_MAP_CONDENSED
+        gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map as hex");
+        gcs().send_text(MAV_SEVERITY_INFO, "map is biased with %02X, 00 means empty [", GPA_MAP_CONDENSED_BIAS);
+        // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
+        int i;
+        for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=10) {
+            // 50 chars can be displayed in mavlink message
+            gcs().send_text(MAV_SEVERITY_INFO, "%04d: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X%s",
+                i,
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+1)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+2)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+3)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+4)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+5)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+6)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+7)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+8)),
+                BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+9)),
+                i < PRINT_GPA_MAP_UNTIL_INDEX-10 ? ";" : "]");
+        }
+        #else // IS_PRINT_GPA_MAP_CONDENSED
+        gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map [");
+        // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
+        int i;
+        for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=5) {
+            // 50 chars can be displayed in mavlink message
+            gcs().send_text(MAV_SEVERITY_INFO, "%+4d, %+4d, %+4d, %+4d, %+4d%s",
+                copter.ground_profile_acquisition->get_ground_profile_datum(i),
+                copter.ground_profile_acquisition->get_ground_profile_datum(i+1),
+                copter.ground_profile_acquisition->get_ground_profile_datum(i+2),
+                copter.ground_profile_acquisition->get_ground_profile_datum(i+3),
+                copter.ground_profile_acquisition->get_ground_profile_datum(i+4),
+                i < PRINT_GPA_MAP_UNTIL_INDEX-5 ? ", " : "]");
+        }
+        #endif // IS_PRINT_GPA_MAP_CONDENSED
+    }
+    #endif // IS_PRINT_GPA_MAP_AS_MESSAGE
+    
+    last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
+        copter.rangefinder2_state.dist_cm, position_neu);
+    if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {
+        #if IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+            copter.mode_measurement.handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
+        #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+    }
+    // no need for dwn rangefinder
+#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
+}
+
 /*
   update RPM sensors
  */

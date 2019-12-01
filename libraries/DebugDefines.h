@@ -34,7 +34,7 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE       0           // print message via GCS message in 1 Hz look
 #define IS_TEST_FFC                                 1
 #define IS_DISABLE_VERBOSE_GPA_PRINTOUTS            0
-#define IS_DEBUG_GPA                                00           // debug Ground Profile Acquisition
+#define IS_DEBUG_GPA                                01           // debug Ground Profile Acquisition
 #define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     00           // check rangefinder angle in SITL!
 #define IS_PRINT_GPA_MAP_AS_MESSAGE                 1           //
 // print Ground Profile Acquisition map values as condensed numbers?
@@ -49,7 +49,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-12-01 12:44+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-12-01 15:34+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]

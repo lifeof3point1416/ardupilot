@@ -535,6 +535,8 @@ private:
 #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC                      // PeterSt 
     // AC_GroundProfileAcquisition &ground_profile_acquisition;                 // use reference?
     AC_GroundProfileAcquisition *ground_profile_acquisition;
+    bool is_started_ground_profile_acquisition = false;
+    int last_scan_point_return_value;                                           // init value in ::init()!
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     // System Timers
@@ -721,6 +723,7 @@ private:
     int call_1hz_loop_counter = 0;                              // counts calls of Copter::one_hz_loop()
     int call_run_counter = 0;                                   // counts calls of:
     //  void Copter::ModeMeasurement::run(), Copter::ModeLoiter::run(), void Copter::ModeAltHold::run()
+    int call_update_gpa_counter = 0;                            // counts update_<gpa>
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);
@@ -929,6 +932,7 @@ private:
     void update_visual_odom();
     void winch_init();
     void winch_update();
+    void update_ground_profile_acquisition(void);       // by PeterSt
 
     // setup.cpp
     void report_compass();

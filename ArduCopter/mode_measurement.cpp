@@ -58,10 +58,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
         AP_HAL::panic("Unable to allocate GroundProfileAcquisition");
     }
 
-    last_scan_point_return_value = AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_NOT_INITIALIZED;
+    copter.last_scan_point_return_value = AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_NOT_INITIALIZED;
     copter.ground_profile_acquisition->init();
 
-    is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
+    copter.is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
     // CONTINUE HERE
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
@@ -265,95 +265,6 @@ void Copter::ModeMeasurement::loiterlike_run()
         break;
 
     case Loiter_Flying:
-
-        // PeterSt:       
-#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
-    // NEU relative to home position ("absolute position" with origin in home position, in contrast to
-        //  altitude over ground), all in cm
-        Vector3f position_neu;
-        position_neu = inertial_nav.get_position();
-
-        if (!is_started_ground_profile_acquisition) {
-            // start Ground Profile Acquisition
-            copter.ground_profile_acquisition->start(ahrs.yaw_sensor, position_neu);
-            is_started_ground_profile_acquisition = true;
-        }
-
-        //  TODO: prio 8: next point for Ground Profile Acquisition here
-        // CONTINUE HERE
-        #if !IS_TEST_FFC
-            #error "not implemented yet"
-        #endif // IS_TEST_FFC
-
-        #if IS_PRINT_GPA_TESTS
-            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-                hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
-                    position_neu.x, position_neu.y, position_neu.z);
-            }
-        #endif // IS_PRINT_GPA_TESTS
-        #if IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
-            if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-                hal.console->printf("map, ground_profile: [");
-                int i;
-                for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
-                    hal.console->printf("%hd, ", copter.ground_profile_acquisition->get_ground_profile_datum(i));
-                }
-                hal.console->printf("]\n\n");
-            }
-        #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
-        #if IS_PRINT_GPA_MAP_AS_MESSAGE
-        if (copter.call_run_counter % (60 * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-            #if IS_PRINT_GPA_MAP_CONDENSED
-            gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map as hex");
-            gcs().send_text(MAV_SEVERITY_INFO, "map is biased with %02X, 00 means empty [", GPA_MAP_CONDENSED_BIAS);
-            // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
-            int i;
-            for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=10) {
-                // 50 chars can be displayed in mavlink message
-                gcs().send_text(MAV_SEVERITY_INFO, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X%s",
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+1)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+2)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+3)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+4)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+5)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+6)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+7)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+8)),
-                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+9)),
-                    i < PRINT_GPA_MAP_UNTIL_INDEX-10 ? ";" : "]");
-            }
-            #else
-            gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map [");
-            // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
-            int i;
-            for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=5) {
-                // 50 chars can be displayed in mavlink message
-                gcs().send_text(MAV_SEVERITY_INFO, "%+4d, %+4d, %+4d, %+4d, %+4d%s",
-                    copter.ground_profile_acquisition->get_ground_profile_datum(i),
-                    copter.ground_profile_acquisition->get_ground_profile_datum(i+1),
-                    copter.ground_profile_acquisition->get_ground_profile_datum(i+2),
-                    copter.ground_profile_acquisition->get_ground_profile_datum(i+3),
-                    copter.ground_profile_acquisition->get_ground_profile_datum(i+4),
-                    i < PRINT_GPA_MAP_UNTIL_INDEX-5 ? ", " : "]");
-            }
-            #endif // IS_PRINT_GPA_MAP_CONDENSED
-        }
-        #endif // IS_PRINT_GPA_MAP_AS_MESSAGE
-        
-        last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
-            copter.rangefinder2_state.dist_cm, position_neu);
-        if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {
-            // TODO: prio 8: send message
-            #if IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
-                handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
-            #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
-        }
-        // no need for dwn rangefinder, TODO: prio 4: remove the following commented line
-        // copter.ground_profile_acquisition->scan_point(copter.rangefinder_state.alt_cm,
-        //      copter.rangefinder2_state.dist_cm, position_neu);
-#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
-
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
@@ -365,7 +276,6 @@ void Copter::ModeMeasurement::loiterlike_run()
 
         // run loiter controller
         loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
-        // CONTINUE HERE
 
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
