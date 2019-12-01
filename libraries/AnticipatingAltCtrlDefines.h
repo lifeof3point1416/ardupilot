@@ -70,7 +70,8 @@ enum AltCtrlMode : uint8_t {
 // set max horizontal speed for MEASUREMENT flight mode
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT      0001    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
-#define MAX_MEASUREMENT_HORIZONTAL_SPEED            225     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT   1
+#define MAX_MEASUREMENT_HORIZONTAL_SPEED            100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition (GPA)
 
@@ -162,3 +163,6 @@ enum AltCtrlMode : uint8_t {
 #if ((MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC) && !IS_GROUND_PROFILE_ACQUISITION_ENABLED)
     #error "for Feed Forward Control, Ground Profile Acquisition must be enabled, but it is not enabled."
 #endif
+
+#define BIASED_GPA_VALUE(N)                             ( (N) > GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE ? \
+    GET_BIASED_NUMBER((N), (GPA_MAP_CONDENSED_BIAS)) : (0x00) )

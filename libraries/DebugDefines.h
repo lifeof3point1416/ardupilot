@@ -24,29 +24,41 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_ALT_CTRL_METHOD_IN_MEASUREMENT     1           // at start
 #define IS_DEBUG_MAX_HORIZONTAL_SPEED               000         // spamming console
 // print some values in a mavlink message if desired in interval: PRINT_MESSAGE_VALUE_INTERVAL
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     00
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     00
-#define IS_PRINT_VALUE_LOITER_ALT_TARGET            00
-#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM   00           // print rangefinder_alt_cm, variable that is manipulated
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     0
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     0
+#define IS_PRINT_VALUE_LOITER_ALT_TARGET            0
+#define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM   0           // print rangefinder_alt_cm, variable that is manipulated
     // depending on the altitude control, eg. by Extended PID altitude control of MEASUREMENT flightmode
 
 // more specific stuff
 #define IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE       0           // print message via GCS message in 1 Hz look
 #define IS_TEST_FFC                                 1
-#define IS_DEBUG_GPA                                1           // debug Ground Profile Acquisition
-#define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     1           // check rangefinder angle in SITL!
+#define IS_DISABLE_VERBOSE_GPA_PRINTOUTS            0
+#define IS_DEBUG_GPA                                00           // debug Ground Profile Acquisition
+#define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     00           // check rangefinder angle in SITL!
+#define IS_PRINT_GPA_MAP_AS_MESSAGE                 1           //
+// print Ground Profile Acquisition map values as condensed numbers?
+// hex numbers biased with a constant, so that there are only positive numbers (if the values are within range)
+//  examples:
+//  false: print "normally":                        [  -16   -5   +3  +47 +126]
+//  true: print as biased hex (biased with 0x80)    [70 7B 83 AF FE]
+#define IS_PRINT_GPA_MAP_CONDENSED                  1           
+#define GPA_MAP_CONDENSED_BIAS                      (0x80)      // (values < -<this>) will still be negative
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               30          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-11-29 19:35+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-12-01 12:44+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
+#define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]
 //                                                                  didn't update LAST_CODE_CHANGE
 
 
 ///// derived definitions, no need to change from here
 //
 
-#define IS_PRINT_GPA_TESTS                          (IS_TEST_FFC)   // for Ground Profile Acquisition
+// for Ground Profile Acquisition
+#define IS_PRINT_GPA_TESTS                          (IS_TEST_FFC && !IS_DISABLE_VERBOSE_GPA_PRINTOUTS)
+#define GET_BIASED_NUMBER(N, BIAS)                   ( (N) + (BIAS) )

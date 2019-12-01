@@ -181,6 +181,12 @@ void Copter::ModeMeasurement::loiterlike_run()
         hal.console->printf("MEAS: pos_control->get_speed_xy(): %f\n", pos_control->get_speed_xy());
     }
 #endif // IS_DEBUG_MAX_HORIZONTAL_SPEED
+#if IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT
+    if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        gcs().send_text(MAV_SEVERITY_NOTICE, "MEAS: pos_control->get_speed_xy(): %f\n", pos_control->get_speed_xy());
+        //hal.console->printf("MEAS: pos_control->get_speed_xy(): %f\n", pos_control->get_speed_xy());
+    }
+#endif // IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT
 
     // Loiter State Machine
     switch (loiter_state) {
@@ -295,6 +301,45 @@ void Copter::ModeMeasurement::loiterlike_run()
                 hal.console->printf("]\n\n");
             }
         #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
+        #if IS_PRINT_GPA_MAP_AS_MESSAGE
+        if (copter.call_run_counter % (60 * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+            #if IS_PRINT_GPA_MAP_CONDENSED
+            gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map as hex");
+            gcs().send_text(MAV_SEVERITY_INFO, "map is biased with %02X, 00 means empty [", GPA_MAP_CONDENSED_BIAS);
+            // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
+            int i;
+            for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=10) {
+                // 50 chars can be displayed in mavlink message
+                gcs().send_text(MAV_SEVERITY_INFO, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X%s",
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+1)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+2)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+3)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+4)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+5)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+6)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+7)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+8)),
+                    BIASED_GPA_VALUE(copter.ground_profile_acquisition->get_ground_profile_datum(i+9)),
+                    i < PRINT_GPA_MAP_UNTIL_INDEX-10 ? ";" : "]");
+            }
+            #else
+            gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map [");
+            // print only first PRINT_GPA_MAP_UNTIL_INDEX cm
+            int i;
+            for (i = 0; i < PRINT_GPA_MAP_UNTIL_INDEX; i+=5) {
+                // 50 chars can be displayed in mavlink message
+                gcs().send_text(MAV_SEVERITY_INFO, "%+4d, %+4d, %+4d, %+4d, %+4d%s",
+                    copter.ground_profile_acquisition->get_ground_profile_datum(i),
+                    copter.ground_profile_acquisition->get_ground_profile_datum(i+1),
+                    copter.ground_profile_acquisition->get_ground_profile_datum(i+2),
+                    copter.ground_profile_acquisition->get_ground_profile_datum(i+3),
+                    copter.ground_profile_acquisition->get_ground_profile_datum(i+4),
+                    i < PRINT_GPA_MAP_UNTIL_INDEX-5 ? ", " : "]");
+            }
+            #endif // IS_PRINT_GPA_MAP_CONDENSED
+        }
+        #endif // IS_PRINT_GPA_MAP_AS_MESSAGE
         
         last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
             copter.rangefinder2_state.dist_cm, position_neu);
