@@ -26,9 +26,9 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-// #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
+#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
 // for test in SITL, b/c SITL can only simulate 0° rangefinders
-#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        0      // 0° is downwards, 
+// #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        0      // 0° is downwards, 
 
 // rotation can be set in MissionPlanner: MP-->Config/Tuning/Full Param List
 //                     in MAVProxy: param set RNGFND_ORIENT 0    # for ROTATION_NONE
