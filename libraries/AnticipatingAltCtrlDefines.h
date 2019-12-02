@@ -166,3 +166,13 @@ enum AltCtrlMode : uint8_t {
 
 #define BIASED_GPA_VALUE(N)                             ( (N) > GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE ? \
     GET_BIASED_NUMBER((N), (GPA_MAP_CONDENSED_BIAS)) : (0x00) )
+
+#if IS_DEBUG_CHECK_FWD_RANGEFINDER_ANGLE
+    #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    static_assert(RANGEFINDER_ANGLE_FORWARD_FACING_DEG == 0, 
+        "in SITL only  dwn rangefinders can be simulated, fwd rangefinder angle should be 0°");
+    #else
+    static_assert(RANGEFINDER_ANGLE_FORWARD_FACING_DEG > 0+10, 
+        "check fwd rangefinder angle, should be much bigger than 0°");
+    #endif // CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#endif // IS_DEBUG_CHECK_FWD_RANGEFINDER_ANGLE
