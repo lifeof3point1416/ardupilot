@@ -26,22 +26,28 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
+#define IS_USE_SITL_CONFIGURATION                   true
+
+#if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
+#else 
 // for test in SITL, b/c SITL can only simulate 0° rangefinders
-// #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        0      // 0° is downwards, 
+#define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        0      // 0° is downwards, 
+#endif
 
 // rotation can be set in MissionPlanner: MP-->Config/Tuning/Full Param List
 //                     in MAVProxy: param set RNGFND_ORIENT 0    # for ROTATION_NONE
 //                                  param set RNGFND2_ORIENT 25  # for ROTATION_PITCH_270
 #define RANGEFINDER_ORIENTATION_FORWARD_FACING      ROTATION_NONE               // "Forward" in MP
 #define RANGEFINDER_ORIENTATION_DOWNWARD_FACING     ROTATION_PITCH_270          // "Down" in MP
-// TODO: prio 7:    adjust orientations, 
+// TODO: prio 5:    adjust orientations, 
 // actually fwd should be ROTATION_PITCH_315 == 39 (45°backwards, there is not ROTATION_PITCH_45 yet, but 
 //  prototype actually has it mounted backwards, because it was better to mount that way)
 
-#define IS_ENABLE_SECOND_RANGEFINDER                true                        // for the fwd f rangefinder
+#define IS_ENABLE_SECOND_RANGEFINDER                true                        // for the fwd rangefinder
 #define IS_DO_TILT_COMPENSATION_SECOND_RANGEFINDER  true
 #define IS_DO_HEALTH_CHECK_SECOND_RANGEFINDER       true
+#define IS_REVERSE_GPA_MAIN_DIRECTION               true        // in the case that fwd rangefinder is actually mounted at the back
 
 #define IS_MOCK_OSCILLATING_RANGEFINDER_DATA        false    // for proving, I edited the right code
 #define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 9: test this

@@ -1005,7 +1005,13 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
         // invalid value
         return false;
     }
-    main_direction = _heading;                              // set main direction of the current measurement flight
+// set main direction of the current measurement flight
+#if IS_REVERSE_GPA_MAIN_DIRECTION                           
+    // in case we fly backwards (if "fwd rangefinder" is mounted in the back due to practicability reasons)
+    main_direction = (18000 + _heading) % 36000;
+# else // IS_REVERSE_GPA_MAIN_DIRECTION
+    main_direction = _heading;
+#endif // IS_REVERSE_GPA_MAIN_DIRECTION
 
 #if IS_PRINT_GPA_TESTS
     hal.console->printf("main_direction: %" PRIu16 " (hal.console)\n", main_direction);
