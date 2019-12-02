@@ -1106,10 +1106,10 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
     #endif // IS_DEBUG_GPA
 
-    // check y_p (distance from main_direction line)
+    // check y_p (distance from main_direction line), feedback will be handled from within update_<gpa>
     if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
         #if 0
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "far from GPA axis! %f cm", 
+        gcs().send_text(MAV_SEVERITY_ERROR, "far from GPA axis! %d cm", 
             y_p);
         #endif // 1
 

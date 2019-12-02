@@ -299,7 +299,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
 
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM
     if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "rangefinder_alt_cm: %f", rangefinder_alt_cm);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "rangefinder_alt_cm: %f", rangefinder_alt_cm);
         // hal.console->printf("$$$");
         // printf("$$$$$");
     }
@@ -319,7 +319,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN
         //if (this->mode_measurement.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
         if (call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: g.rangefinder_gain: %f", (float) g.rangefinder_gain);
+            gcs().send_text(MAV_SEVERITY_DEBUG, "value: g.rangefinder_gain: %f", (float) g.rangefinder_gain);
             // print system time for checking intervals
             hal.console->printf("print value (%s) Time since start: %" PRIu32 " us\n", this->flightmode->name4(), 
                 AP_HAL::micros());

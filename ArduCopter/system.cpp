@@ -30,7 +30,7 @@ void Copter::init_ardupilot()
 
     // edit by PeterSt HERE
     #if IS_PRINT_INIT_GCS_MESSAGE
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Hello via gcs message! from line %d", __LINE__);      // doesn't work (not set up yet)
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Hello via gcs message! from line %d", __LINE__);      // doesn't work (not set up yet)
     #endif
     #if IS_PRINT_INIT_PRINTF_MESSAGE
         printf("Hello via printf from line %d :)\n", __LINE__);                                        // works on sitl (xterm)
@@ -306,8 +306,8 @@ void Copter::init_ardupilot()
 
     // PeterSt
     #if IS_PRINT_INIT_GCS_MESSAGE
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Hello via gcs message! from line %d", __LINE__);           // works :)
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "last code change: %s", LAST_CODE_CHANGE);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Hello via gcs message! from line %d", __LINE__);           // works :)
+        gcs().send_text(MAV_SEVERITY_DEBUG, "last code change: %s", LAST_CODE_CHANGE);
     #endif
     #if IS_PRINT_INIT_HAL_PRINTF_MESSAGE
         hal.console->printf("Hello via hal.console->printf from line %d\n", __LINE__);                     // works on sitl (console)
@@ -318,13 +318,13 @@ void Copter::init_ardupilot()
             hal.console->printf("Note that there have been changes since then!\n");
         }
         if (IS_MOCK_OSCILLATING_RANGEFINDER_DATA) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "MOCKING OSCILLATING RANGEFINDER!");
+            gcs().send_text(MAV_SEVERITY_DEBUG, "MOCKING OSCILLATING RANGEFINDER!");
         }
     #endif
 
     #if IS_MOCK_OSCILLATING_RANGEFINDER_DATA
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Attention!! Using mock rangefinder oscillation");
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "    This is for testing purposes only");
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Attention!! Using mock rangefinder oscillation");
+        gcs().send_text(MAV_SEVERITY_DEBUG, "    This is for testing purposes only");
     #endif
 }
 

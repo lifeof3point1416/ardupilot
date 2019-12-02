@@ -323,7 +323,7 @@ void Copter::ModeMeasurement::run()
     #if (IS_PRINT_REPEATET_MESSAGE_IN_MEASUREMENT)
         // if (call_run_counter % (REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
         if (copter.call_run_counter % (REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Copter is in flightmode %s (27)", this->name());
+            gcs().send_text(MAV_SEVERITY_DEBUG, "Copter is in flightmode %s (27)", this->name());
             // print system time for checking intervals
             hal.console->printf("(%s:) Time since start: %" PRIu32 " us\n", this->name4(), AP_HAL::micros());
         }
@@ -332,7 +332,7 @@ void Copter::ModeMeasurement::run()
 
     #if IS_TEST_MEASUREMENT_INSTANCE_INIT
     if (copter.call_run_counter % (REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "call_conter_Copter_ModeMeasurement_init: %d", 
+        gcs().send_text(MAV_SEVERITY_DEBUG, "call_conter_Copter_ModeMeasurement_init: %d", 
             call_conter_Copter_ModeMeasurement_init);
         // print system time for checking intervals
         hal.console->printf("(%s:) Time since start: %" PRIu32 " us\n", this->name4(), AP_HAL::micros());

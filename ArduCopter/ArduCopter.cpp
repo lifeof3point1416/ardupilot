@@ -427,24 +427,25 @@ void Copter::three_hz_loop()
 void Copter::one_hz_loop()
 {
     // debug stuff by PeterSt
+    // TODO: prio 6: remove all commented out debug lines that are not needed
     call_1hz_loop_counter++;
     #if IS_PRINT_REPEATET_GCS_MESSAGE
         if (call_1hz_loop_counter % REPEATET_GCS_MESSAGE_INTERVAL == 1) {   // so that it's also executed in 1st loop
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Schalalalala :)");
+            gcs().send_text(MAV_SEVERITY_DEBUG, "Schalalalala :)");
             uint64_t micros = AP_HAL::micros();
             hal.console->printf("Time since start: %4d.%06d s\n", (int) (micros/1000000), (int) (micros%1000000));
             //hal.console->printf("Time since start: %" PRIu64 " us\n", AP_HAL::micros());
         }
     #endif 
     #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Moin :)");          // works
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Moin :)");          // works
     #endif
     #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
         if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
+            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
                 rangefinder_state.alt_cm);
             #if IS_ENABLE_SECOND_RANGEFINDER
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder2_state.dist_cm: %" PRIi16 "",
+            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder2_state.dist_cm: %" PRIi16 "",
                 rangefinder2_state.dist_cm);
             #endif
             // get particular rangefinder by its orientation, set in MP by RNGFND<N>_ORIENT
@@ -456,21 +457,21 @@ void Copter::one_hz_loop()
             //      actually our "forward facing rangefinder" is backward, due to practability reasons
             //      but lets assume, its forward, as it is only a prototype
             //  
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "value: rangefinder.distance_cm_orient(");
-            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_NONE     ): %4" PRIi16 "; ori: %d",
+            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder.distance_cm_orient(");
+            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_NONE     ): %4" PRIi16 "; ori: %d",
             //     rangefinder.distance_cm_orient(ROTATION_NONE     ), ROTATION_NONE);
-            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_PITCH_270): %4" PRIi16 "; ori: %d",
+            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_270): %4" PRIi16 "; ori: %d",
             //     rangefinder.distance_cm_orient(ROTATION_PITCH_270), ROTATION_PITCH_270);
-            // gcs().send_text(MAV_SEVERITY_CRITICAL, "ROTATION_PITCH_315): %4" PRIi16 "; ori: %d",
+            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_315): %4" PRIi16 "; ori: %d",
             //     rangefinder.distance_cm_orient(ROTATION_PITCH_315), ROTATION_PITCH_315);
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "<downward facing>): %4" PRIi16 "; ori: %d",
+            gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): %4" PRIi16 "; ori: %d",
                 rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING),
                 RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "<forward facing>):  %4" PRIi16 "; ori: %d",
+            gcs().send_text(MAV_SEVERITY_DEBUG, "<forward facing>):  %4" PRIi16 "; ori: %d",
                 rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING),
                 RANGEFINDER_ORIENTATION_FORWARD_FACING);
-            // gcs().send_text(MAV_SEVERITY_CRITICAL, "<downward facing>): ");
-            // gcs().send_text(MAV_SEVERITY_CRITICAL, "%4" PRIi16 "; ori: %d",
+            // gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): ");
+            // gcs().send_text(MAV_SEVERITY_DEBUG, "%4" PRIi16 "; ori: %d",
             //     rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING), 
             //     RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
             

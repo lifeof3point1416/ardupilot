@@ -134,7 +134,7 @@ void Copter::update_ground_profile_acquisition(void) {
     #endif // IS_PRINT_GPA_TESTS
 
     #if IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
-        if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        if (copter.call_run_counter % (PRINT_GPA_MAP_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
             hal.console->printf("map, ground_profile: [");
             int i;
             for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
@@ -145,7 +145,7 @@ void Copter::update_ground_profile_acquisition(void) {
     #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
 
     #if IS_PRINT_GPA_MAP_AS_MESSAGE
-    if (copter.call_update_gpa_counter % (30 * 100) == 1) {
+    if (copter.call_update_gpa_counter % (PRINT_GPA_MAP_INTERVAL * 100) == 1) {
         #if IS_PRINT_GPA_MAP_CONDENSED
         gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map as hex");
         gcs().send_text(MAV_SEVERITY_INFO, "map is biased with %02X, 00 means empty [", GPA_MAP_CONDENSED_BIAS);
