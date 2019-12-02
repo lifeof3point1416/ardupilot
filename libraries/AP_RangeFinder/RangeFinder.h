@@ -230,6 +230,8 @@ public:
     bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
     int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
 
+    uint16_t get_main_direction(void) {return main_direction;}
+
 protected:
 
 private:

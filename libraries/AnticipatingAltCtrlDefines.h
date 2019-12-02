@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   true
+#define IS_USE_SITL_CONFIGURATION                   false
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -176,9 +176,9 @@ enum AltCtrlMode : uint8_t {
 #if IS_DEBUG_CHECK_FWD_RANGEFINDER_ANGLE
     #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     static_assert(RANGEFINDER_ANGLE_FORWARD_FACING_DEG == 0, 
-        "in SITL only  dwn rangefinders can be simulated, fwd rangefinder angle should be 0°");
+        "in SITL only  dwn rangefinders can be simulated, fwd rangefinder angle should be 0°!");
     #else
     static_assert(RANGEFINDER_ANGLE_FORWARD_FACING_DEG > 0+10, 
-        "check fwd rangefinder angle, should be much bigger than 0°");
+        "check fwd rangefinder angle, should be much bigger than 0°!");
     #endif // CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #endif // IS_DEBUG_CHECK_FWD_RANGEFINDER_ANGLE

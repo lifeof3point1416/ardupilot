@@ -119,6 +119,11 @@ void Copter::update_ground_profile_acquisition(void) {
     if (!is_started_ground_profile_acquisition) {
         copter.ground_profile_acquisition->start(ahrs.yaw_sensor, position_neu);
         is_started_ground_profile_acquisition = true;
+
+        #if IS_DEBUG_GPA
+        gcs().send_text(MAV_SEVERITY_DEBUG, "GPA start. main_direction: %hu c°",
+            copter.ground_profile_acquisition->get_main_direction());
+        #endif // IS_DEBUG_GPA
     }
 
     // CONTINUE HERE
@@ -132,6 +137,16 @@ void Copter::update_ground_profile_acquisition(void) {
                 position_neu.x, position_neu.y, position_neu.z);
         }
     #endif // IS_PRINT_GPA_TESTS
+
+    #if IS_PRINT_GPA_MAIN_DIRECTION_COO
+    if (copter.call_update_gpa_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 100) == 1) {
+        //int x_f, y_f;
+        Vector2<int> main_direction_coo;
+        main_direction_coo = copter.ground_profile_acquisition->get_main_direction_coo(position_neu);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "main_direction coo: x_f: %d, y_f: %d",
+            main_direction_coo.x, main_direction_coo.y);
+    }
+    #endif // IS_PRINT_GPA_MAIN_DIRECTION_COO
 
     #if IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
         if (copter.call_run_counter % (PRINT_GPA_MAP_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
