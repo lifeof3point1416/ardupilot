@@ -206,7 +206,9 @@ public:
     bool init(void);
     // start scanning with the current orientation and set position_neu_cm as reference point for absolute position
     bool start(uint16_t _heading, Vector3f position_neu_cm);                      
-    // bool start(int _heading, Vector3f position_neu_cm);                      
+    #if 0 
+    bool start(int _heading, Vector3f position_neu_cm);
+    #endif
     int scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
     // int scan_point(int16_t dwn_rangefinder_dist_cm, int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 

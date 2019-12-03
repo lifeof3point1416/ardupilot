@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   false
+#define IS_USE_SITL_CONFIGURATION                   true
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards

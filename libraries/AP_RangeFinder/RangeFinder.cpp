@@ -1086,8 +1086,6 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 // position_neu: .x: north of home position in cm, .y: east of home position in cm, .z: up of home
 // return: ground_profile index of the new point that has been scanned, negative if it hasn't been stored
 int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
-// int AC_GroundProfileAcquisition::scan_point(int16_t dwn_rangefinder_dist_cm, 
-//     int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
 
     // cf. prototype simulator (in python): AnticipatingFFC.set_future_profile_point
 
