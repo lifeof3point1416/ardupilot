@@ -986,6 +986,17 @@ bool AC_GroundProfileAcquisition::init(void) {
         ground_profile[0]);
     #endif // IS_PRINT_GPA_TESTS
 
+    // init last_scanned_point
+    #if IS_PRINT_GPA_NEW_POINT
+    last_scanned_point.fwd_rangefinder_dist_cm = INT16_MIN;
+    last_scanned_point.position_neu_cm.x = NAN;
+    last_scanned_point.position_neu_cm.y = NAN;
+    last_scanned_point.position_neu_cm.z = NAN;
+    last_scanned_point.x_f = INT16_MIN;
+    last_scanned_point.y_p = INT32_MIN;
+    last_scanned_point.z_f = INT16_MIN;
+    #endif
+
     // check rangefinders???
 
     return true;
@@ -1112,12 +1123,12 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 
     // check y_p (distance from main_direction line), feedback will be handled from within update_<gpa>
     if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
+
+        #if IS_DEBUG_GPA
         #if 0
         gcs().send_text(MAV_SEVERITY_ERROR, "far from GPA axis! %d cm", 
             y_p);
         #endif // 1
-
-        #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
             hal.console->printf("GPA: far from GPA axis! %d cm\n", y_p);
         }
@@ -1204,6 +1215,15 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     // hard insert, not robust against outliers!
     // TODO: prio 7: implement soft insert
     ground_profile[ground_profile_index] = z_f;
+
+    #if IS_PRINT_GPA_NEW_POINT
+    last_scanned_point.time_us = AP_HAL::micros();
+    last_scanned_point.fwd_rangefinder_dist_cm = fwd_rangefinder_dist_cm;
+    last_scanned_point.position_neu_cm = position_neu_cm;
+    last_scanned_point.x_f = x_f;
+    last_scanned_point.y_p = y_p;
+    last_scanned_point.z_f = z_f;
+    #endif // IS_PRINT_GPA_NEW_POINT
 
     return ground_profile_index;
 }

@@ -22,7 +22,7 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_REPEATET_MESSAGE_IN_MEASUREMENT    1           // only sends gcs message in flightmode MEASUREMENT
 #define IS_TEST_MEASUREMENT_INSTANCE_INIT           1           
 #define IS_PRINT_ALT_CTRL_METHOD_IN_MEASUREMENT     1           // at start
-#define IS_DEBUG_MAX_HORIZONTAL_SPEED               000         // spamming console
+#define IS_DEBUG_MAX_HORIZONTAL_SPEED               0         // spamming console
 // print some values in a mavlink message if desired in interval: PRINT_MESSAGE_VALUE_INTERVAL
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_GAIN     0
 #define IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST     0
@@ -38,8 +38,9 @@ TODO (Prio 3): Find proper way to include this
 // concerning Ground Profile Acquisition
 #define IS_DISABLE_VERBOSE_GPA_PRINTOUTS            0
 #define IS_DEBUG_GPA                                01           // debug Ground Profile Acquisition
-#define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     00           // check rangefinder angle in SITL!
-#define IS_PRINT_GPA_MAP_AS_MESSAGE                 1           //
+#define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     0           // print via console
+#define IS_PRINT_GPA_MAP_AS_MESSAGE                 1           // print via MAVLink message
+#define IS_PRINT_GPA_NEW_POINT                      0           // print each new point, too much io!
 // print Ground Profile Acquisition map values as condensed numbers?
 // hex numbers biased with a constant, so that there are only positive numbers (if the values are within range)
 //  examples:
@@ -55,8 +56,8 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-12-03 15:00+01:00"    // TODO: frequently update after changes
-#define IS_LAST_CHANGE_DATE_DEPRECATED              0          // change to 1, if you changed code but
+#define LAST_CODE_CHANGE                    "2019-12-04 09:28+01:00"    // TODO: frequently update after changes
+#define IS_LAST_CHANGE_DATE_DEPRECATED              01          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]
 //                                                                  didn't update LAST_CODE_CHANGE

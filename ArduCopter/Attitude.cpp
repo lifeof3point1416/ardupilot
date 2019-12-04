@@ -267,7 +267,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         // projected altitude
         alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
         // BEGIN new
-        // TODO: prio 9: test this
         // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
         //  very steep downward slope,
         //  overwrite with dwn rangefinder, if necessary

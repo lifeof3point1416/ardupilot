@@ -207,6 +207,38 @@ void Copter::update_ground_profile_acquisition(void) {
             copter.mode_measurement.handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
         #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
     }
+    #if IS_PRINT_GPA_NEW_POINT
+    // messages too slow!
+     #if 0
+    gcs().send_text(MAV_SEVERITY_DEBUG, "Last scanned point at %" PRIu32 "", 
+        copter.ground_profile_acquisition->last_scanned_point.time_us);
+    gcs().send_text(MAV_SEVERITY_DEBUG, "in: fwd: %3hd cm; pos: x: %4.1f, y: %4.1f, z: %4.1f",
+    //gcs().send_text(MAV_SEVERITY_DEBUG, "in:fwd: %3hd; pos:x: %4f,y: %4f,z: %4f",
+        copter.ground_profile_acquisition->last_scanned_point.fwd_rangefinder_dist_cm,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.x,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.y,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.z);
+    gcs().send_text(MAV_SEVERITY_DEBUG, "out: x_f: %3hd cm; y_p: %3d cm; z_f: %3hd cm",
+        copter.ground_profile_acquisition->last_scanned_point.x_f,
+        copter.ground_profile_acquisition->last_scanned_point.y_p,
+        copter.ground_profile_acquisition->last_scanned_point.z_f);
+     #else // 0 or 1
+    hal.console->printf("Last scanned point at %" PRIu32 "\n", 
+        copter.ground_profile_acquisition->last_scanned_point.time_us);
+    hal.console->printf("in: fwd: %3hd cm; pos: x: %4.1f, y: %4.1f, z: %4.1f\n",
+    //gcs().send_text(MAV_SEVERITY_DEBUG, "in:fwd: %3hd; pos:x: %4f,y: %4f,z: %4f",
+        copter.ground_profile_acquisition->last_scanned_point.fwd_rangefinder_dist_cm,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.x,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.y,
+        copter.ground_profile_acquisition->last_scanned_point.position_neu_cm.z);
+    hal.console->printf("out: x_f: %3hd cm; y_p: %3d cm; z_f: %3hd cm\n",
+        copter.ground_profile_acquisition->last_scanned_point.x_f,
+        copter.ground_profile_acquisition->last_scanned_point.y_p,
+        copter.ground_profile_acquisition->last_scanned_point.z_f);
+     #endif // 0
+    #endif // IS_PRINT_GPA_NEW_POINT
+
+
     // no need for dwn rangefinder
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 }

@@ -233,6 +233,19 @@ public:
     int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
 
     uint16_t get_main_direction(void) {return main_direction;}
+#if IS_PRINT_GPA_NEW_POINT
+    struct ScannedPoint {
+        uint32_t time_us;
+        // input
+        int16_t fwd_rangefinder_dist_cm;
+        Vector3f position_neu_cm;
+        // calculated values, all in cm
+        int16_t x_f;                            // for ground_profile index
+        int y_p;                                // expresses deviation from main_direction line
+        int16_t z_f;                            // absolute altitiude
+    };
+    struct ScannedPoint last_scanned_point;
+#endif // IS_PRINT_GPA_NEW_POINT
 
 protected:
 
