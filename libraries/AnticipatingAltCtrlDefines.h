@@ -53,6 +53,8 @@ enum AltCtrlMode : uint8_t {
 #define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 9: test this
 #define DIST_MINIMUM_ALTITUDE_OVER_GROUND_CM        50      // do not go below this altitude           
 
+#define CALL_FREQUENCY_UPDATE_GPA                   100     // in Hz for the scheduler
+
 //
 // for different altitude control methods
 //

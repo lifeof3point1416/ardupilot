@@ -132,14 +132,14 @@ void Copter::update_ground_profile_acquisition(void) {
     #endif // IS_TEST_FFC
 
     #if IS_PRINT_GPA_TESTS
-        if (copter.call_run_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_MEASUREMENT_RUN) == 1) {
+        if (copter.call_update_gpa_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_UPDATE_GPA) == 1) {
             hal.console->printf("position_neu: x: %8f, y: %8f, z: %8f\n", 
                 position_neu.x, position_neu.y, position_neu.z);
         }
     #endif // IS_PRINT_GPA_TESTS
 
     #if IS_PRINT_GPA_MAIN_DIRECTION_COO
-    if (copter.call_update_gpa_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 100) == 1) {
+    if (copter.call_update_gpa_counter % (PRINT_MESSAGE_VALUE_INTERVAL * CALL_FREQUENCY_UPDATE_GPA) == 1) {
         //int x_f, y_f;
         Vector2<int> main_direction_coo;
         main_direction_coo = copter.ground_profile_acquisition->get_main_direction_coo(position_neu);
@@ -160,7 +160,7 @@ void Copter::update_ground_profile_acquisition(void) {
     #endif // IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP
 
     #if IS_PRINT_GPA_MAP_AS_MESSAGE
-    if (copter.call_update_gpa_counter % (PRINT_GPA_MAP_INTERVAL * 100) == 1) {
+    if (copter.call_update_gpa_counter % (PRINT_GPA_MAP_INTERVAL * CALL_FREQUENCY_UPDATE_GPA) == 1) {
         #if IS_PRINT_GPA_MAP_CONDENSED
         gcs().send_text(MAV_SEVERITY_INFO, "sending GPA map as hex");
         gcs().send_text(MAV_SEVERITY_INFO, "map is biased with %02X, 00 means empty [", GPA_MAP_CONDENSED_BIAS);
@@ -237,7 +237,6 @@ void Copter::update_ground_profile_acquisition(void) {
         copter.ground_profile_acquisition->last_scanned_point.z_f);
      #endif // 0
     #endif // IS_PRINT_GPA_NEW_POINT
-
 
     // no need for dwn rangefinder
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED

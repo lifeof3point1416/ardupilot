@@ -194,7 +194,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #endif
 // begin added by PeterSt
 #if IS_GROUND_PROFILE_ACQUISITION_ENABLED
-    SCHED_TASK(update_ground_profile_acquisition,   100,    100),
+    SCHED_TASK(update_ground_profile_acquisition,   CALL_FREQUENCY_UPDATE_GPA,              100),
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 // end
     SCHED_TASK_CLASS(AP_Button,            &copter.g2.button,           update,           5, 100),
