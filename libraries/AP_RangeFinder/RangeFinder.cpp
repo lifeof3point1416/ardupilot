@@ -1109,10 +1109,10 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
         "QhfffiiihhBi",                                             // types
         TimeUS,
         FwdRF,
-        #if 1
+        #if 0
         PosX, PosY, PosZ,
         #else 
-        (double) PosX, (double) PosY, (double) PosZ,
+        (double) PosX, (double) PosY, (double) PosZ,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
         #endif // 1
         XP, YP, ZP,
         XF, ZF, ((uint8_t) IsValid), Ret                            // no bool available, sizeof(bool) is 1
