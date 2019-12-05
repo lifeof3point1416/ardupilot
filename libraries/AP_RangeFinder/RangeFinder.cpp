@@ -1246,6 +1246,14 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         }
         #endif // IS_DEBUG_GPA
 
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::micros64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            x_f, z_f, false,
+            ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE);
+        #endif 
+
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE;
     } else if (x_f >= GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE) {
         // too big for the array
