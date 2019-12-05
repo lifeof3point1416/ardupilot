@@ -37,6 +37,9 @@
 #include "AP_RangeFinder_Benewake.h"
 #include "AP_RangeFinder_Benewake_TFMiniPlus.h"
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#if IS_LOG_GPA
+#include <DataFlash/DataFlash.h>
+#endif // IS_LOG_GPA
 
 extern const AP_HAL::HAL &hal;
 
@@ -1091,6 +1094,46 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     return ret;
 }
 
+#if IS_LOG_GPA
+bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
+    int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret) {
+    // TODO: prio 8: implement logging
+    // dataflash tag "GPA" is already preoccupied by GPS-Auxilliary - use GPAQ instead
+    // TODO: prio 7: log ground_profile instead of sending it via gcs message
+
+    // see https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_Logger/LogStructure.h#L6 for specifiers
+    DataFlash_Class::instance()->Log_Write("GPAQ",                  // tag for Ground Profile AQuisition (must be unique)
+        "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,IsValid,Ret",   // variable names
+        "smmmmmmmmm--",                                             // base units
+        "FBBBBBBBBB00",                                             // exponents
+        "QhfffiiihhBi",                                             // types
+        TimeUS,
+        FwdRF,
+        #if 1
+        PosX, PosY, PosZ,
+        #else 
+        (double) PosX, (double) PosY, (double) PosZ,
+        #endif // 1
+        XP, YP, ZP,
+        XF, ZF, ((uint8_t) IsValid), Ret                            // no bool available, sizeof(bool) is 1
+    );
+    // DataFlash_Class::instance()->Log_Write("GPAQ",      // tag for Ground Profile AQuisition (must be unique)
+    //     "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,IsValid", // variable names
+    //     "smmmmmmmmm-",                                    // base units
+    //     "FBBBBBBBBB0",                                    // exponents
+    //     "QhfffiiihhB",                                     // types
+    //     AP_HAL::micros64(),
+    //     fwd_rangefinder_dist_cm,
+    //     position_neu_cm.x,
+    //     position_neu_cm.y,
+    //     position_neu_cm.z,
+    //     x_p, y_p, z_p,
+    //     x_f, z_f, ((uint8_t) false)
+    // );
+    return true;    // this is redundant
+}
+#endif // IS_LOG_GPA
+
 // scan a point of the ground profile, using forward facing rangefinder value and "absolute position"
 //  (with regard to the position of start())
 // fwd_rangefinder_dist_cm in cm
@@ -1134,6 +1177,14 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         }
         #endif // IS_DEBUG_GPA
 
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::millis64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, false,
+            ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED);
+        #endif 
+
         return ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED;
     }
 
@@ -1154,6 +1205,15 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
             hal.console->printf("GPA debug: (z_p - h2) out of range, (z_p - h2) = %d\n", (z_p - h2));
         }
         #endif // IS_DEBUG_GPA
+
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::millis64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            x_f, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, false,
+            ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE);
+        #endif 
+        
         return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
     }
     // y_f = y_p - h2;  WRONG! 
@@ -1196,6 +1256,14 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         }
         #endif // IS_DEBUG_GPA
 
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::millis64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            x_f, z_f, false,
+            ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH);
+        #endif 
+
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
     }
 
@@ -1208,6 +1276,15 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
             hal.console->printf("GPA debug: z_f out of range, z_f = %d\n", z_f);
         }
         #endif // IS_DEBUG_GPA
+
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::millis64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            x_f, z_f, false,
+            ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE);
+        #endif 
+
         return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
     }
 
@@ -1224,6 +1301,14 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     last_scanned_point.y_p = y_p;
     last_scanned_point.z_f = z_f;
     #endif // IS_PRINT_GPA_NEW_POINT
+
+    #if IS_LOG_GPA
+    log_scan_point(AP_HAL::millis64(), fwd_rangefinder_dist_cm, 
+        position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+        x_p, y_p, z_p, 
+        x_f, z_f, true,
+        ground_profile_index);
+    #endif 
 
     return ground_profile_index;
 }

@@ -41,6 +41,7 @@ TODO (Prio 3): Find proper way to include this
 #define IS_PRINT_GROUND_PROFILE_ACQUISITION_MAP     0           // print via console
 #define IS_PRINT_GPA_MAP_AS_MESSAGE                 1           // print via MAVLink message
 #define IS_PRINT_GPA_NEW_POINT                      0           // print each new point, too much io!
+static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from being spammed");
 // print Ground Profile Acquisition map values as condensed numbers?
 // hex numbers biased with a constant, so that there are only positive numbers (if the values are within range)
 //  examples:
@@ -56,7 +57,7 @@ TODO (Prio 3): Find proper way to include this
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-12-04 09:42+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-12-05 17:28+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]

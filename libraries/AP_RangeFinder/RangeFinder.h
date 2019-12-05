@@ -246,6 +246,10 @@ public:
     };
     struct ScannedPoint last_scanned_point;
 #endif // IS_PRINT_GPA_NEW_POINT
+#if IS_LOG_GPA 
+    bool log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
+        int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret);
+#endif // IS_LOG_GPA
 
 protected:
 

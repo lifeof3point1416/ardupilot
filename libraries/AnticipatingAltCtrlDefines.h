@@ -100,6 +100,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL       true
 //#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (10*1000000)    // wait at least this timespan for next msg
 #define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (2*1000000)    // shorter for debug mode
+#define IS_LOG_GPA                                  true            // within GPA method
 
 
 // actual parameter definitions
