@@ -1165,7 +1165,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     #endif // IS_DEBUG_GPA
 
     // check y_p (distance from main_direction line), feedback will be handled from within update_<gpa>
-    if (y_p > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
+    if (abs(y_p) > GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM) {
 
         #if IS_DEBUG_GPA
         #if 0
