@@ -1102,6 +1102,25 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
     // TODO: prio 7: log ground_profile instead of sending it via gcs message
 
     // see https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_Logger/LogStructure.h#L6 for specifiers
+    #if IS_LOG_EXTRA_XF_ZF_CONSTRAINT
+    DataFlash_Class::instance()->Log_Write("GPAQ",                  // tag for Ground Profile AQuisition (must be unique)
+        "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,XFOk,ZFOk,IsOk,Ret",   // variable names
+        "smmmmmmmmmmm--",                                             // base units
+        "FBBBBBBBBBBB00",                                             // exponents
+        "QhfffiiihhhhBi",                                             // types
+        TimeUS,
+        FwdRF,
+        #if 0
+        PosX, PosY, PosZ,
+        #else 
+        (double) PosX, (double) PosY, (double) PosZ,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
+        #endif // 1
+        XP, YP, ZP,
+        XF, ZF,
+        IsValid ? XF : (int16_t) 0, IsValid ? (int16_t) ZF : 0, // to prevent from INVALID_VALUE (-32k) busting log review graphs
+        ((uint8_t) IsValid), Ret                            // no bool available, sizeof(bool) is 1
+    );
+    #else
     DataFlash_Class::instance()->Log_Write("GPAQ",                  // tag for Ground Profile AQuisition (must be unique)
         "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,IsValid,Ret",   // variable names
         "smmmmmmmmm--",                                             // base units
@@ -1117,19 +1136,7 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
         XP, YP, ZP,
         XF, ZF, ((uint8_t) IsValid), Ret                            // no bool available, sizeof(bool) is 1
     );
-    // DataFlash_Class::instance()->Log_Write("GPAQ",      // tag for Ground Profile AQuisition (must be unique)
-    //     "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,IsValid", // variable names
-    //     "smmmmmmmmm-",                                    // base units
-    //     "FBBBBBBBBB0",                                    // exponents
-    //     "QhfffiiihhB",                                     // types
-    //     AP_HAL::micros64(),
-    //     fwd_rangefinder_dist_cm,
-    //     position_neu_cm.x,
-    //     position_neu_cm.y,
-    //     position_neu_cm.z,
-    //     x_p, y_p, z_p,
-    //     x_f, z_f, ((uint8_t) false)
-    // );
+    #endif // IS_LOG_EXTRA_XF_ZF_CONSTRAINT
     return true;    // this is redundant
 }
 #endif // IS_LOG_GPA
