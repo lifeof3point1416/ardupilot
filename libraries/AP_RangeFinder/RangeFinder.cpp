@@ -1223,7 +1223,6 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
         
         return ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE;
     }
-    // y_f = y_p - h2;  WRONG! 
     z_f = z_p - h2;
 #if IS_USE_GPA_MAP_OFFSET
     // an additional conditional branch for every cycle :/
@@ -1233,7 +1232,6 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     }
     z_f -= ground_profile_offset;
 #endif // IS_USE_GPA_MAP_OFFSET
-    // not sure why sometimes index 0 has a value != 0... perhaps
 
     // calculate array index (for ground_profile)
     int ground_profile_index;
