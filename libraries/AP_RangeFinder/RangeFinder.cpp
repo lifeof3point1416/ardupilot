@@ -1410,14 +1410,12 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int x_sum;
     int z_sum_mult;                             
     int n_values;                               // number of values
-    // all values whos variable names end with "_mult" are multiplied by a multiplicator
     int x_mean_mult, z_mean_mult;
     int x_diff_i_mult;                          // (x_i - mean{x})
     int z_diff_i_mult;                          // (z_i - mean{z})
     int xz_diff_sum_mult;                       // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
     int xx_diff_sum_mult;                       // sum for all i of {(x_i - mean{x})^2}
     int z;
-    // use
     float xz_diff_sum_f, xx_diff_sum_f;
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
@@ -1432,28 +1430,23 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     z_sum_mult = 0;
     n_values = 0;           
     int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of valid z values
-    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains valid z values, multiplied by a factor
-    int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, later next derivation dz/dx, all multiplied by a factor
+    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
+    int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, all multiplied by a factor
     int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
-    // int last_z;
 
-    for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) {           //  ==> ARM: LDS n_values, #0 (?); later ADDS n_values, #1
+    for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) {
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {       // index has been constrained before
             x_vector[n_values] = x;
-            // if (n_values > 0) {                             // for ARM processors with conditional instructions, this is only 1 instruction
-            //     last_z = z;                                 //  (with status flags still from n_values=0 or n_values++): MOVGE last_z, z
-            // }
             z =  ground_profile_acquisition->get_ground_profile_datum(x);
             // the following line is not inefficient if a barrel shifter is available (eg for ARM processor, as in CubeBlack)
             //  otherwise, for this loop we should add up z_sum first and shift it then, to save 1 shifting operation per valid datum
             //  however, this would introduce z_vector for grade==1 and z_vector_mult for grade>1, which makes the code more complicated
             z_vector_mult[n_values] = z << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT;
             // also add up x_sum and z_sum for mean of primitive function, to calculate first derivation
-            x_sum += x;
+            x_sum += x;                                                         // ARM: ADD x_sum, x_sum, x
             z_sum_mult += z << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT; // ARM: ADD z_sum_mult, z_sum_mult, z, LSL #4 ; for mult_exp==4
-            // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
-            if (n_values > 0) {                             // we could unroll this branch, but then the could would look uglier
-                //dz_vector[n_values-1] = z - last_z;
+            // calc differences for derivating z values for next higher derivation grade
+            if (n_values > 0) {                             // we could unroll this branch, but then the code would look uglier
                 dz_vector_mult[n_values-1] = z_vector_mult[n_values] - z_vector_mult[n_values-1];
                 dx_vector[n_values-1] = x_vector[n_values] - x_vector[n_values-1];
             }
@@ -1463,51 +1456,25 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     // cycle through 1st, 2nd and 3rd grade derivation
     for (grade = 1; grade <= 3; grade++) {
         // get mean values of x and z
-        // if (grade == 1) {
-        //     for (x = x_target_left; x <= x_target_right; x++) {
-        //         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {       // index has been constrained before
-        //             n_values++;
-        //             x_sum += x;
-        //             z_sum += ground_profile_acquisition->get_ground_profile_datum(x);
-        //             //
-        //             // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
-        //         }
-        //     }
-        // } else 
+        // z_sum_mult for grade==1 has already been calculated
         if (grade == 2) {
             z_sum_mult = 0;
             for (i = 0; i < n_values; i++) {
                 z_sum_mult += z_vector_mult[i];
-                // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
-                if (i > 0) {                             // we could unroll this branch, but then the could would look uglier
+                // calc differences for derivating z values for next higher derivation grade
+                if (i > 0) {
                     // hopefully the compiler is smart enough to keep the respective last values of the vectors in a register, to prevent
                     //  from a lot of memory accesses
                     dz_vector_mult[i-1] = z_vector_mult[i] - z_vector_mult[i-1];
                     dx_vector[i-1] = x_vector[i] - x_vector[i-1];
                 }
             }
-            // for (x = x_target_left; x <= x_target_right; x++) {
-            //     if (ground_profile_derivation[x] != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) {       // index has been constrained before
-            //         n_values++;
-            //         x_sum += x;
-            //         z_sum += ground_profile_derivation[x];
-            //         //
-            //         // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
-            //     }
-            // }
         } else if (grade == 3){
             // no need for differences for 3rd and highest derivation grade
             z_sum_mult = 0;
             for (i = 0; i < n_values; i++) {
                 z_sum_mult += z_vector_mult[i];
             }
-            // for (x = x_target_left; x <= x_target_right; x++) {
-            //     if (ground_profile_derivation[x] != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) {       // index has been constrained before
-            //         n_values++;
-            //         x_sum += x;
-            //         z_sum += ground_profile_derivation[x];
-            //     }
-            // }
         }
         if (n_values == 0) {
             // no valid values within derivation window ==> derivations.is_valid == false
@@ -1518,7 +1485,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
         
         // x_mean_mult = x_sum * (1 << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
-        // z_mean_mult = z_sum * (1 << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
         // // don't know, how smart the compiler is, using explicit bit shifts:
         x_mean_mult = (x_sum << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
         z_mean_mult = z_sum_mult / n_values;
