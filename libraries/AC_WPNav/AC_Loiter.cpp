@@ -230,7 +230,7 @@ void AC_Loiter::update(float ekfGndSpdLimit, float ekfNavVelGainScaler)
             _speed_cms_old = _speed_cms;
             _speed_cms = MAX_MEASUREMENT_HORIZONTAL_SPEED;
             // for debug
-            // TODO: prio 8: remove this after debug
+            // TODO: prio 6: remove this after debug
             #if 1
             // ...
             #endif // 1

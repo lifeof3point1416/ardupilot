@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   false
+#define IS_USE_SITL_CONFIGURATION                   true
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -50,7 +50,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_REVERSE_GPA_MAIN_DIRECTION               true        // in the case that fwd rangefinder is actually mounted at the back
 
 #define IS_MOCK_OSCILLATING_RANGEFINDER_DATA        false    // for proving, I edited the right code
-#define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 9: test this
+#define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 7: test this
 #define DIST_MINIMUM_ALTITUDE_OVER_GROUND_CM        50      // do not go below this altitude           
 
 #define CALL_FREQUENCY_UPDATE_GPA                   50     // in Hz for the scheduler
@@ -70,16 +70,20 @@ enum AltCtrlMode : uint8_t {
 #define ALT_CTRL_MODE_NAME_EXTENDED_PID             "EXTENDED_PID"
 #define ALT_CTRL_MODE_NAME_FFC                      "FFC"
 
+// define enum-mocks
+#define GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING    1
+#define GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING 2
+
 // specify behavior of MEASUREMENT flight mode
-#define MEASUREMENT_BEHAVIOR_LOITER                 1       // as loiter, but with new altitude controller
-#define MEASUREMENT_BEHAVIOR_SEMI_GUIDED            2       // initially as loiter, then forward flight is triggered manually
-#define MEASUREMENT_BEHAVIOR_GUIDED                 3       // behave as in guided
+#define MEASUREMENT_BEHAVIOR_LOITER                         1       // as loiter, but with new altitude controller
+#define MEASUREMENT_BEHAVIOR_SEMI_GUIDED                    2       // initially as loiter, then forward flight is triggered manually
+#define MEASUREMENT_BEHAVIOR_GUIDED                         3       // behave as in guided
 
 // set max horizontal speed for MEASUREMENT flight mode
-#define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT      0001    // so that we can fly with max speed without a complex
+#define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT              0001    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
-#define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT   0
-#define MAX_MEASUREMENT_HORIZONTAL_SPEED            100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT           0
+#define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition (GPA)
 
@@ -96,13 +100,20 @@ enum AltCtrlMode : uint8_t {
 //#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
 #define IS_USE_GPA_MAP_OFFSET                               true        // so that first GPA map value is set to 0
 
-#define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM    100     // otherwise: don't store in GPA, send warning
-#define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL       true
-//#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (10*1000000)    // wait at least this timespan for next msg
-#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC  (2*1000000)    // shorter for debug mode
-#define IS_LOG_GPA                                  true            // within GPA method
-#define IS_LOG_EXTRA_XF_ZF_CONSTRAINT               true            // to prevent log review window zooming out for -32k values
+#define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM            100     // otherwise: don't store in GPA, send warning
+#define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL               true
+//#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC        (10*1000000)    // wait at least this timespan for next msg
+#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC          (2*1000000)    // shorter for debug mode
+#define IS_LOG_GPA                                          true            // within GPA method
+#define IS_LOG_EXTRA_XF_ZF_CONSTRAINT                       true            // to prevent log review window zooming out for -32k values
+#define IS_CONVERT_FLOAT_LOGS_TO_DOUBLE                     true
 
+// for ground profile derivator (GPD)
+
+#define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        true
+#define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
+#define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+#define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
 
 // actual parameter definitions
 
@@ -112,7 +123,10 @@ enum AltCtrlMode : uint8_t {
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
-#define PHYSICAL_MODEL_TIME_CONSTANT_MICROS         149000  // PT1-time constant tau of the copter (including deadtime)
+#define PHYSICAL_MODEL_TIME_CONSTANT_MICROS                 149000  // PT1-time constant tau of the copter (including deadtime) [us]
+#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s == 1/Ms]
+#define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
+#define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
 
 // for extended PID
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
@@ -186,3 +200,11 @@ enum AltCtrlMode : uint8_t {
         "check fwd rangefinder angle, should be much bigger than 0°!");
     #endif // CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #endif // IS_DEBUG_CHECK_FWD_RANGEFINDER_ANGLE
+
+static_assert( (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING) ||
+    (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING),
+    "Unknown value for GROUND_PROFILE_DERIVATOR_FITTING" );
+
+#if (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING)
+#error GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING is not implemented yet
+#endif

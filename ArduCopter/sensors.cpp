@@ -199,14 +199,23 @@ void Copter::update_ground_profile_acquisition(void) {
         #endif // IS_PRINT_GPA_MAP_CONDENSED
     }
     #endif // IS_PRINT_GPA_MAP_AS_MESSAGE
-    
-    last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
-        copter.rangefinder2_state.dist_cm, position_neu);
-    if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {
+    if (copter.rangefinder2_state.dist_healthy) {
+        last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
+            copter.rangefinder2_state.dist_cm, position_neu);
         #if IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
-            copter.mode_measurement.handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
+        if (!copter.ground_profile_acquisition->is_scan_point_index_valid(last_scan_point_return_value)) {
+                copter.mode_measurement.handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
+        }
         #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+    } else {
+        #if IS_LOG_GPA
+        // this is actually not within ground_profile_acquisition->scan_point, because the method doesn't get called
+        //  if fwd rangefinder is not healthy, but there is a scan_point-return value especially for this case
+        ground_profile_acquisition->scan_point_unhealthy_fwd_rangefinder(
+            copter.rangefinder2_state.dist_cm, position_neu);
+        #endif 
     }
+
     #if IS_PRINT_GPA_NEW_POINT
     // messages too slow!
      #if 0

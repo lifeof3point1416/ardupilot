@@ -537,6 +537,8 @@ private:
     AC_GroundProfileAcquisition *ground_profile_acquisition;
     bool is_started_ground_profile_acquisition = false;
     int last_scan_point_return_value;                                           // init value in ::init()!
+
+    AC_GroundProfileDerivator *ground_profile_derivator;    
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     // System Timers
@@ -1060,7 +1062,7 @@ private:
 // TODO: check if MODE_MEASUREMENT exists
 //  does ArduCopter/config.h get created automatically?
 #if MODE_MEASUREMENT_ENABLED == ENABLED
-    // TODO: prio 8 instantiate anticipating altitude control, too? 
+    // TODO: prio 5 instantiate anticipating altitude control, too? 
     //  Cf. autotune in http://ardupilot.org/dev/docs/apmcopter-adding-a-new-flight-mode.html 4.
     ModeMeasurement mode_measurement;
 #endif

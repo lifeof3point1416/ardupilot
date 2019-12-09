@@ -977,7 +977,6 @@ AC_GroundProfileAcquisition::AC_GroundProfileAcquisition(void) {
 // init array map for ground profile points to be scanned
 // return: successfully initialized?
 bool AC_GroundProfileAcquisition::init(void) {
-    // TODO: ...
     // init variables
     int i;
     for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
@@ -1055,7 +1054,7 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
 // get coordinates in main direction space,
 //  of position_neu_cm along this->main_direction, origin at this->start_position_cm
 //  can be interpreted as 1-dimensional position, y should be as low as possible
-// return: x-coordiate [cm]
+// return: struct of x-coordiate [cm] and y-coordinate [cm]
 //int AC_GroundProfileAcquisition::get_1d_x(Vector3f position_neu_cm) {
 Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f position_neu_cm) {
     // goal is to get x (1D variable) of a point P is specified by position_neu_cm
@@ -1097,7 +1096,6 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 #if IS_LOG_GPA
 bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
     int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret) {
-    // TODO: prio 8: implement logging
     // dataflash tag "GPA" is already preoccupied by GPS-Auxilliary - use GPAQ instead
     // TODO: prio 7: log ground_profile instead of sending it via gcs message
 
@@ -1110,7 +1108,7 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
         "QhfffiiihhhhBi",                                             // types
         TimeUS,
         FwdRF,
-        #if 0
+        #if !IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
         PosX, PosY, PosZ,
         #else 
         (double) PosX, (double) PosY, (double) PosZ,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
@@ -1128,7 +1126,7 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
         "QhfffiiihhBi",                                             // types
         TimeUS,
         FwdRF,
-        #if 0
+        #if !IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
         PosX, PosY, PosZ,
         #else 
         (double) PosX, (double) PosY, (double) PosZ,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
@@ -1138,6 +1136,56 @@ bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF,
     );
     #endif // IS_LOG_EXTRA_XF_ZF_CONSTRAINT
     return true;    // this is redundant
+}
+
+// only for logging, this is called if fwd rangefinder is not healthy
+bool AC_GroundProfileAcquisition::scan_point_unhealthy_fwd_rangefinder(
+        int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
+    int16_t XF, ZF;
+    XF = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    ZF = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    bool IsValid;
+    IsValid = false;                                                // because of unhealthy forward rangefinder
+    #if IS_LOG_EXTRA_XF_ZF_CONSTRAINT
+    DataFlash_Class::instance()->Log_Write("GPAQ",                  // tag for Ground Profile AQuisition (must be unique)
+        "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,XFOk,ZFOk,IsOk,Ret",   // variable names
+        "smmmmmmmmmmm--",                                             // base units
+        "FBBBBBBBBBBB00",                                             // exponents
+        "QhfffiiihhhhBi",                                             // types
+        AP_HAL::micros64(),
+        fwd_rangefinder_dist_cm,
+        #if !IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
+        position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+        #else 
+        (double) position_neu_cm.x, (double) position_neu_cm.y, (double) position_neu_cm.z,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
+        #endif // 1
+        0, 0, 0,                                                // arbitrarily set to 0
+        XF, ZF,
+        IsValid ? XF : (int16_t) 0, IsValid ? (int16_t) ZF : 0, // to prevent from INVALID_VALUE (-32k) busting log review graphs
+        ((uint8_t) IsValid),                                        // no bool available, sizeof(bool) is 1
+        ScanPointInvalidReturnValue_FWD_RANGEFINDER_NOT_HEALTHY
+    );
+    #else
+    DataFlash_Class::instance()->Log_Write("GPAQ",                  // tag for Ground Profile AQuisition (must be unique)
+        "TimeUS,FwdRF,PosX,PosY,PosZ,XP,YP,ZP,XF,ZF,XFOk,ZFOk,IsOk,Ret",   // variable names
+        "smmmmmmmmmmm--",                                             // base units
+        "FBBBBBBBBBBB00",                                             // exponents
+        "QhfffiiihhhhBi",                                             // types
+        AP_HAL::micros64(),
+        fwd_rangefinder_dist_cm,
+        #if !IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
+        position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+        #else 
+        (double) position_neu_cm.x, (double) position_neu_cm.y, (double) position_neu_cm.z,        // as in libraries/AC_AttitudeControl/AC_PosControl.cpp, ln 860
+        #endif // 1
+        0, 0, 0,                                                // arbitrarily set to 0
+        XF, ZF,
+        IsValid ? XF : (int16_t) 0, IsValid ? (int16_t) ZF : 0, // to prevent from INVALID_VALUE (-32k) busting log review graphs
+        ((uint8_t) IsValid),                                        // no bool available, sizeof(bool) is 1
+        ScanPointInvalidReturnValue_FWD_RANGEFINDER_NOT_HEALTHY
+    );
+    #endif // IS_LOG_EXTRA_XF_ZF_CONSTRAINT
+    return true;                                                // redundant
 }
 #endif // IS_LOG_GPA
 
@@ -1206,6 +1254,7 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     x_f = (x_p + dx2) / 1;      // 1 cm is for 1 array cell    
 
     // pre check if value is in range (as overflow couldn't be detected)
+    //  needs to be done before offset is added
     if (((z_p - h2) <= GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) || (INT16_MAX < (z_p - h2))) {
         #if IS_DEBUG_GPA
         if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
@@ -1328,3 +1377,235 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 
 #endif // 1 OR 0
 #endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
+
+///// Temporary workaround for AC_GroundProfileDerivator here
+// couldn't add files to waf successfully, yet
+// definition part is in RangeFinder.cpp
+// using static or singleton variables would be better, cf. rangefinder
+
+// TODO: test this
+
+AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition) {
+    set_ground_profile(_ground_profile_acquisition);
+}
+
+// calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
+//  specified by x_target_left <= x <= x_target_right
+//  these two arguments must be checked before, if they are within the valid range of ground_profile!
+//  this function uses the consecutive linear fitting method
+AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_consecutive_linear_fitting(int x_target_left, int x_target_right) {
+    DistanceDerivations derivations;
+    derivations.first = NAN;
+    derivations.second = NAN;
+    derivations.third = NAN;
+    derivations.is_valid = false;
+
+    /// using method of least squares
+    // using integer arithmetics for the loops that cycle over each value within the derivation window, for each derivation grade
+    // variables with "_mult" suffix are multiplied by a multiplicator, to prevent some of the higher derivation z values' precision
+    //  the precision is (2^(-GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT)), so eg. 1/16 for a mult exp of 4
+    //  TODO: prio 6: is this precise enough? consider that rangefinder is only precise to ca. 1 cm, values are also filtered
+    int grade;                                  // grade of derivation
+    int x, i;
+    int x_sum;
+    int z_sum_mult;                             
+    int n_values;                               // number of values
+    // all values whos variable names end with "_mult" are multiplied by a multiplicator
+    int x_mean_mult, z_mean_mult;
+    int x_diff_i_mult;                          // (x_i - mean{x})
+    int z_diff_i_mult;                          // (z_i - mean{z})
+    int xz_diff_sum_mult;                       // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
+    int xx_diff_sum_mult;                       // sum for all i of {(x_i - mean{x})^2}
+    int z;
+    // use
+    float xz_diff_sum_f, xx_diff_sum_f;
+    float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
+    for (i = 0; i < 4; i++) {
+        derivation_vector[i] = 0;
+    }
+    // using an additional array for derivation values prevents if checks for
+    //  each derivation cycle, or referencing a struct as an array as
+    //  done here: https://stackoverflow.com/questions/5524552/access-struct-members-as-if-they-are-a-single-array
+
+    // scan once for valid values and fill x_vector and z_vector_mult
+    x_sum = 0;
+    z_sum_mult = 0;
+    n_values = 0;           
+    int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of valid z values
+    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains valid z values, multiplied by a factor
+    int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, later next derivation dz/dx, all multiplied by a factor
+    int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
+    // int last_z;
+
+    for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) {           //  ==> ARM: LDS n_values, #0 (?); later ADDS n_values, #1
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {       // index has been constrained before
+            x_vector[n_values] = x;
+            // if (n_values > 0) {                             // for ARM processors with conditional instructions, this is only 1 instruction
+            //     last_z = z;                                 //  (with status flags still from n_values=0 or n_values++): MOVGE last_z, z
+            // }
+            z =  ground_profile_acquisition->get_ground_profile_datum(x);
+            // the following line is not inefficient if a barrel shifter is available (eg for ARM processor, as in CubeBlack)
+            //  otherwise, for this loop we should add up z_sum first and shift it then, to save 1 shifting operation per valid datum
+            //  however, this would introduce z_vector for grade==1 and z_vector_mult for grade>1, which makes the code more complicated
+            z_vector_mult[n_values] = z << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT;
+            // also add up x_sum and z_sum for mean of primitive function, to calculate first derivation
+            x_sum += x;
+            z_sum_mult += z << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT; // ARM: ADD z_sum_mult, z_sum_mult, z, LSL #4 ; for mult_exp==4
+            // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
+            if (n_values > 0) {                             // we could unroll this branch, but then the could would look uglier
+                //dz_vector[n_values-1] = z - last_z;
+                dz_vector_mult[n_values-1] = z_vector_mult[n_values] - z_vector_mult[n_values-1];
+                dx_vector[n_values-1] = x_vector[n_values] - x_vector[n_values-1];
+            }
+        }
+    }
+
+    // cycle through 1st, 2nd and 3rd grade derivation
+    for (grade = 1; grade <= 3; grade++) {
+        // get mean values of x and z
+        // if (grade == 1) {
+        //     for (x = x_target_left; x <= x_target_right; x++) {
+        //         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {       // index has been constrained before
+        //             n_values++;
+        //             x_sum += x;
+        //             z_sum += ground_profile_acquisition->get_ground_profile_datum(x);
+        //             //
+        //             // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
+        //         }
+        //     }
+        // } else 
+        if (grade == 2) {
+            z_sum_mult = 0;
+            for (i = 0; i < n_values; i++) {
+                z_sum_mult += z_vector_mult[i];
+                // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
+                if (i > 0) {                             // we could unroll this branch, but then the could would look uglier
+                    // hopefully the compiler is smart enough to keep the respective last values of the vectors in a register, to prevent
+                    //  from a lot of memory accesses
+                    dz_vector_mult[i-1] = z_vector_mult[i] - z_vector_mult[i-1];
+                    dx_vector[i-1] = x_vector[i] - x_vector[i-1];
+                }
+            }
+            // for (x = x_target_left; x <= x_target_right; x++) {
+            //     if (ground_profile_derivation[x] != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) {       // index has been constrained before
+            //         n_values++;
+            //         x_sum += x;
+            //         z_sum += ground_profile_derivation[x];
+            //         //
+            //         // TODO: prio 7: calc differences for derivating z values for next higher derivation grade
+            //     }
+            // }
+        } else if (grade == 3){
+            // no need for differences for 3rd and highest derivation grade
+            z_sum_mult = 0;
+            for (i = 0; i < n_values; i++) {
+                z_sum_mult += z_vector_mult[i];
+            }
+            // for (x = x_target_left; x <= x_target_right; x++) {
+            //     if (ground_profile_derivation[x] != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) {       // index has been constrained before
+            //         n_values++;
+            //         x_sum += x;
+            //         z_sum += ground_profile_derivation[x];
+            //     }
+            // }
+        }
+        if (n_values == 0) {
+            // no valid values within derivation window ==> derivations.is_valid == false
+            // TODO: prio 6: discard all derivations, even valid ones of lower order?
+            //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
+            //  if we decide to do this, we will need to describe this specific behavior
+            return derivations;
+        }
+        
+        // x_mean_mult = x_sum * (1 << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
+        // z_mean_mult = z_sum * (1 << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
+        // // don't know, how smart the compiler is, using explicit bit shifts:
+        x_mean_mult = (x_sum << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
+        z_mean_mult = z_sum_mult / n_values;
+
+        x_diff_i_mult = 0;
+        z_diff_i_mult = 0;
+        xz_diff_sum_mult = 0;
+        xx_diff_sum_mult = 0;
+        for (i = 0; i < n_values; i++) {
+            // following line in ARM: RSB x_diff_i_mult, x_mean_mult, x_vector_i, LSL #4 ; for a mult exp of 4
+            x_diff_i_mult = (x_vector[i] << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) - x_mean_mult;
+            z_diff_i_mult = z_vector_mult[i] - z_mean_mult;
+            // the following is actually unsafe without overflow check
+            // TODO: prio 7: overflow check
+            xz_diff_sum_mult += z_diff_i_mult * x_diff_i_mult;
+            xx_diff_sum_mult += x_diff_i_mult * x_diff_i_mult;
+        }
+
+        xz_diff_sum_f = (float) ((xz_diff_sum_mult) >> (GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT * 2));
+        xx_diff_sum_f = (float) ((xx_diff_sum_mult) >> (GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT * 2));
+        // this is only one operation per cycle and derivation grade ==> floats ok to prevent from further decreasing accuracy
+        //  alternative would be to return two integers xz_diff_sum_f, xx_diff_sum_f and later use them as fractions
+        derivation_vector[grade] = xz_diff_sum_f / xx_diff_sum_f;      // this is precise to 2^(-<multiplicator exponent>)
+
+        if (grade < 3) {
+            // adjust sum and n_values to next higher derivation grade
+            // the rightmost (= last) x and z values are consumed by diff'ing
+            n_values--;
+            x_sum -= x_vector[n_values];
+            // calculate derivate dz to dx
+            // derivation of old z vector by x vector is the new z vector (of the next higher derivation grade)
+            for (i = 0; i < n_values; i++) {
+                z_vector_mult[i] = dz_vector_mult[i] / dx_vector[i];
+            }
+
+            // TODO: prio 8: also doublecheck if the derivation window has been extended by these two consumed values
+            // TODO: prio 7: check if there are enough values for derivations
+        }
+    }
+    // waste derivation_vector[0] for the sake of clarity
+    derivations.first =     derivation_vector[1];
+    derivations.second =    derivation_vector[2];
+    derivations.third =     derivation_vector[3];
+    derivations.is_valid =  true;
+    return derivations;
+}
+
+AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_profile_derivations(
+    Vector3f position_neu_cm, float horiz_speed) {
+    DistanceDerivations derivations;
+    derivations.first = NAN;
+    derivations.second = NAN;
+    derivations.third = NAN;
+    derivations.is_valid = false;
+    
+    // get ground_profile x, t and z values within the derivation window
+    //  (in prototype we called the z value y instead, which might be confused with GPA's y_p)
+    Vector2<int> position_main_direction_coo;
+    position_main_direction_coo = ground_profile_acquisition->get_main_direction_coo(position_neu_cm);
+    // for transformation of x [cm] to t [s]: compensate with a factor in the final calculations
+    if (!ground_profile_acquisition || (ground_profile_acquisition == nullptr)) {
+        // TODO: prio 7: use some kind of error code status for feedback?
+        return derivations;             // is_valid == false
+    }
+    int x_target_left, x_target_right;
+    x_target_left = position_main_direction_coo.x - (GROUND_PROFILE_DERIVATOR_DX_APPROX/2);
+    x_target_right = position_main_direction_coo.x + (GROUND_PROFILE_DERIVATOR_DX_APPROX/2);
+    // constrain indices to existing ground_profile indices
+    x_target_left = MAX(x_target_left, 0);
+    x_target_right = MIN(x_target_right, GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE-1);
+    // TODO: prio 7: check distance from main_direction axis (check y_p)
+
+#if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+    derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
+    // get derivations over time instead of over distance
+    // TODO: prio 7: double check div or mul speed
+    derivations.first *= horiz_speed;
+    derivations.second *= horiz_speed;
+    derivations.third *= horiz_speed;
+#elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
+    // TODO: prio 5:
+    // implement single polynome fitting
+    #error Not implemented yet
+#else
+    #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
+#endif
+    
+    return derivations;
+}
+

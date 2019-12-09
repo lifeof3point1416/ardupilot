@@ -62,7 +62,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     copter.ground_profile_acquisition->init();
 
     copter.is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
-    // CONTINUE HERE
+    
+    // TODO: prio 8: init GPD
+    copter.ground_profile_derivator = new AC_GroundProfileDerivator(copter.ground_profile_acquisition);
+
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     return ret;

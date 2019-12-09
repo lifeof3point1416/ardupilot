@@ -214,11 +214,6 @@ public:
 
     //int get_1d_x(Vector3f position_neu_cm);
     Vector2<int> get_main_direction_coo(Vector3f position_neu_cm);
-    // get first 3 derivations of ground profile at position_neu_cm
-    //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
-    // TODO: think about return value: int or float?
-    //  internally use int, because it is faster
-    Vector3f get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
 
     // note that these enums must be negative, because any positive return value of scan_point(...) is
     //  considered valid
@@ -228,9 +223,15 @@ public:
         ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH = -3,
         ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED = -4,
         ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE = -5,
+        ScanPointInvalidReturnValue_FWD_RANGEFINDER_NOT_HEALTHY = -6,       // actually no Scan Point return value
     };
     bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
-    int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
+    inline int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
+    inline bool has_ground_profile_datum_no_index_check(int index) {        // only check if the ground_profile value not the invalid value
+        return get_ground_profile_datum(index) != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;}
+    inline bool has_ground_profile_datum(int index) {                       // check whether index is valid, and if ground_profile value is not invalid
+        return ((0 <= index) && (index < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE)) &&
+        (get_ground_profile_datum(index) != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE);}
 
     uint16_t get_main_direction(void) {return main_direction;}
 #if IS_PRINT_GPA_NEW_POINT
@@ -249,6 +250,7 @@ public:
 #if IS_LOG_GPA 
     bool log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
         int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret);
+    bool scan_point_unhealthy_fwd_rangefinder(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 #endif // IS_LOG_GPA
 
 protected:
@@ -268,3 +270,48 @@ private:
 
 #endif // 1 OR 0
 #endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
+
+///// Temporary workaround for AC_GroundProfileDerivator here
+// couldn't add files to waf successfully, yet
+// definition part is in RangeFinder.cpp
+
+class AC_GroundProfileDerivator {
+
+public:
+
+    // AC_GroundProfileDerivator(void) {;}          // don't use this ==> force initing gpa for gpd
+    AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition);
+    bool init(void);                                // is this necessary?
+    void set_ground_profile(AC_GroundProfileAcquisition *_ground_profile_acquisition) {
+        ground_profile_acquisition = _ground_profile_acquisition;
+    }
+
+    // TODO: prio 6: check weather float or int
+    // TODO: prio 6: check units. use s/th like micro meters for int arithmetics?
+    #if 1
+    struct DistanceDerivations {                    // the first three derivates of distance over time
+        float first;                                // [cm/s]
+        float second;                               // [cm/s/s]
+        float third;                                // [cm/s/s/s]
+        bool is_valid;                              // was it possible to calculate the derivations
+    };
+    #else
+    struct DistanceDerivations {
+        float derivation_vector[3];
+        bool is_valid;
+    };
+    #endif 
+    DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
+    // get first 3 derivations of ground profile at position_neu_cm
+    //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    // TODO: think about return value: int or float?
+    //  internally use int, because it is faster
+    DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
+
+protected:
+
+private:
+
+    AC_GroundProfileAcquisition *ground_profile_acquisition = nullptr;        // use reference or pointer?
+
+};
