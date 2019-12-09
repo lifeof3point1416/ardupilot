@@ -65,6 +65,9 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     
     // TODO: prio 8: init GPD
     copter.ground_profile_derivator = new AC_GroundProfileDerivator(copter.ground_profile_acquisition);
+    if (copter.ground_profile_derivator == nullptr) {
+        AP_HAL::panic("Unable to allocate GroundProfileDerivator");
+    }
 
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
@@ -300,6 +303,12 @@ void Copter::ModeMeasurement::loiterlike_run()
                 hal.console->printf("target_climb_rate after:            %f\n", target_climb_rate);
             }
         #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
+
+        // PeterSt:
+        // TODO: prio 8: run GPD tests
+        #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+        #error not implemented yet, CONTINUE HERE
+        #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);

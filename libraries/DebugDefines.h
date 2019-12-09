@@ -52,6 +52,9 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define PRINT_GPA_MAP_INTERVAL                      30
 #define IS_PRINT_GPA_MAIN_DIRECTION_COO             true        // print them in an interval
 
+// concerning Ground Profile Derivator
+#define IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS       true
+
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds

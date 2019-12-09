@@ -238,7 +238,8 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     if (copter.control_mode == control_mode_t::MEASUREMENT) {
         // differentiate between the altitude control methods
      #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
-
+        /// extended pid implementation
+        // TODO: prio 6: log sometimes? (not with 400 Hz)
       #if IS_MOCK_OSCILLATING_RANGEFINDER_DATA
         // add some oscillating value, so we know the rangefinder value successfully gets manipulated here
         float osci_value;
@@ -286,9 +287,9 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         #error not implemented yet
       #endif // !IS_TEST_FFC
       rangefinder_alt_cm = rangefinder_state_alt_cm;    // without this line this causes a compile error: var not used
-     #else
+     #else // (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
         #error unknown altitude control for flightmode MEASUREMENT
-     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) != AltCtrlMode::STANDARD_PID
+     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
     } else {
         // for all other flightmodes nothing changes
     }

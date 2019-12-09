@@ -198,6 +198,7 @@ private:
 #if IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
 #if 1   // in case we want to disable this definition manually
 
+
 class AC_GroundProfileAcquisition {
 
 public:
@@ -252,6 +253,7 @@ public:
         int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret);
     bool scan_point_unhealthy_fwd_rangefinder(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 #endif // IS_LOG_GPA
+    bool log_ground_profile(void);              // TODO: prio 8: implement this
 
 protected:
 
@@ -307,11 +309,33 @@ public:
     // TODO: think about return value: int or float?
     //  internally use int, because it is faster
     DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
+    inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
 
 protected:
 
 private:
 
     AC_GroundProfileAcquisition *ground_profile_acquisition = nullptr;        // use reference or pointer?
+};
+
+
+#if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS 
+// use this like an FFC controller, only for testing the GPD
+class AC_GroundProfileDerivatorTester {
+
+public:
+
+    AC_GroundProfileDerivatorTester(AC_GroundProfileDerivator *_ground_profile_derivator) {
+        ground_profile_derivator = _ground_profile_derivator;
+    }
+    void log_profile_derivations(void);
+    bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log);       // run GPD as the FFC would
+
+protected:
+
+    AC_GroundProfileDerivator *ground_profile_derivator = nullptr;
+
+private:
 
 };
+#endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS

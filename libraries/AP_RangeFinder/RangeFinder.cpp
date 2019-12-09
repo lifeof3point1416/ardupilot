@@ -1375,6 +1375,10 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     return ground_profile_index;
 }
 
+bool AC_GroundProfileAcquisition::log_ground_profile(void) {
+    #error CONTINUE HERE
+}
+
 #endif // 1 OR 0
 #endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
 
@@ -1560,7 +1564,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
     // get derivations over time instead of over distance
-    // TODO: prio 7: double check div or mul speed
     derivations.first *= horiz_speed;
     derivations.second *= horiz_speed;
     derivations.third *= horiz_speed;
@@ -1574,4 +1577,34 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     
     return derivations;
 }
+
+///// GPDTester
+//
+#if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+
+void AC_GroundProfileDerivatorTester::log_profile_derivations(void) {
+
+    #error TODO: prio 8: CONTINUE HERE
+}
+
+bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log) {
+    // log gpa map
+    if (is_log) {
+        ground_profile_derivator->log_ground_profile();
+    }
+
+    // TODO: prio 8: run gpd
+    AC_GroundProfileDerivator::DistanceDerivations derivations{NAN, NAN, NAN, false};
+    derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed);
+
+    // TODO: prio 8: log results,
+    //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary
+    //  for logging with more detail
+    if (is_log) {
+        log_profile_derivations();
+    }
+}
+
+#endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+
 
