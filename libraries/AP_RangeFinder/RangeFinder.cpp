@@ -1497,8 +1497,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         #if IS_VERBOSE_DEBUG_GPD
         // CLF = consecutive linear fitting
         // console is probably too slow, this does not get printed
-        hal.console->printf("GPD CLF: x: %4d, ground_profile[x] valid? %d\n",
-            x, ground_profile_acquisition->has_ground_profile_datum_no_index_check(x));
+        //hal.console->printf("GPD CLF: x: %4d, ground_profile[x] valid? %d\n",
+        //    x, ground_profile_acquisition->has_ground_profile_datum_no_index_check(x));
         printf("GPD CLF: x: %4d, ground_profile[x] valid? %d\n",
             x, ground_profile_acquisition->has_ground_profile_datum_no_index_check(x));
         #endif // IS_VERBOSE_DEBUG_GPD
@@ -1552,6 +1552,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             }
         }
         if (n_values == 0) {
+            // prevent division by 0
             // no valid values within derivation window ==> derivations.is_valid == false
             // TODO: prio 6: discard all derivations, even valid ones of lower order?
             //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
@@ -1561,6 +1562,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         
         // x_mean_mult = x_sum * (1 << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
         // // don't know, how smart the compiler is, using explicit bit shifts:
+        // n_values==0 is prevented
         x_mean_mult = (x_sum << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
         z_mean_mult = z_sum_mult / n_values;
 
@@ -1582,7 +1584,31 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         xx_diff_sum_f = (float) ((xx_diff_sum_mult) >> (GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT * 2));
         // this is only one operation per cycle and derivation grade ==> floats ok to prevent from further decreasing accuracy
         //  alternative would be to return two integers xz_diff_sum_f, xx_diff_sum_f and later use them as fractions
+        #if IS_VERBOSE_DEBUG_GPD
+        printf("GPD CLF: xz_diff_sum_f: %f, xx_diff_sum_f: %f\n",
+            xz_diff_sum_f, xx_diff_sum_f);
+        if (xx_diff_sum_f == 0) {
+            printf("!!! xx_diff_sum_f == 0 !!!\n");
+        }
+        #endif // IS_VERBOSE_DEBUG_GPD
+        // check values
+        // TODO: prio 8: also handle invalid derivations
+        if (n_values < 2) {
+            // need minimum 2 valid values for calculating derivations!
+            return derivations;
+        }
+        // avoid zero-division
+        if (xx_diff_sum_f == 0) {
+            // this should not occur with more than 2 values
+            printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
+            printf("!!! xx_diff_sum_f == 0 !!!\nThis should not occur with more than 2 values.\n");
+            return derivations;
+        }
+
         derivation_vector[grade] = xz_diff_sum_f / xx_diff_sum_f;      // this is precise to 2^(-<multiplicator exponent>)
+        #if IS_VERBOSE_DEBUG_GPD
+        printf("RF.cpp line %d ok.\n", __LINE__);
+        #endif // IS_VERBOSE_DEBUG_GPD
 
         if (grade < 3) {
             // adjust sum and n_values to next higher derivation grade
@@ -1600,22 +1626,21 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             printf("]\n");
             #endif // #if IS_VERBOSE_DEBUG_GPD
             for (i = 0; i < n_values; i++) {
-                #if IS_VERBOSE_DEBUG_GPD
-                printf("RF.cpp line %d ok.\n", __LINE__);   // ok
+                #if 1
                 if (dx_vector[i] == 0) {
-                    printf("!!! dx_vector[i] == 0. i == %d\n", i);  // this is the error
+                    printf("!!! dx_vector[i] == 0. i == %d; grade == %d\n", i, grade);  // this is the error
                 }
-                #endif // IS_VERBOSE_DEBUG_GPD
+                #endif // 1
                 z_vector_mult[i] = dz_vector_mult[i] / dx_vector[i];
-                #if IS_VERBOSE_DEBUG_GPD
-                printf("RF.cpp line %d ok.\n", __LINE__);   // 
-                #endif
             }
 
             // TODO: prio 8: also doublecheck if the derivation window has been extended by these two consumed values
             // TODO: prio 7: check if there are enough values for derivations
         }
     }
+    #if 0
+    printf("ok.");
+    #endif // 1
     // waste derivation_vector[0] for the sake of clarity
     derivations.first =     derivation_vector[1];
     derivations.second =    derivation_vector[2];
@@ -1652,8 +1677,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
+    
     // get derivations over time instead of over distance
     // TODO: prio 8: double check this, should be exponents of speed?
+    // test if this works, even for invalid derivations
     derivations.first *= horiz_speed;   
     derivations.second *= horiz_speed;  // *= squared(horiz_speed) ???
     derivations.third *= horiz_speed;   // ...???
@@ -1670,7 +1697,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
         DataFlash_Class::instance()->Log_Write("GPD",                   // GPD
             "TimeUS,MapSeqNo,XP,YP,VHor,DZP1,DZP2,DZP3,IsValid",
             "s-mmnno?-",                                                // DZP3: [m/s/s/s], no identifier
-            "F0BBBBBB-"
+            "F0BBBBBB-",
             "QIiiffffB",
             AP_HAL::micros64(),
             ground_profile_acquisition->get_ground_profile_map_seq_no(),
@@ -1718,11 +1745,12 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 
 // }
 
+// tests GroundProfileDerivator featuring the GroundProfileAcquisition
+// logs only if is_log is true - be careful not to spam logging
+// returns derivations.is_valid
 bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log) {
-    bool ret = false;
-
     #if IS_VERBOSE_DEBUG_GPD
-     #if 1              // disable if done
+     #if 0              // disable if done
         printf("!");    // on x-term
      #endif // 1
     #endif // IS_VERBOSE_DEBUG_GPD
@@ -1736,21 +1764,16 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
         sec_full = _micros / 1000000;
         sec_part_micros = _micros % 1000000;
         hal.console->printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
+        printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
         #endif // IS_VERBOSE_DEBUG_GPD
 
-        ret = ground_profile_derivator->log_ground_profile();
+        ground_profile_derivator->log_ground_profile();
     }
 
     // run gpd
     AC_GroundProfileDerivator::DistanceDerivations derivations{
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
-    #if IS_VERBOSE_DEBUG_GPD
-    printf("RF.cpp line %d ok.\n", __LINE__);   // ok
-    #endif // IS_VERBOSE_DEBUG_GPD
     derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, is_log);
-    #if IS_VERBOSE_DEBUG_GPD
-    printf("RF.cpp line %d ok.\n", __LINE__);   // not ok!!!
-    #endif // IS_VERBOSE_DEBUG_GPD
 
     // // TODO: prio 8: log results,
     // //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary
@@ -1758,7 +1781,7 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
     // if (is_log) {
     //     log_profile_derivations(position_neu_cm, horiz_speed, derivations);
     // }
-    return ret;                                                         // could turn this function into void
+    return derivations.is_valid;
 }
 
 #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS

@@ -336,7 +336,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         // PeterSt:
         #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
         // TODO: prio 8: run GPD tests
-        bool is_log_GPDTester; 
+        bool is_log_GPDTester, is_GPDTester_return_valid = false; 
         // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
         is_log_GPDTester = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
         #if IS_VERBOSE_DEBUG_GPD
@@ -347,10 +347,14 @@ void Copter::ModeMeasurement::loiterlike_run()
          #if IS_VERBOSE_DEBUG_GPD
             printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
          #endif // IS_VERBOSE_DEBUG_GPD 
-
-        copter.ground_profile_derivator_tester->test_using_gpa(inertial_nav.get_position(), 
-            inertial_nav.get_velocity_xy(), is_log_GPDTester);
-
+        
+        is_GPDTester_return_valid = copter.ground_profile_derivator_tester->test_using_gpa(
+            inertial_nav.get_position(), inertial_nav.get_velocity_xy(), is_log_GPDTester);
+         #if 0  // temporary debug
+        printf("%d", is_GPDTester_return_valid);
+         #else
+        is_GPDTester_return_valid;
+         #endif // 1
          #if IS_VERBOSE_DEBUG_GPD
             printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
          #endif // IS_VERBOSE_DEBUG_GPD 
