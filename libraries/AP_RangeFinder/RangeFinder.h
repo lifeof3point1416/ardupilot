@@ -334,8 +334,9 @@ public:
     AC_GroundProfileDerivatorTester(AC_GroundProfileDerivator *_ground_profile_derivator) {
         ground_profile_derivator = _ground_profile_derivator;
     }
-    void log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
-        AC_GroundProfileDerivator::DistanceDerivations derivations);
+    // void log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
+        // AC_GroundProfileDerivator::DistanceDerivations derivations);
+        
     bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log);       // run GPD as the FFC would
 
 protected:

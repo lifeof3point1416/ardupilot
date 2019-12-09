@@ -68,8 +68,29 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     if (copter.ground_profile_derivator == nullptr) {
         AP_HAL::panic("Unable to allocate GroundProfileDerivator");
     }
+    #if IS_VERBOSE_DEBUG_GPD
+    if (copter.ground_profile_derivator == nullptr) {
+        hal.console->printf("init copter.ground_profile_derivator didn't work!!!\n");
+    } else {
+        hal.console->printf("init copter.ground_profile_derivator ok.\n");  // ok
+    }
+    #endif // IS_VERBOSE_DEBUG_GPD
 
-    // TODO: prio 8: init GroundProfileDerivatorTester
+    // init GroundProfileDerivatorTester
+    #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+    copter.ground_profile_derivator_tester = new AC_GroundProfileDerivatorTester(copter.ground_profile_derivator);
+    if (copter.ground_profile_derivator_tester == nullptr) {
+        AP_HAL::panic("Unable to allocate GroundProfileDerivatorTester");
+    }
+
+     #if IS_VERBOSE_DEBUG_GPD
+    if (copter.ground_profile_derivator_tester == nullptr) {
+        hal.console->printf("init copter.ground_profile_derivator_tester didn't work!!!\n");
+    } else {
+        hal.console->printf("init copter.ground_profile_derivator_tester ok.\n");   // ok
+    }
+     #endif // IS_VERBOSE_DEBUG_GPD
+    #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
@@ -144,6 +165,12 @@ void Copter::ModeMeasurement::loiterlike_run()
     // initialize vertical speed and acceleration
     pos_control->set_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
     pos_control->set_accel_z(g.pilot_accel_z);
+
+    // by PeterSt
+    #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+    // to prevent floating point error
+    // TODO: prio 8: fill or remove this
+    #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
     // process pilot inputs unless we are in radio failsafe
     if (!copter.failsafe.radio) {
@@ -307,9 +334,27 @@ void Copter::ModeMeasurement::loiterlike_run()
         #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
 
         // PeterSt:
-        // TODO: prio 8: run GPD tests
         #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
-        // #error not implemented yet, TODO: prio 9: CONTINUE HERE
+        // TODO: prio 8: run GPD tests
+        bool is_log_GPDTester; 
+        // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
+        is_log_GPDTester = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
+        #if IS_VERBOSE_DEBUG_GPD
+        // for verbose debugging: also log first call
+        is_log_GPDTester = is_log_GPDTester || (copter.call_update_gpa_counter == 1);
+        #endif
+
+         #if IS_VERBOSE_DEBUG_GPD
+            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
+         #endif // IS_VERBOSE_DEBUG_GPD 
+
+        copter.ground_profile_derivator_tester->test_using_gpa(inertial_nav.get_position(), 
+            inertial_nav.get_velocity_xy(), is_log_GPDTester);
+
+         #if IS_VERBOSE_DEBUG_GPD
+            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
+         #endif // IS_VERBOSE_DEBUG_GPD 
+
         #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
         // get avoidance adjusted climb rate

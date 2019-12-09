@@ -1449,11 +1449,13 @@ AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition
 //  specified by x_target_left <= x <= x_target_right
 //  these two arguments must be checked before, if they are within the valid range of ground_profile!
 //  this function uses the consecutive linear fitting method
-AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_consecutive_linear_fitting(int x_target_left, int x_target_right) {
+AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_consecutive_linear_fitting(
+    int x_target_left, int x_target_right) {
+
     DistanceDerivations derivations;
-    derivations.first = NAN;
-    derivations.second = NAN;
-    derivations.third = NAN;
+    derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.second = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.third = DERIVATIONS_NO_DATA_INIT_VALUE;
     derivations.is_valid = false;
 
     /// using method of least squares
@@ -1490,10 +1492,26 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, all multiplied by a factor
     int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
 
-    for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) {
+    //for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) { // WRONG!!! n_values only if valid value :D
+    for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {               // RIGHT
+        #if IS_VERBOSE_DEBUG_GPD
+        // CLF = consecutive linear fitting
+        // console is probably too slow, this does not get printed
+        hal.console->printf("GPD CLF: x: %4d, ground_profile[x] valid? %d\n",
+            x, ground_profile_acquisition->has_ground_profile_datum_no_index_check(x));
+        printf("GPD CLF: x: %4d, ground_profile[x] valid? %d\n",
+            x, ground_profile_acquisition->has_ground_profile_datum_no_index_check(x));
+        #endif // IS_VERBOSE_DEBUG_GPD
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {       // index has been constrained before
-            x_vector[n_values] = x;
+            x_vector[n_values] = x; 
+            #if IS_VERBOSE_DEBUG_GPD
+            printf("GPD CLF: new valid value. x_vector[%3d]: %4d\n",
+                n_values, x);
+            #endif // IS_VERBOSE_DEBUG_GPD
             z =  ground_profile_acquisition->get_ground_profile_datum(x);
+            #if IS_VERBOSE_DEBUG_GPD
+            printf("GPD CLF: new valid value. z{x_P=%3d}: %4d\n", x, z);
+            #endif // IS_VERBOSE_DEBUG_GPD
             // the following line is not inefficient if a barrel shifter is available (eg for ARM processor, as in CubeBlack)
             //  otherwise, for this loop we should add up z_sum first and shift it then, to save 1 shifting operation per valid datum
             //  however, this would introduce z_vector for grade==1 and z_vector_mult for grade>1, which makes the code more complicated
@@ -1506,6 +1524,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                 dz_vector_mult[n_values-1] = z_vector_mult[n_values] - z_vector_mult[n_values-1];
                 dx_vector[n_values-1] = x_vector[n_values] - x_vector[n_values-1];
             }
+            n_values++;     // only inc if there has been a valid value
         }
     }
 
@@ -1572,8 +1591,25 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             x_sum -= x_vector[n_values];
             // calculate derivate dz to dx
             // derivation of old z vector by x vector is the new z vector (of the next higher derivation grade)
+            #if IS_VERBOSE_DEBUG_GPD
+            printf("n_values: %d; grade: %d\n", n_values, grade);
+            printf("dx_vector: [");
             for (i = 0; i < n_values; i++) {
+                printf("%d, ", dx_vector[i]);
+            }
+            printf("]\n");
+            #endif // #if IS_VERBOSE_DEBUG_GPD
+            for (i = 0; i < n_values; i++) {
+                #if IS_VERBOSE_DEBUG_GPD
+                printf("RF.cpp line %d ok.\n", __LINE__);   // ok
+                if (dx_vector[i] == 0) {
+                    printf("!!! dx_vector[i] == 0. i == %d\n", i);  // this is the error
+                }
+                #endif // IS_VERBOSE_DEBUG_GPD
                 z_vector_mult[i] = dz_vector_mult[i] / dx_vector[i];
+                #if IS_VERBOSE_DEBUG_GPD
+                printf("RF.cpp line %d ok.\n", __LINE__);   // 
+                #endif
             }
 
             // TODO: prio 8: also doublecheck if the derivation window has been extended by these two consumed values
@@ -1592,9 +1628,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     Vector3f position_neu_cm, float horiz_speed, bool is_log) {
 
     DistanceDerivations derivations;
-    derivations.first = NAN;
-    derivations.second = NAN;
-    derivations.third = NAN;
+    derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.second = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.third = DERIVATIONS_NO_DATA_INIT_VALUE;
     derivations.is_valid = false;
     
     // get ground_profile x, t and z values within the derivation window
@@ -1685,14 +1721,36 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log) {
     bool ret = false;
 
+    #if IS_VERBOSE_DEBUG_GPD
+     #if 1              // disable if done
+        printf("!");    // on x-term
+     #endif // 1
+    #endif // IS_VERBOSE_DEBUG_GPD
+
     // log gpa map
     if (is_log) {
+        #if IS_VERBOSE_DEBUG_GPD
+        uint32_t _micros;
+        int32_t sec_full, sec_part_micros;
+        _micros = AP_HAL::micros();
+        sec_full = _micros / 1000000;
+        sec_part_micros = _micros % 1000000;
+        hal.console->printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
+        #endif // IS_VERBOSE_DEBUG_GPD
+
         ret = ground_profile_derivator->log_ground_profile();
     }
 
     // run gpd
-    AC_GroundProfileDerivator::DistanceDerivations derivations{NAN, NAN, NAN, false};
+    AC_GroundProfileDerivator::DistanceDerivations derivations{
+        DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
+    #if IS_VERBOSE_DEBUG_GPD
+    printf("RF.cpp line %d ok.\n", __LINE__);   // ok
+    #endif // IS_VERBOSE_DEBUG_GPD
     derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, is_log);
+    #if IS_VERBOSE_DEBUG_GPD
+    printf("RF.cpp line %d ok.\n", __LINE__);   // not ok!!!
+    #endif // IS_VERBOSE_DEBUG_GPD
 
     // // TODO: prio 8: log results,
     // //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary

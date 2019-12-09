@@ -115,6 +115,7 @@ enum AltCtrlMode : uint8_t {
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
 #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
+#define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
 
 // actual parameter definitions
 

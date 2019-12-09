@@ -538,7 +538,10 @@ private:
     bool is_started_ground_profile_acquisition = false;
     int last_scan_point_return_value;                                           // init value in ::init()!
 
-    AC_GroundProfileDerivator *ground_profile_derivator;    
+    AC_GroundProfileDerivator *ground_profile_derivator;
+ #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+    AC_GroundProfileDerivatorTester *ground_profile_derivator_tester;
+ #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     // System Timers

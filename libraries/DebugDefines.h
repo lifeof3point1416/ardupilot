@@ -53,14 +53,15 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_PRINT_GPA_MAIN_DIRECTION_COO             true        // print them in an interval
 
 // concerning Ground Profile Derivator
-#define IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS       true
+#define IS_VERBOSE_DEBUG_GPD                        true        // verbose debugs for Ground Profile Derivator
+#define IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS       true      
 
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2019-12-09 15:23+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2019-12-09 19:13+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              01          // change to 1, if you changed code but
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]
