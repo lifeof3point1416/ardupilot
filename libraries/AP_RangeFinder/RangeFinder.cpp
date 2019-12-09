@@ -1353,7 +1353,8 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     /// insert value (hard or soft, using a filter, check for outliers)
     // hard insert, not robust against outliers!
     // TODO: prio 7: implement soft insert
-    ground_profile[ground_profile_index] = z_f;
+    ground_profile[ground_profile_index] = z_f; // edit map
+    ground_profile_map_seq_no++;                // only new map, if the map has been edited
 
     #if IS_PRINT_GPA_NEW_POINT
     last_scanned_point.time_us = AP_HAL::micros();
@@ -1375,8 +1376,59 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     return ground_profile_index;
 }
 
+// logging ground profile (a big array) in chunks of smaller logs, cf. ISBD
 bool AC_GroundProfileAcquisition::log_ground_profile(void) {
-    #error CONTINUE HERE
+    uint16_t chunk_seq_no;
+    int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
+    int i_map;
+    uint8_t i_chunk, i_chunk_copy;
+    for (chunk_seq_no = 0; chunk_seq_no < (GPA_MAP_LOG_N_CHUNKS - 1); chunk_seq_no++) {
+        // TODO: calculate the map chunk
+        for (i_chunk = 0; i_chunk < GPA_MAP_LOG_CHUNK_SIZE; i_chunk++) {
+            map_chunk[i_chunk] = get_ground_profile_datum(chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE + i_chunk);
+        }
+        // log the map chunk
+        DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+            "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+            "s--mm-",
+            "F--BB-",
+            "QIHiaB",
+            AP_HAL::micros64(),
+            ground_profile_map_seq_no,                                  // gpa ground profile map counter
+            chunk_seq_no,                                               // gpa ground profile map chunk counter
+            (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+            map_chunk,                                                  // gpa ground profile map chunk
+            // no of valid values in map chunk array
+            ((uint8_t) i_chunk)                                         // should have had a full chunk
+        );    
+    }
+    /// implement very last for loop cycle for chunk_seq_no = GPA_MAP_LOG_N_CHUNKS - 1
+    // check for end of map
+    for (i_map = chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE, i_chunk = 0;
+            i_map < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE;
+            i_map++, i_chunk++) {
+        map_chunk[i_chunk] = get_ground_profile_datum(i_map);
+    }
+    // fill rest of chunk with INVALID_VALUE and set NValid accordingly
+    for (i_chunk_copy = i_chunk; i_chunk_copy < GPA_MAP_LOG_CHUNK_SIZE; i_chunk_copy++) {
+        map_chunk[i_chunk_copy] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    }
+    // log the map chunk
+    DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+        "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+        "s--mm-",
+        "F--BB-",
+        "QIHiaB",
+        AP_HAL::micros64(),
+        ground_profile_map_seq_no,                                  // gpa ground profile map counter
+        chunk_seq_no,                                               // gpa ground profile map chunk counter
+        (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+        map_chunk,                                                  // gpa ground profile map chunk
+        // no of valid values in map chunk array
+        ((uint8_t) i_chunk)
+    );    
+    //
+    return true;                                                    // this seems to be redundant
 }
 
 #endif // 1 OR 0
@@ -1537,7 +1589,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
 }
 
 AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_profile_derivations(
-    Vector3f position_neu_cm, float horiz_speed) {
+    Vector3f position_neu_cm, float horiz_speed, bool is_log) {
+
     DistanceDerivations derivations;
     derivations.first = NAN;
     derivations.second = NAN;
@@ -1564,9 +1617,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
     // get derivations over time instead of over distance
-    derivations.first *= horiz_speed;
-    derivations.second *= horiz_speed;
-    derivations.third *= horiz_speed;
+    // TODO: prio 8: double check this, should be exponents of speed?
+    derivations.first *= horiz_speed;   
+    derivations.second *= horiz_speed;  // *= squared(horiz_speed) ???
+    derivations.third *= horiz_speed;   // ...???
 #elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
     // TODO: prio 5:
     // implement single polynome fitting
@@ -1574,6 +1628,32 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 #else
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif
+
+    if (is_log) {
+        // TODO: prio 8: implement logging
+        DataFlash_Class::instance()->Log_Write("GPD",                   // GPD
+            "TimeUS,MapSeqNo,XP,YP,VHor,DZP1,DZP2,DZP3,IsValid",
+            "s-mmnno?-",                                                // DZP3: [m/s/s/s], no identifier
+            "F0BBBBBB-"
+            "QIiiffffB",
+            AP_HAL::micros64(),
+            ground_profile_acquisition->get_ground_profile_map_seq_no(),
+            position_main_direction_coo.x,
+            position_main_direction_coo.y,
+            #if IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
+            (double) horiz_speed,
+            (double) derivations.first,
+            (double) derivations.second,
+            (double) derivations.third,
+            #else
+            horiz_speed,
+            derivations.first,
+            derivations.second,
+            derivations.third,
+            #endif // IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
+            ((uint8_t) (derivations.is_valid))
+        );
+    }
     
     return derivations;
 }
@@ -1582,27 +1662,45 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 //
 #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
-void AC_GroundProfileDerivatorTester::log_profile_derivations(void) {
+// void AC_GroundProfileDerivatorTester::log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
+//     AC_GroundProfileDerivator::DistanceDerivations derivations) {
+    
+//     #error TODO: prio 8: CONTINUE HERE, OLD FROM HERE
+//     DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+//         "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+//         "s--mm-",
+//         "F--BB-",
+//         "QIHiaB",
+//         AP_HAL::micros64(),
+//         ground_profile_map_seq_no,                                  // gpa ground profile map counter
+//         chunk_seq_no,                                               // gpa ground profile map chunk counter
+//         (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+//         map_chunk,                                                  // gpa ground profile map chunk
+//         // no of valid values in map chunk array
+//         ((uint8_t) i_chunk)
+//     );   
 
-    #error TODO: prio 8: CONTINUE HERE
-}
+// }
 
 bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log) {
+    bool ret = false;
+
     // log gpa map
     if (is_log) {
-        ground_profile_derivator->log_ground_profile();
+        ret = ground_profile_derivator->log_ground_profile();
     }
 
-    // TODO: prio 8: run gpd
+    // run gpd
     AC_GroundProfileDerivator::DistanceDerivations derivations{NAN, NAN, NAN, false};
-    derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed);
+    derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, is_log);
 
-    // TODO: prio 8: log results,
-    //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary
-    //  for logging with more detail
-    if (is_log) {
-        log_profile_derivations();
-    }
+    // // TODO: prio 8: log results,
+    // //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary
+    // //  for logging with more detail
+    // if (is_log) {
+    //     log_profile_derivations(position_neu_cm, horiz_speed, derivations);
+    // }
+    return ret;                                                         // could turn this function into void
 }
 
 #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS

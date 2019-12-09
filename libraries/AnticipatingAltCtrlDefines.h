@@ -107,6 +107,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_LOG_GPA                                          true            // within GPA method
 #define IS_LOG_EXTRA_XF_ZF_CONSTRAINT                       true            // to prevent log review window zooming out for -32k values
 #define IS_CONVERT_FLOAT_LOGS_TO_DOUBLE                     true
+#define GPA_MAP_LOG_CHUNK_SIZE                              32      // constrained by 'a' arrays: int16_t[32]
 
 // for ground profile derivator (GPD)
 
@@ -150,6 +151,11 @@ enum AltCtrlMode : uint8_t {
 #define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MILLIS(N, millis, freq) (   \
     ( (( (millis) >> 7) & 0b111) / N == 0 ) && ( (( (millis - ((1<<10)/freq)) >> 7) & 0b111) / N != 0 ) \
 )
+
+// number of GPA map chunks that is necessary to log one GPA map
+// round number up. if there is a single value which is left, we need to have another chunk
+#define GPA_MAP_LOG_N_CHUNKS (GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE / GPA_MAP_LOG_CHUNK_SIZE + \
+    ( (GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE % GPA_MAP_LOG_CHUNK_SIZE) != 0) )
 
 // how much do we want to shift the rangefinder value into the future
 //  by interpolating dwn and fwd facing rangefinders with a weight
@@ -208,3 +214,5 @@ static_assert( (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SIN
 #if (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING)
 #error GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING is not implemented yet
 #endif
+
+static_assert(GPA_MAP_LOG_CHUNK_SIZE == 32, "GPA map chunk sizes must be 32, in order to match logging formatter 'a'");

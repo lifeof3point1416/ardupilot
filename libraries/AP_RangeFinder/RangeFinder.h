@@ -248,26 +248,32 @@ public:
     };
     struct ScannedPoint last_scanned_point;
 #endif // IS_PRINT_GPA_NEW_POINT
+
+    // concerning logging
 #if IS_LOG_GPA 
     bool log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
         int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret);
     bool scan_point_unhealthy_fwd_rangefinder(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 #endif // IS_LOG_GPA
     bool log_ground_profile(void);              // TODO: prio 8: implement this
+    inline uint32_t get_ground_profile_map_seq_no(void) {
+        return ground_profile_map_seq_no;
+    }
 
 protected:
 
 private:
 
     int16_t ground_profile[GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE];
-    uint16_t main_direction = 36000;                                    // heading in centi degrees [c°]
-    // int main_direction = 36000;                                    // heading in centi degrees [c°]
+    uint16_t main_direction = 36000;            // heading in centi degrees [c°]
+    // int main_direction = 36000;              // heading in centi degrees [c°]
     // position_neu_cm of starting point, this will be 0 for ground_profile
     Vector3f start_position_cm;                                 
 #if IS_USE_GPA_MAP_OFFSET
-    int16_t ground_profile_offset = 0;                              // [cm] so that first value in map is 0
+    int16_t ground_profile_offset = 0;          // [cm] so that first value in map is 0
     bool is_ground_profile_offset_set = false;
 #endif // IS_USE_GPA_MAP_OFFSET
+    uint32_t ground_profile_map_seq_no = 0;     // sequential number of the gpa ground_profile, for identifying logs
 };
 
 #endif // 1 OR 0
@@ -308,7 +314,7 @@ public:
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // TODO: think about return value: int or float?
     //  internally use int, because it is faster
-    DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed); // TODO: implement
+    DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);
     inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
 
 protected:
@@ -328,7 +334,8 @@ public:
     AC_GroundProfileDerivatorTester(AC_GroundProfileDerivator *_ground_profile_derivator) {
         ground_profile_derivator = _ground_profile_derivator;
     }
-    void log_profile_derivations(void);
+    void log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
+        AC_GroundProfileDerivator::DistanceDerivations derivations);
     bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log);       // run GPD as the FFC would
 
 protected:
