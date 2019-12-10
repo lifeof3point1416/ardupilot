@@ -1377,14 +1377,18 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 }
 
 // logging ground profile (a big array) in chunks of smaller logs, cf. ISBD
+#if 0
 bool AC_GroundProfileAcquisition::log_ground_profile(void) {
     uint16_t chunk_seq_no;
     int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
+    // TODO: prio 8: double check map_chunk logging
+    //  are they persistent, as soon as Log_Write is called?
+    //  or do we need a lot of different map_chunk arrays until they are persisted?
     int i_map;
     uint8_t i_chunk, i_chunk_copy;
     for (chunk_seq_no = 0; chunk_seq_no < (GPA_MAP_LOG_N_CHUNKS - 1); chunk_seq_no++) {
-        // TODO: calculate the map chunk
-        for (i_chunk = 0; i_chunk < GPA_MAP_LOG_CHUNK_SIZE; i_chunk++) {
+        // calculate the map chunk
+        for (i_chunk = 0; i_chunk < ((uint8_t) GPA_MAP_LOG_CHUNK_SIZE); i_chunk++) {
             map_chunk[i_chunk] = get_ground_profile_datum(chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE + i_chunk);
         }
         // log the map chunk
@@ -1410,7 +1414,7 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
         map_chunk[i_chunk] = get_ground_profile_datum(i_map);
     }
     // fill rest of chunk with INVALID_VALUE and set NValid accordingly
-    for (i_chunk_copy = i_chunk; i_chunk_copy < GPA_MAP_LOG_CHUNK_SIZE; i_chunk_copy++) {
+    for (i_chunk_copy = i_chunk; i_chunk_copy < ((uint8_t) GPA_MAP_LOG_CHUNK_SIZE); i_chunk_copy++) {
         map_chunk[i_chunk_copy] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
     }
     // log the map chunk
@@ -1430,6 +1434,110 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
     //
     return true;                                                    // this seems to be redundant
 }
+#else // 1
+// new style:
+bool AC_GroundProfileAcquisition::log_ground_profile(void) {
+    uint16_t chunk_seq_no;
+    int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
+    // TODO: prio 8: double check map_chunk logging
+    //  are they persistent, as soon as Log_Write is called?
+    //  or do we need a lot of different map_chunk arrays until they are persisted?
+    int i_map;
+    uint8_t i_chunk, i_chunk_copy;
+    uint8_t n_last_chunk_size;                                          // number of valid data of last chunk
+    // use offsets cf. ISBD:
+    //  &ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE]
+    for (chunk_seq_no = 0; chunk_seq_no < (GPA_MAP_LOG_N_CHUNKS - 1); chunk_seq_no++) {
+        // log the map chunk
+        DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+            "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+            "s--mm-",
+            "F--BB-",
+            "QIHiaB",
+            AP_HAL::micros64(),
+            ground_profile_map_seq_no,                                  // gpa ground profile map counter
+            chunk_seq_no,                                               // gpa ground profile map chunk counter
+            (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+            ( &(ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE]) ),       // gpa ground profile map chunk
+            // no of valid values in map chunk array
+            ((uint8_t) GPA_MAP_LOG_CHUNK_SIZE)                          // should have had a full chunk
+        );
+    }
+    // last chunk, which might not be full of data, separately
+    n_last_chunk_size = GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE - chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE;
+    // check size of last chunk
+    if (n_last_chunk_size != (GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE % GPA_MAP_LOG_CHUNK_SIZE)) {
+        printf("ERROR! Size of last chunk is corrupted. n_last_chunk_size == %hhu, but should be %hhu.\n",
+            n_last_chunk_size, (GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE % GPA_MAP_LOG_CHUNK_SIZE));
+    }
+    DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+        "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+        "s--mm-",
+        "F--BB-",
+        "QIHiaB",
+        AP_HAL::micros64(),
+        ground_profile_map_seq_no,                                  // gpa ground profile map counter
+        chunk_seq_no,                                               // gpa ground profile map chunk counter
+        (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+        //&ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE],     
+        ( &(ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE]) ), // gpa ground profile map chunk
+        // no of valid values in map chunk array
+        ((uint8_t) n_last_chunk_size)                               // should have had a full chunk
+    );
+
+    #if 0   // OLD 
+    #error CONTINUE HERE
+
+    for (chunk_seq_no = 0; chunk_seq_no < (GPA_MAP_LOG_N_CHUNKS - 1); chunk_seq_no++) {
+        // calculate the map chunk
+        for (i_chunk = 0; i_chunk < ((uint8_t) GPA_MAP_LOG_CHUNK_SIZE); i_chunk++) {
+            map_chunk[i_chunk] = get_ground_profile_datum(chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE + i_chunk);
+        }
+        // log the map chunk
+        DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+            "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+            "s--mm-",
+            "F--BB-",
+            "QIHiaB",
+            AP_HAL::micros64(),
+            ground_profile_map_seq_no,                                  // gpa ground profile map counter
+            chunk_seq_no,                                               // gpa ground profile map chunk counter
+            (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+            map_chunk,                                                  // gpa ground profile map chunk
+            // no of valid values in map chunk array
+            ((uint8_t) i_chunk)                                         // should have had a full chunk
+        );    
+    }
+    /// implement very last for loop cycle for chunk_seq_no = GPA_MAP_LOG_N_CHUNKS - 1
+    // check for end of map
+    for (i_map = chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE, i_chunk = 0;
+            i_map < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE;
+            i_map++, i_chunk++) {
+        map_chunk[i_chunk] = get_ground_profile_datum(i_map);
+    }
+    // fill rest of chunk with INVALID_VALUE and set NValid accordingly
+    for (i_chunk_copy = i_chunk; i_chunk_copy < ((uint8_t) GPA_MAP_LOG_CHUNK_SIZE); i_chunk_copy++) {
+        map_chunk[i_chunk_copy] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    }
+    // log the map chunk
+    DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
+        "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
+        "s--mm-",
+        "F--BB-",
+        "QIHiaB",
+        AP_HAL::micros64(),
+        ground_profile_map_seq_no,                                  // gpa ground profile map counter
+        chunk_seq_no,                                               // gpa ground profile map chunk counter
+        (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
+        map_chunk,                                                  // gpa ground profile map chunk
+        // no of valid values in map chunk array
+        ((uint8_t) i_chunk)
+    );    
+    #endif // OLD
+    //
+    return true;                                                    // this seems to be redundant
+}
+#endif // 1
 
 #endif // 1 OR 0
 #endif // IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION && IS_USE_WORKAROUND_HOST_FILE_GPA
@@ -1692,19 +1800,32 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif
 
+    int16_t z_pf;                               // current absolute altitude from GPA
+    int16_t z_pf_ok;                            // as z_pf, but 0 if invalid to prefent graph from scaling up
+    if ((0 <= position_main_direction_coo.x) && 
+            (position_main_direction_coo.x < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE)) {
+        z_pf = ground_profile_acquisition->get_ground_profile_datum(position_main_direction_coo.x);
+        z_pf_ok = (z_pf != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) ? z_pf : 0;
+    } else {
+        z_pf = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+        z_pf_ok = 0;
+    }
+    
     if (is_log) {
         // TODO: prio 8: implement logging
         DataFlash_Class::instance()->Log_Write("GPD",                   // GPD
-            "TimeUS,MapSeqNo,XP,YP,VHor,DZP1,DZP2,DZP3,IsValid",
-            "s-mmnno?-",                                                // DZP3: [m/s/s/s], no identifier
-            "F0BBBBBB-",
-            "QIiiffffB",
+            "TimeUS,MapSeqNo,XP,YP,VHor,ZPF,ZPFOk,DZP1,DZP2,DZP3,IsValid",
+            "s-mmnmmno?-",                                                // DZP3: [m/s/s/s], no identifier
+            "F0BBBBBBBB-",
+            "QIiifhhfffB",
             AP_HAL::micros64(),
             ground_profile_acquisition->get_ground_profile_map_seq_no(),
             position_main_direction_coo.x,
             position_main_direction_coo.y,
             #if IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
             (double) horiz_speed,
+            z_pf,
+            z_pf_ok,
             (double) derivations.first,
             (double) derivations.second,
             (double) derivations.third,
