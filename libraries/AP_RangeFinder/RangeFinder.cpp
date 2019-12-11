@@ -1438,12 +1438,12 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
 // new style:
 bool AC_GroundProfileAcquisition::log_ground_profile(void) {
     uint16_t chunk_seq_no;
-    int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
+    // int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
     // TODO: prio 8: double check map_chunk logging
     //  are they persistent, as soon as Log_Write is called?
     //  or do we need a lot of different map_chunk arrays until they are persisted?
-    int i_map;
-    uint8_t i_chunk, i_chunk_copy;
+    // int i_map;
+    // uint8_t i_chunk, i_chunk_copy;
     uint8_t n_last_chunk_size;                                          // number of valid data of last chunk
     // use offsets cf. ISBD:
     //  &ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE]
@@ -1757,19 +1757,63 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     return derivations;
 }
 
+// determines the first three derivations of the absolute altitude (ground_profile) with regard to time
+// position_neu_cm: absolute position with regard to starting point [cm] in NEU system
+// horiz_speed:     horizontal speed [cm/s]
+// heading:         heading/direction of flight [c°]; ignore horizontal speed compenation if heading==0xffff
+// is_log:          should we log?
 AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_profile_derivations(
-    Vector3f position_neu_cm, float horiz_speed, bool is_log) {
+    Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log) {
 
     DistanceDerivations derivations;
     derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
     derivations.second = DERIVATIONS_NO_DATA_INIT_VALUE;
     derivations.third = DERIVATIONS_NO_DATA_INIT_VALUE;
     derivations.is_valid = false;
-    
+
     // get ground_profile x, t and z values within the derivation window
     //  (in prototype we called the z value y instead, which might be confused with GPA's y_p)
     Vector2<int> position_main_direction_coo;
     position_main_direction_coo = ground_profile_acquisition->get_main_direction_coo(position_neu_cm);
+
+#if IS_DO_GPD2_DEBUGGING_LOGGING
+    call_gpd2_log_counter++;
+    // need this data for logging, even if we return derivations.is_valid==false before main calculations
+    //  if GPD2 logging is disabled, we don't need these calulculations if we abort with invalid derivations
+    //  in that case we save time because we only calculate it when we need it
+
+    int16_t z_pf;                               // current absolute altitude from GPA
+    int16_t z_pf_ok;                            // as z_pf, but 0 if invalid to prefent graph from scaling up
+    if ((0 <= position_main_direction_coo.x) && 
+            (position_main_direction_coo.x < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE)) {
+        z_pf = ground_profile_acquisition->get_ground_profile_datum(position_main_direction_coo.x);
+        z_pf_ok = (z_pf != GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE) ? z_pf : 0;
+    } else {
+        z_pf = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+        z_pf_ok = 0;
+    }
+
+    if (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0) {
+        DataFlash_Class::instance()->Log_Write("GPD2",                   // GPD debug logging
+            "TimeUS,ZPFOk,XP",
+            "smm",
+            "FBB",
+            "Qhi",
+            AP_HAL::micros64(),
+            z_pf_ok,
+            position_main_direction_coo.x
+        );
+    }
+#endif // IS_DO_GPD2_DEBUGGING_LOGGING    
+
+    // check arguments
+#if IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
+    if ((heading < 0) || ((heading > 36000) && (heading != 0xffff))) {
+        return derivations;                     // invalid heading ==> invalid derivations
+    }
+#endif // IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
+    
+    
     // for transformation of x [cm] to t [s]: compensate with a factor in the final calculations
     if (!ground_profile_acquisition || (ground_profile_acquisition == nullptr)) {
         // TODO: prio 7: use some kind of error code status for feedback?
@@ -1785,13 +1829,23 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
-    
+
+    // compensate deviation from main_direction in horiz_speed!
+#if IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
+    int32_t heading_deviation;
+    float horizontal_speed_deviation_compensation_factor;
+    heading_deviation = heading - ((int32_t) ground_profile_acquisition->get_main_direction());
+    horizontal_speed_deviation_compensation_factor = cosf((float) abs(heading_deviation));
+    horiz_speed *= horizontal_speed_deviation_compensation_factor;
+#endif // IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
+    // TODO: prio 7: test if this works, even for invalid derivations
     // get derivations over time instead of over distance
-    // TODO: prio 8: double check this, should be exponents of speed?
-    // test if this works, even for invalid derivations
+    //  conversion contains the derivation grade n as exponent of the speed. 
+    //  (d^n z)/(d x^n) * (x/t)^n   = (d^n z)/(d t^n)
+    //  (d^n z)/(d x^n) *   v_x^n   = (d^n z)/(d t^n)
     derivations.first *= horiz_speed;   
-    derivations.second *= horiz_speed;  // *= squared(horiz_speed) ???
-    derivations.third *= horiz_speed;   // ...???
+    derivations.second *= horiz_speed * horiz_speed;                        //
+    derivations.third *= horiz_speed * horiz_speed * horiz_speed;           //
 #elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
     // TODO: prio 5:
     // implement single polynome fitting
@@ -1800,6 +1854,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif
 
+#if (!IS_DO_GPD2_DEBUGGING_LOGGING)
     int16_t z_pf;                               // current absolute altitude from GPA
     int16_t z_pf_ok;                            // as z_pf, but 0 if invalid to prefent graph from scaling up
     if ((0 <= position_main_direction_coo.x) && 
@@ -1810,20 +1865,22 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
         z_pf = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
         z_pf_ok = 0;
     }
+#endif // !IS_DO_GPD2_DEBUGGING_LOGGING
     
     if (is_log) {
-        // TODO: prio 8: implement logging
+        // implement logging
         DataFlash_Class::instance()->Log_Write("GPD",                   // GPD
-            "TimeUS,MapSeqNo,XP,YP,VHor,ZPF,ZPFOk,DZP1,DZP2,DZP3,IsValid",
-            "s-mmnmmno?-",                                                // DZP3: [m/s/s/s], no identifier
-            "F0BBBBBBBB-",
-            "QIiifhhfffB",
+            "TimeUS,MapSeqNo,XP,YP,VHor,Hdg,ZPF,ZPFOk,DZP1,DZP2,DZP3,IsValid",
+            "s-mmnhmmno?-",                                                // DZP3: [m/s/s/s], no identifier
+            "F0BBBBBBBBB-",
+            "QIiifihhfffB",
             AP_HAL::micros64(),
             ground_profile_acquisition->get_ground_profile_map_seq_no(),
             position_main_direction_coo.x,
             position_main_direction_coo.y,
             #if IS_CONVERT_FLOAT_LOGS_TO_DOUBLE
             (double) horiz_speed,
+            heading,
             z_pf,
             z_pf_ok,
             (double) derivations.first,
@@ -1831,6 +1888,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
             (double) derivations.third,
             #else
             horiz_speed,
+            heading,
+            z_pf,
+            z_pf_ok,
             derivations.first,
             derivations.second,
             derivations.third,
@@ -1846,30 +1906,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 //
 #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
-// void AC_GroundProfileDerivatorTester::log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
-//     AC_GroundProfileDerivator::DistanceDerivations derivations) {
-    
-//     #error TODO: prio 8: CONTINUE HERE, OLD FROM HERE
-//     DataFlash_Class::instance()->Log_Write("GPAM",                  // tag for Ground Profile Aquisition Map
-//         "TimeUS,MapSeqNo,ChunkSeqNo,XChunk0,ZArr,NValid",
-//         "s--mm-",
-//         "F--BB-",
-//         "QIHiaB",
-//         AP_HAL::micros64(),
-//         ground_profile_map_seq_no,                                  // gpa ground profile map counter
-//         chunk_seq_no,                                               // gpa ground profile map chunk counter
-//         (int) (chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE),                // first x of the chunk
-//         map_chunk,                                                  // gpa ground profile map chunk
-//         // no of valid values in map chunk array
-//         ((uint8_t) i_chunk)
-//     );   
-
-// }
-
 // tests GroundProfileDerivator featuring the GroundProfileAcquisition
 // logs only if is_log is true - be careful not to spam logging
 // returns derivations.is_valid
-bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log) {
+bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log) {
     #if IS_VERBOSE_DEBUG_GPD
      #if 0              // disable if done
         printf("!");    // on x-term
@@ -1894,7 +1934,7 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
     // run gpd
     AC_GroundProfileDerivator::DistanceDerivations derivations{
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
-    derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, is_log);
+    derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, heading, is_log);
 
     // // TODO: prio 8: log results,
     // //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary

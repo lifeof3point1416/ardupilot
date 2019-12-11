@@ -94,6 +94,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
+#if IS_DO_GPD2_DEBUGGING_LOGGING
+    gcs().send_text(MAV_SEVERITY_WARNING, "GDP2 logging enabled, very high rate!!");
+#endif // IS_DO_GPD2_DEBUGGING_LOGGING
+
     return ret;
 }
 
@@ -346,10 +350,10 @@ void Copter::ModeMeasurement::loiterlike_run()
 
          #if IS_VERBOSE_DEBUG_GPD
             printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
-         #endif // IS_VERBOSE_DEBUG_GPD 
+         #endif // IS_VERBOSE_DEBUG_GPD   
         
         is_GPDTester_return_valid = copter.ground_profile_derivator_tester->test_using_gpa(
-            inertial_nav.get_position(), inertial_nav.get_velocity_xy(), is_log_GPDTester);
+            inertial_nav.get_position(), inertial_nav.get_velocity_xy(), ahrs.yaw_sensor, is_log_GPDTester);
          #if 0  // temporary debug
         printf("%d", is_GPDTester_return_valid);
          #else

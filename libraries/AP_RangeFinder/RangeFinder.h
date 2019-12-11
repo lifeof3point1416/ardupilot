@@ -314,10 +314,15 @@ public:
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // TODO: think about return value: int or float?
     //  internally use int, because it is faster
-    DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);
+    DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);
+    //DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);
     inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
 
 protected:
+
+#if IS_DO_GPD2_DEBUGGING_LOGGING
+    int call_gpd2_log_counter = 0;                  // for reducing GDP2 logging from 400 to 100 Hz
+#endif // IS_DO_GPD2_DEBUGGING_LOGGING
 
 private:
 
@@ -337,7 +342,7 @@ public:
     // void log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
         // AC_GroundProfileDerivator::DistanceDerivations derivations);
         
-    bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, bool is_log);       // run GPD as the FFC would
+    bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);       // run GPD as the FFC would
 
 protected:
 

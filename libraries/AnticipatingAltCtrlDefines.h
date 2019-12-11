@@ -112,10 +112,13 @@ enum AltCtrlMode : uint8_t {
 // for ground profile derivator (GPD)
 
 #define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        true
+#define IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION  true        // check for validity in get_deviations
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
 #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
 #define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
+#define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
+#define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
 
 // actual parameter definitions
 
