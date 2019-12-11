@@ -179,6 +179,9 @@ bool DataFlash_Backend::Log_Write_Emit_FMT(uint8_t msg_type)
     return true;
 }
 
+// PSt: this is the older equivalent of recent bool AP_Logger_Backend::Write(...) at
+//  https://github.com/peterbarker/ardupilot/blob/4f2416e07c093b4eed6f586795e680e56efde137/libraries/AP_Logger/AP_Logger_Backend.cpp
+
 bool DataFlash_Backend::Log_Write(const uint8_t msg_type, va_list arg_list, bool is_critical)
 {
     // stack-allocate a buffer so we can WriteBlock(); this could be
@@ -285,6 +288,15 @@ bool DataFlash_Backend::Log_Write(const uint8_t msg_type, va_list arg_list, bool
             offset += sizeof(uint64_t);
             break;
         }
+        // begin PSt: new from Peter Barker's commit
+        case 'a': {
+            int16_t *tmp = va_arg(arg_list, int16_t*);
+            const uint8_t bytes = 32*2;
+            memcpy(&buffer[offset], tmp, bytes);
+            offset += bytes;
+            break;
+        }
+        // end
         }
         if (charlen != 0) {
             char *tmp = va_arg(arg_list, char*);
