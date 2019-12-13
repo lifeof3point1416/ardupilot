@@ -747,6 +747,9 @@ private:
     void log_xpid(float rangefinder_alt_cm, int16_t rangefinder_state_alt_cm,
         float rangefinder2_alt_cm_float, float alt_proj, bool IsValid);
 #endif // IS_DO_XPID_DEBUGGING_LOGGING
+#if IS_DO_XPI2_DEBUGGING_LOGGING
+    void log_xpi2(float vel_horiz, float rangefinder_weight_factor, float distance_error);
+#endif // IS_DO_XPI2_DEBUGGING_LOGGING
 
 #if ADSB_ENABLED == ENABLED
     // avoidance_adsb.cpp

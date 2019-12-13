@@ -124,7 +124,8 @@ enum AltCtrlMode : uint8_t {
 
 // actual parameter definitions
 
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
@@ -138,7 +139,8 @@ enum AltCtrlMode : uint8_t {
 // for extended PID
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
 #define IS_DO_XPID_DEBUGGING_LOGGING                true    // do logging for all PIDs, especially useful for Extended PID
-#define XPID_LOGGING_FREQUENCY                      100     // [Hz]
+// #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
+#define IS_DO_XPI2_DEBUGGING_LOGGING                true    // verbose additional info to XPID
 
 //
 ///////////////////////////////////////////////////////////////////////////////

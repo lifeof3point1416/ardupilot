@@ -185,7 +185,21 @@ void Copter::log_xpid(float rangefinder_alt_cm, int16_t rangefinder_state_alt_cm
 }
 #endif // IS_DO_XPID_DEBUGGING_LOGGING
 
-// TODO: prio 7: add further ExtPID debugging info PID2?
+// further ExtPID debugging info PID2
+#if IS_DO_XPI2_DEBUGGING_LOGGING
+void Copter::log_xpi2(float vel_horiz, float rangefinder_weight_factor, float distance_error) {
+    DataFlash_Class::instance()->Log_Write("XPI2",
+        "TimeUS,VHori,RfWeight,DistError",
+        "sn0m",
+        "FB0B",
+        "Qfff",
+        AP_HAL::micros64(),
+        vel_horiz,
+        rangefinder_weight_factor,
+        distance_error
+    );
+}
+#endif // IS_DO_XPI2_DEBUGGING_LOGGING
 
 // PSt: rangefinder comes into play here 
 // (flightmodi using this function are controlled by altitude over ground, not altitude over home)
@@ -366,6 +380,9 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
      #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
         log_xpid(rangefinder_alt_cm, rangefinder_state_alt_cm, rangefinder2_alt_cm_float, 
             alt_proj, true);
+        #if IS_DO_XPI2_DEBUGGING_LOGGING
+        log_xpi2(vel_horiz, rangefinder_weight_factor, distance_error);
+        #endif // IS_DO_XPI2_DEBUGGING_LOGGING
      #else
         log_xpid(rangefinder_alt_cm, rangefinder_state_alt_cm, INVALID_RANGEFINDER_VALUE, 
             INVALID_RANGEFINDER_VALUE, true);
