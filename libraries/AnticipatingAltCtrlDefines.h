@@ -121,12 +121,14 @@ enum AltCtrlMode : uint8_t {
 #define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
 #define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
 #define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
+#define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation
+#define CLF_LOGGING_FREQUENCY                               400         // [Hz]
 
 // actual parameter definitions
 
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
@@ -228,3 +230,7 @@ static_assert( (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SIN
 #endif
 
 static_assert(GPA_MAP_LOG_CHUNK_SIZE == 32, "GPA map chunk sizes must be 32, in order to match logging formatter 'a'");
+
+#if IS_DO_CLF_DEBUGGING_LOGGING && (!IS_DO_GPD2_DEBUGGING_LOGGING)
+#error CLF logging requires GDP2 logging!
+#endif

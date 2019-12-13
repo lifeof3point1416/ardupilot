@@ -309,6 +309,17 @@ public:
         bool is_valid;
     };
     #endif 
+    enum ConsecutiveLinearFittingReturnState {
+        ConsecutiveLinearFittingReturnState_VALID_RESULT = 0,   // got a valid result; deviations.is_valid == true
+        ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO = 1,
+        ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO = 2,
+        ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO = 3,
+    };
+#if IS_DO_CLF_DEBUGGING_LOGGING
+    void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
+        int x_sum, int z_sum_mult_i, int grade_i, float xx_diff_sum_f, float xz_diff_sum_f,
+        AC_GroundProfileDerivator::DistanceDerivations derivations);
+#endif
     DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES

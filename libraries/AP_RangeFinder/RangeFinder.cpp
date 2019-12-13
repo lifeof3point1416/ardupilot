@@ -1547,7 +1547,38 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
 // definition part is in RangeFinder.cpp
 // using static or singleton variables would be better, cf. rangefinder
 
-// TODO: test this
+#if IS_DO_CLF_DEBUGGING_LOGGING
+void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int8_t validity_status,
+        int x_sum, int z_sum_mult_i, int grade_i, float xx_diff_sum_f, float xz_diff_sum_f,
+        AC_GroundProfileDerivator::DistanceDerivations derivations) {
+    if (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0) {
+        // values should be [0 .. 3] anyways
+        if (abs(grade_i) > 127) {
+            grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+        }
+
+        DataFlash_Class::instance()->Log_Write("CLF",
+            "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
+            "s---m?-??no?-",
+            "F0-0BB0--BBB-",
+            "QibBiibfffffB",
+            AP_HAL::micros64(),
+            n_values,
+            validity_status,
+            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),
+            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,
+            z_sum_mult_i,
+            ((int8_t) grade_i),
+            xx_diff_sum_f,
+            xz_diff_sum_f,
+            derivations.first,
+            derivations.second,
+            derivations.third,
+            ((uint8_t) derivations.is_valid)
+        );
+    }
+}
+#endif
 
 AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition) {
     set_ground_profile(_ground_profile_acquisition);
@@ -1577,12 +1608,12 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int z_sum_mult;                             
     int n_values;                               // number of values
     int x_mean_mult, z_mean_mult;
-    int x_diff_i_mult;                          // (x_i - mean{x})
-    int z_diff_i_mult;                          // (z_i - mean{z})
-    int xz_diff_sum_mult;                       // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
-    int xx_diff_sum_mult;                       // sum for all i of {(x_i - mean{x})^2}
+    int x_diff_i_mult = 0;                      // (x_i - mean{x})
+    int z_diff_i_mult = 0;                      // (z_i - mean{z})
+    int xz_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
+    int xx_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x})^2}
     int z;
-    float xz_diff_sum_f, xx_diff_sum_f;
+    float xz_diff_sum_f = 0, xx_diff_sum_f = 0;
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
         derivation_vector[i] = 0;
@@ -1665,6 +1696,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // TODO: prio 6: discard all derivations, even valid ones of lower order?
             //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
             //  if we decide to do this, we will need to describe this specific behavior
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
         
@@ -1674,10 +1709,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         x_mean_mult = (x_sum << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
         z_mean_mult = z_sum_mult / n_values;
 
-        x_diff_i_mult = 0;
-        z_diff_i_mult = 0;
-        xz_diff_sum_mult = 0;
-        xx_diff_sum_mult = 0;
         for (i = 0; i < n_values; i++) {
             // following line in ARM: RSB x_diff_i_mult, x_mean_mult, x_vector_i, LSL #4 ; for a mult exp of 4
             x_diff_i_mult = (x_vector[i] << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) - x_mean_mult;
@@ -1703,6 +1734,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         // TODO: prio 8: also handle invalid derivations
         if (n_values < 2) {
             // need minimum 2 valid values for calculating derivations!
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
         // avoid zero-division
@@ -1710,6 +1745,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // this should not occur with more than 2 values
             printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
             printf("!!! xx_diff_sum_f == 0 !!!\nThis should not occur with more than 2 values.\n");
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, 
+                (int8_t) ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
 
@@ -1754,6 +1794,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     derivations.second =    derivation_vector[2];
     derivations.third =     derivation_vector[3];
     derivations.is_valid =  true;
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_VALID_RESULT, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
     return derivations;
 }
 
@@ -1816,7 +1860,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     
     // for transformation of x [cm] to t [s]: compensate with a factor in the final calculations
     if (!ground_profile_acquisition || (ground_profile_acquisition == nullptr)) {
-        // TODO: prio 7: use some kind of error code status for feedback?
+        // TODO: prio 6: use some kind of error code status for feedback?
         return derivations;             // is_valid == false
     }
     int x_target_left, x_target_right;
