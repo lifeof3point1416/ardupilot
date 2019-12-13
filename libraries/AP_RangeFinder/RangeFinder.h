@@ -341,8 +341,9 @@ public:
     }
     // void log_profile_derivations(Vector3f position_neu_cm, float horiz_speed,
         // AC_GroundProfileDerivator::DistanceDerivations derivations);
-        
+#if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
     bool test_using_gpa(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);       // run GPD as the FFC would
+#endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
 protected:
 

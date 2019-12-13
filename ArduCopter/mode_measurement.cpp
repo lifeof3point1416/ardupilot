@@ -338,7 +338,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
 
         // PeterSt:
-        #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+        #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
         // TODO: prio 8: run GPD tests
         bool is_log_GPDTester, is_GPDTester_return_valid = false; 
         // a lot of logs (whole GPA map eg.) ==> log only once per second for samples

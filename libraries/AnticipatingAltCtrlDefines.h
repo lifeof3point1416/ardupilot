@@ -59,7 +59,7 @@ enum AltCtrlMode : uint8_t {
 // for different altitude control methods
 //
 
-// define enum-mocks
+///// define enum-mocks
 // for some reason, Log.cpp doesn't recognize these AltCtrlMode enum defines and causes a compiler error
 // therefore we add them as defines as a fix
 #define ALT_CTRL_MODE_STANDARD_PID                  1
@@ -78,6 +78,7 @@ enum AltCtrlMode : uint8_t {
 #define MEASUREMENT_BEHAVIOR_LOITER                         1       // as loiter, but with new altitude controller
 #define MEASUREMENT_BEHAVIOR_SEMI_GUIDED                    2       // initially as loiter, then forward flight is triggered manually
 #define MEASUREMENT_BEHAVIOR_GUIDED                         3       // behave as in guided
+///// end of define enum-mocks
 
 // set max horizontal speed for MEASUREMENT flight mode
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT              0001    // so that we can fly with max speed without a complex
@@ -108,6 +109,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_LOG_EXTRA_XF_ZF_CONSTRAINT                       true            // to prevent log review window zooming out for -32k values
 #define IS_CONVERT_FLOAT_LOGS_TO_DOUBLE                     true
 #define GPA_MAP_LOG_CHUNK_SIZE                              32      // constrained by 'a' arrays: int16_t[32]
+#define INVALID_RANGEFINDER_VALUE                           (-1)    // if some rangefinder value is not available for any reason
 
 // for ground profile derivator (GPD)
 
@@ -122,8 +124,8 @@ enum AltCtrlMode : uint8_t {
 
 // actual parameter definitions
 
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // FOR TESTING
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
@@ -135,6 +137,8 @@ enum AltCtrlMode : uint8_t {
 
 // for extended PID
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
+#define IS_DO_XPID_DEBUGGING_LOGGING                true    // do logging for all PIDs, especially useful for Extended PID
+#define XPID_LOGGING_FREQUENCY                      100     // [Hz]
 
 //
 ///////////////////////////////////////////////////////////////////////////////

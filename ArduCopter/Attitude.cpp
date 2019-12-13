@@ -159,6 +159,34 @@ float Copter::get_non_takeoff_throttle()
     return MAX(0,motors->get_throttle_hover()/2.0f);
 }
 
+// TODO: prio 8: add logging XPID
+#if IS_DO_XPID_DEBUGGING_LOGGING
+// void Copter::log_xpid() {
+// optional log of PID parameters, especially interesting for ExtendedPID Altitude Control Mode
+//  IsValid: have the rangefinder values been used to change target rate?
+//      if is is false, there was an early return, due to no available rangefinder, glitching or
+//  if some values are unavailable (eg because of PID or FFC AltCtrlMode), they are filled with
+//      INVALID_RANGEFINDER_VALUE
+void Copter::log_xpid(float rangefinder_alt_cm, int16_t rangefinder_state_alt_cm,
+        float rangefinder2_alt_cm_float, float alt_proj, bool IsValid) {
+    DataFlash_Class::instance()->Log_Write("XPID",
+        "TimeUS,RfAlt,RfDwnAlt,RfFwdAlt,ProjAlt,AltCtrlMode,IsOk",
+        "smmmm--",
+        "FBBBB--",
+        "QfhffbB",
+        AP_HAL::micros64(),
+        rangefinder_alt_cm,                     // altitude over ground (aog) used by finally PID
+        rangefinder_state_alt_cm,               // aog from dwn rf
+        rangefinder2_alt_cm_float,              // calculated aog of future point from fwn rf
+        alt_proj,                               // aog of projected point for ExtendedPID
+        ((int8_t) MEASUREMENT_ALTITUDE_CONTROL_MODE),   // according to enum/enum-like defines of ALT_CTRL_MODE_<MODE>, 2 is ExtPID
+        ((uint8_t) IsValid)                     // no bool available, sizeof(bool) is 1
+    );
+}
+#endif // IS_DO_XPID_DEBUGGING_LOGGING
+
+// TODO: prio 7: add further ExtPID debugging info PID2?
+
 // PSt: rangefinder comes into play here 
 // (flightmodi using this function are controlled by altitude over ground, not altitude over home)
 //  these are eg.: LOITER, ALT_HOLD
@@ -171,6 +199,10 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
 #if RANGEFINDER_ENABLED == ENABLED
     if (!copter.rangefinder_alt_ok()) {
         // if rangefinder is not ok, do not use surface tracking
+        #if IS_DO_XPID_DEBUGGING_LOGGING
+        log_xpid(INVALID_RANGEFINDER_VALUE, INVALID_RANGEFINDER_VALUE, INVALID_RANGEFINDER_VALUE, 
+            INVALID_RANGEFINDER_VALUE, false);
+        #endif // IS_DO_XPID_DEBUGGING_LOGGING
         return target_rate;
     }
 
@@ -217,10 +249,15 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     }
     if (rangefinder_state.glitch_count != 0) {
         // we are currently glitching, just use the target rate
+        #if IS_DO_XPID_DEBUGGING_LOGGING
+        log_xpid(INVALID_RANGEFINDER_VALUE, rangefinder_state.alt_cm, INVALID_RANGEFINDER_VALUE, 
+            INVALID_RANGEFINDER_VALUE, false);
+        #endif // IS_DO_XPID_DEBUGGING_LOGGING
         return target_rate;
     }
 
-    // calc desired velocity correction from target rangefinder alt vs actual rangefinder alt (remove the error already passed to Altitude controller to avoid oscillations)
+    // calc desired velocity correction from target rangefinder alt vs actual rangefinder alt (remove the error
+    //  already passed to Altitude controller to avoid oscillations)
     // PSt: error in altitudes over ground
     //  differentiate distance_error by (1/g.rangefinder_gain) [s]; probably some empirical value
     // BEGIN    adjusted by PeterSt
@@ -231,10 +268,17 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     // Anticipating Altitude Control HERE
     // adjust rangefinder-altitude according to the desired altitude control
 
-    float rangefinder_alt_cm;                                       // altitude from rangefinder, depending on alt ctrl mode
-    rangefinder_alt_cm = rangefinder_state.alt_cm;                  // safe init (value used in official implementation)
+    float rangefinder_alt_cm;                                   // altitude from rangefinder, depending on alt ctrl mode
+    rangefinder_alt_cm = rangefinder_state.alt_cm;              // safe init (value used in official implementation)
 
     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) != ALT_CTRL_MODE_STANDARD_PID
+     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
+        float rangefinder2_alt_cm_float = INVALID_RANGEFINDER_VALUE;    // altitude over ground for measured future point (fwd rf)
+        float dist_horiz_proj = INVALID_RANGEFINDER_VALUE;
+        float dist_horiz_2 = INVALID_RANGEFINDER_VALUE;                 // horizontal distance to the measured future point
+        float alt_proj = INVALID_RANGEFINDER_VALUE;                     // projected altitude (over ground)
+        float rangefinder_weight_factor = 0, rangefinder_alt_diff = 0, vel_horiz = 0;
+     #endif // #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
     if (copter.control_mode == control_mode_t::MEASUREMENT) {
         // differentiate between the altitude control methods
      #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
@@ -252,11 +296,11 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
       #else // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
         // use weighted interpolation between the two rangefinders (forward and downward: fwd rf, dwn rf)
 
-        float rangefinder2_alt_cm_float;        // altitude over ground for measured future point (fwd rf)
-        float dist_horiz_proj;                  
-        float dist_horiz_2;                     // horizontal distance to the measured future point
-        float alt_proj;
-        float rangefinder_weight_factor, rangefinder_alt_diff, vel_horiz;
+        // float rangefinder2_alt_cm_float;        // altitude over ground for measured future point (fwd rf)
+        // float dist_horiz_proj;                  
+        // float dist_horiz_2;                     // horizontal distance to the measured future point
+        // float alt_proj;
+        // float rangefinder_weight_factor, rangefinder_alt_diff, vel_horiz;
         // calculate 
         rangefinder2_alt_cm_float = ((float) rangefinder2_state.dist_cm) * RANGEFINDER_COS_ANGLE_FORWARD_FACING; 
         vel_horiz = inertial_nav.get_velocity_xy();             // horizontal velocity
@@ -269,15 +313,23 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         dist_horiz_2 = ((float) rangefinder2_state.dist_cm) * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;
         // calculate altitude over ground at projected point, 
         // weighted between current (dwn rangefinder) and future measured point (fwd rf)
-        rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
-        rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
-        // projected altitude
-        alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
+        if (dist_horiz_2 != 0) {
+            rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
+            rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
+            // projected altitude (over ground)
+            alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
+        } else {
+            // if both points are the same: weight totally towards fwn rangefinder
+            rangefinder_weight_factor = 0;
+            rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
+            alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
+        }
+        
         // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
         //  very steep downward slope,
         //  overwrite with dwn rangefinder, if necessary
         #if IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
-        if (rangefinder_state_alt_cm < IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND) {
+        if (alt_proj < DIST_MINIMUM_ALTITUDE_OVER_GROUND_CM) {
             alt_proj = rangefinder_state_alt_cm;
         }
         #endif // IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
@@ -310,6 +362,15 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     #endif // IS_PRINT_MESSAGE_VALUE_RANGEFINDER_ALT_CM
 
     distance_error = (target_rangefinder_alt - rangefinder_alt_cm) - (current_alt_target - current_alt);
+    #if IS_DO_XPID_DEBUGGING_LOGGING
+     #if (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
+        log_xpid(rangefinder_alt_cm, rangefinder_state_alt_cm, rangefinder2_alt_cm_float, 
+            alt_proj, true);
+     #else
+        log_xpid(rangefinder_alt_cm, rangefinder_state_alt_cm, INVALID_RANGEFINDER_VALUE, 
+            INVALID_RANGEFINDER_VALUE, true);
+     #endif // (MEASUREMENT_ALTITUDE_CONTROL_MODE) == ALT_CTRL_MODE_EXTENDED_PID
+    #endif // IS_DO_XPID_DEBUGGING_LOGGING
     // END      adjusted by PeterSt
     // next line was the original code (PeterSt)
     //distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
@@ -342,6 +403,11 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     // return combined pilot climb rate + rate to correct rangefinder alt error
     return (target_rate + velocity_correction);
 #else
+    // no rangefinder ==> no adjustment of target_rate (PSt)
+    #if IS_DO_XPID_DEBUGGING_LOGGING
+    log_xpid(INVALID_RANGEFINDER_VALUE, INVALID_RANGEFINDER_VALUE, INVALID_RANGEFINDER_VALUE, 
+        INVALID_RANGEFINDER_VALUE, false);
+    #endif // IS_DO_XPID_DEBUGGING_LOGGING
     return (float)target_rate;
 #endif
 }
