@@ -249,25 +249,30 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         //
         rangefinder_alt_cm = rangefinder_state_alt_cm;
         //distance_error = (target_rangefinder_alt - rangefinder_state_alt_cm) - (current_alt_target - current_alt);
-      #else
-        // use weighted interpolation between the two rangefinders
+      #else // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
+        // use weighted interpolation between the two rangefinders (forward and downward: fwd rf, dwn rf)
 
-        float rangefinder2_alt_cm_float, dist_horiz_proj, dist_horiz_2, alt_proj;
+        float rangefinder2_alt_cm_float;        // altitude over ground for measured future point (fwd rf)
+        float dist_horiz_proj;                  
+        float dist_horiz_2;                     // horizontal distance to the measured future point
+        float alt_proj;
         float rangefinder_weight_factor, rangefinder_alt_diff, vel_horiz;
-        // calculate altitude over ground for measured future point, detected by fwd facing rangefinder
-        rangefinder2_alt_cm_float = (float) rangefinder2_state.dist_cm * RANGEFINDER_COS_ANGLE_FORWARD_FACING; 
-        // horizontal distance to the projected future point
+        // calculate 
+        rangefinder2_alt_cm_float = ((float) rangefinder2_state.dist_cm) * RANGEFINDER_COS_ANGLE_FORWARD_FACING; 
         vel_horiz = inertial_nav.get_velocity_xy();             // horizontal velocity
-        dist_horiz_proj = vel_horiz * EXTENDED_PID_FUTURE_PROJECTION_TIME_MICROS / 1e6;
-        // horizontal distance to the measured future point
-        dist_horiz_2 = rangefinder2_alt_cm_float * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;
-        // altitude over ground at projected point, weighted between current (dwn rangefinder)
-        //  and future measured point (fwd rf)
+        // horizontal distance of current to the interpolated projected point, whose projected altitude over
+        //  ground (aog) will be estimated and is somewhere between the current aog and the aog of the 
+        //  measured point (based on the fwd rf)
+        dist_horiz_proj = vel_horiz * ((float) EXTENDED_PID_FUTURE_PROJECTION_TIME_MICROS) / 1e6;
+        
+        //dist_horiz_2 = rangefinder2_alt_cm_float * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;  // WRONG!!!
+        dist_horiz_2 = ((float) rangefinder2_state.dist_cm) * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;
+        // calculate altitude over ground at projected point, 
+        // weighted between current (dwn rangefinder) and future measured point (fwd rf)
         rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
         rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
         // projected altitude
         alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
-        // BEGIN new
         // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
         //  very steep downward slope,
         //  overwrite with dwn rangefinder, if necessary
@@ -276,7 +281,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
             alt_proj = rangefinder_state_alt_cm;
         }
         #endif // IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND
-        // END new
         // use this projected altitude as rangefinder-value
         rangefinder_alt_cm = alt_proj;
       #endif // IS_MOCK_OSCILLATING_RANGEFINDER_DATA
@@ -307,7 +311,6 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
 
     distance_error = (target_rangefinder_alt - rangefinder_alt_cm) - (current_alt_target - current_alt);
     // END      adjusted by PeterSt
-
     // next line was the original code (PeterSt)
     //distance_error = (target_rangefinder_alt - rangefinder_state.alt_cm) - (current_alt_target - current_alt);
     velocity_correction = distance_error * g.rangefinder_gain;
