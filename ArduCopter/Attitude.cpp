@@ -190,7 +190,7 @@ void Copter::log_xpid(float rangefinder_alt_cm, int16_t rangefinder_state_alt_cm
 void Copter::log_xpi2(float vel_horiz, float rangefinder_weight_factor, float distance_error) {
     DataFlash_Class::instance()->Log_Write("XPI2",
         "TimeUS,VHori,RfWeight,DistError",
-        "sn0m",
+        "sn-m",
         "FB0B",
         "Qfff",
         AP_HAL::micros64(),
@@ -327,17 +327,20 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
         dist_horiz_2 = ((float) rangefinder2_state.dist_cm) * RANGEFINDER_SIN_ANGLE_FORWARD_FACING;
         // calculate altitude over ground at projected point, 
         // weighted between current (dwn rangefinder) and future measured point (fwd rf)
-        if (dist_horiz_2 != 0) {
+        if (fabs(dist_horiz_2) > EXTENDED_PID_ZERO_EPSILON) {
             rangefinder_weight_factor = dist_horiz_proj / dist_horiz_2;
-            rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
-            // projected altitude (over ground)
-            alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
         } else {
             // if both points are the same: weight totally towards fwn rangefinder
             rangefinder_weight_factor = 0;
-            rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
-            alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
         }
+        // constrain extrapolation for better accuracy
+        if (fabs(rangefinder_weight_factor) > EXTENDED_PID_MAX_PROJECTION_FATOR) {
+            rangefinder_weight_factor = (rangefinder_weight_factor < 0) ? 
+                -EXTENDED_PID_MAX_PROJECTION_FATOR : +EXTENDED_PID_MAX_PROJECTION_FATOR;
+        }
+        // projected altitude (over ground)
+        rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
+        alt_proj = rangefinder_state_alt_cm - rangefinder_weight_factor * rangefinder_alt_diff;
         
         // check, if current altitude over ground is over a certain minimum, to avoid crash due to a
         //  very steep downward slope,

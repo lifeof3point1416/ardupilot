@@ -141,6 +141,8 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_XPID_DEBUGGING_LOGGING                true    // do logging for all PIDs, especially useful for Extended PID
 // #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
 #define IS_DO_XPI2_DEBUGGING_LOGGING                true    // verbose additional info to XPID
+#define EXTENDED_PID_ZERO_EPSILON                   (1e-6)
+#define EXTENDED_PID_MAX_PROJECTION_FATOR           (5.0f)       // don't extrapolate more than this
 
 //
 ///////////////////////////////////////////////////////////////////////////////
