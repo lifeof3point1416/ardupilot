@@ -1610,9 +1610,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int x_mean_mult, z_mean_mult;
     int x_diff_i_mult = 0;                      // (x_i - mean{x})
     int z_diff_i_mult = 0;                      // (z_i - mean{z})
-    int xz_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
-    int xx_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x})^2}
-    int z;
+    int xz_diff_sum_mult;                       // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
+    int xx_diff_sum_mult;                       // sum for all i of {(x_i - mean{x})^2}
+    int z_mult;
     float xz_diff_sum_f = 0, xx_diff_sum_f = 0;
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
@@ -1622,15 +1622,129 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     //  each derivation cycle, or referencing a struct as an array as
     //  done here: https://stackoverflow.com/questions/5524552/access-struct-members-as-if-they-are-a-single-array
 
-    // scan once for valid values and fill x_vector and z_vector_mult
+    
+    int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of the corresponding valid z values
+    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
+    int x_last;                                             // equivalent of x_vector[i-1], when read
+    int z_last_mult;                                        // equivalent of z_vector_mult[i-1], when read
+    int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
+    // int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, all multiplied by a factor
+    int dzdx_last_mult;                                     // equivalent of imaginary dxdz_vector_mult[i-1], when read
+    // scan once for valid values and fill x_vector and z_vector_mult with the valid values
+    //  at the same time calculate sums for x and z, which are used for mean values later
     x_sum = 0;
     z_sum_mult = 0;
-    n_values = 0;           
-    int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of valid z values
-    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
-    int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, all multiplied by a factor
-    int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
+    // for this loop, n_values counts up, ie it is the index variable of valid data (ie i)
+    for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
+            z_mult = ((int) ground_profile_acquisition->get_ground_profile_datum(x)) 
+                << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT;
+            x_vector[n_values] = x;
+            x_sum += x;
+            if (n_values > 0) {
+                dx_vector[n_values-1] = x - x_last;
+                x_last = x;                                 // for next valid x
+            } else {
+                x_last = x;                                 // first valid x is "x_last" of the second valid x
+            }
+            z_vector_mult[n_values] = z_mult;
+            z_sum_mult += z_mult;
+            //
+            n_values++;                                     // only inc this, if there has been a new valid value
+        }
+    }
 
+    // loop through 1st to 3rd grade of derivation
+    for (grade = 1; grade <= 3; grade++) {
+        // get mean values
+
+        // prevent division by 0
+        if (n_values == 0) {
+            // no valid values within derivation window ==> derivations.is_valid == false
+            // TODO: prio 6: discard all derivations, even valid ones of lower order?
+            //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
+            //  if we decide to do this, we will need to describe this specific behavior
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+
+        x_mean_mult = (x_sum << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) / n_values;
+        z_mean_mult = z_sum_mult / n_values;
+
+        // use Consecutive Linear Fitting to get an approximated derivation of z by x
+        // following formula is based on Simple Linear Regression
+        xx_diff_sum_mult = 0;
+        xz_diff_sum_mult = 0;
+        // loop through all valid values
+        for (i = 0; i < n_values; i++) {
+            x_diff_i_mult = (x_vector[i] << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT) - x_mean_mult;
+            z_diff_i_mult = z_vector_mult[i] - z_mean_mult;
+            xz_diff_sum_mult += x_diff_i_mult * z_diff_i_mult;
+            xx_diff_sum_mult += x_diff_i_mult * x_diff_i_mult;
+        }
+
+        // need minimum 2 valid values for calculating derivations!
+        if (n_values < 2) {
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+        // avoid zero-division
+        if (xx_diff_sum_mult == 0) {
+            // this should not occur with more than 2 values
+            printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
+            printf("!!! xx_diff_sum_mult == 0 !!!\nThis should not occur with more than 2 values.\n");
+#if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, 
+                (int8_t) ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO, 
+                x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+
+        // the resulting numerical derivation is precise to 2^(-<multiplicator exponent>)
+        // factors cancel each other out
+        derivation_vector[grade] = ((float) xz_diff_sum_mult) / ((float) xx_diff_sum_mult);
+
+        // prepare next higher grade derivation
+        if (grade < 3) {
+            // adjust x_sum and n_values to next higher derivation grade
+            // the rightmost (= last) x and z values are consumed by diff'ing
+            x_sum -= x_vector[n_values];                    // erase last x_value
+            n_values--;                                     // we have 1 value pair less than before
+            // also calc the sum of the new z_vector (the z-derivation, which is the vector of all dz/dx values)
+            z_sum_mult = 0;
+            // x_last = x_vector[0];    // deprecated
+            // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
+            z_last_mult = z_vector_mult[0];
+            for (i = 1; i < n_values; i++) {
+                dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
+                z_last_mult = z_vector_mult[i];             // for next i
+                z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
+                // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+                z_sum_mult += dzdx_last_mult;
+            }
+        }   
+    }
+
+    // waste derivation_vector[0] for the sake of clarity
+    derivations.first =     derivation_vector[1];
+    derivations.second =    derivation_vector[2];
+    derivations.third =     derivation_vector[3];
+    derivations.is_valid =  true;
+#if IS_DO_CLF_DEBUGGING_LOGGING
+    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_VALID_RESULT, 
+        x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
+    return derivations;
+    
+#if 0   // deprecated old code, which is probably faulty
     //for (x = x_target_left, n_values = 0; x <= x_target_right; x++, n_values++) { // WRONG!!! n_values only if valid value :D
     for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {               // RIGHT
         #if IS_VERBOSE_DEBUG_GPD
@@ -1799,6 +1913,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                 x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
 #endif // IS_DO_CLF_DEBUGGING_LOGGING
     return derivations;
+#endif // 0
 }
 
 // determines the first three derivations of the absolute altitude (ground_profile) with regard to time
@@ -1894,9 +2009,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     // TODO: prio 5:
     // implement single polynome fitting
     #error Not implemented yet
-#else
+#else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
-#endif
+#endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 
 #if (!IS_DO_GPD2_DEBUGGING_LOGGING)
     int16_t z_pf;                               // current absolute altitude from GPA
