@@ -207,6 +207,17 @@ void Copter::update_ground_profile_acquisition(void) {
                 copter.mode_measurement.handle_invalid_ground_profile_acquisition_index(last_scan_point_return_value);
         }
         #endif // IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL
+        
+        #if IS_USE_GPA_MAP_FREEZE_MODE
+        // freeze GPA if map is full
+        if (last_scan_point_return_value == 
+                AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH) {
+            if (!copter.ground_profile_acquisition->is_frozen()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "GPAMap is full, freezing GPA!");
+                copter.ground_profile_acquisition->set_freeze_map(true);
+            }
+        }
+        #endif // IS_USE_GPA_MAP_FREEZE_MODE
     } else {
         #if IS_LOG_GPA
         // this is actually not within ground_profile_acquisition->scan_point, because the method doesn't get called

@@ -97,6 +97,9 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 #if IS_DO_GPD2_DEBUGGING_LOGGING
     gcs().send_text(MAV_SEVERITY_WARNING, "GDP2 logging enabled, very high rate!!");
 #endif // IS_DO_GPD2_DEBUGGING_LOGGING
+#if IS_USE_GPA_MAP_FREEZE_MODE 
+    gcs().send_text(MAV_SEVERITY_WARNING, "GPA Map freeze mode is enabled!");
+#endif // IS_USE_GPA_MAP_FREEZE_MODE 
 
     return ret;
 }
@@ -113,6 +116,7 @@ bool Copter::ModeMeasurement::handle_invalid_ground_profile_acquisition_index(in
         case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_NEGATIVE:
         case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH:
         case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED:
+        case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN:
             return true;
         default:
             return false;    
@@ -134,6 +138,10 @@ bool Copter::ModeMeasurement::handle_invalid_ground_profile_acquisition_index(in
         break;
     case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED:
         gcs().send_text(MAV_SEVERITY_ERROR, "GPA: %d, didn't store point, deviation from main_direction too high", 
+            scan_point_return_value);
+        break;
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN:
+        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: frozen, didn't store point", 
             scan_point_return_value);
         break;
     default:

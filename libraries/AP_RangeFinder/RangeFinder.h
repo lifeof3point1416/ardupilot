@@ -225,6 +225,7 @@ public:
         ScanPointInvalidReturnValue_DEVIATION_FROM_MAIN_DIRECTION_EXCEEDED = -4,
         ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE = -5,
         ScanPointInvalidReturnValue_FWD_RANGEFINDER_NOT_HEALTHY = -6,       // actually no Scan Point return value
+        ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN = -7,
     };
     bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
     inline int16_t get_ground_profile_datum(int index) {return ground_profile[index];}
@@ -259,6 +260,12 @@ public:
     inline uint32_t get_ground_profile_map_seq_no(void) {
         return ground_profile_map_seq_no;
     }
+#if IS_USE_GPA_MAP_FREEZE_MODE
+    inline void set_freeze_map(bool is_frozen) {    // freeze/unfreeze GPA ground_profile map
+        _is_frozen = is_frozen;
+    }
+    inline bool is_frozen(void) {return _is_frozen;} 
+#endif // IS_USE_GPA_MAP_FREEZE_MODE
 
 protected:
 
@@ -274,6 +281,9 @@ private:
     bool is_ground_profile_offset_set = false;
 #endif // IS_USE_GPA_MAP_OFFSET
     uint32_t ground_profile_map_seq_no = 0;     // sequential number of the gpa ground_profile, for identifying logs
+#if IS_USE_GPA_MAP_FREEZE_MODE
+    bool _is_frozen = false;                    // is ground_profile frozen?
+#endif // IS_USE_GPA_MAP_FREEZE_MODE
 };
 
 #endif // 1 OR 0

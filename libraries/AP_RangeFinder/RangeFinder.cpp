@@ -1192,8 +1192,7 @@ bool AC_GroundProfileAcquisition::scan_point_unhealthy_fwd_rangefinder(
 // fwd_rangefinder_dist_cm in cm
 // position_neu: .x: north of home position in cm, .y: east of home position in cm, .z: up of home
 // return: ground_profile index of the new point that has been scanned, negative if it hasn't been stored
-int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {
-
+int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm) {   
     // cf. prototype simulator (in python): AnticipatingFFC.set_future_profile_point
 
     // transform UAV coordinates (point P) from NEU-home-position-space into main_direction-space
@@ -1204,6 +1203,20 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     y_p = main_dir_coo.y;
     int z_p;                    // altitude in home-position-space
     z_p = (int) roundf(position_neu_cm.z);
+
+#if IS_USE_GPA_MAP_FREEZE_MODE
+    if (is_frozen()) {
+        #if IS_LOG_GPA
+        log_scan_point(AP_HAL::micros64(), fwd_rangefinder_dist_cm, 
+            position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+            x_p, y_p, z_p, 
+            GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, false,
+            ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN);
+        #endif 
+
+        return ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN;
+    }
+#endif // IS_USE_GPA_MAP_FREEZE_MODE
     
     #if IS_DEBUG_GPA
     uint32_t _micros = AP_HAL::micros();
