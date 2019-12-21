@@ -82,7 +82,7 @@ void AP_MotorsHeli_Quad::output_test(uint8_t motor_seq, int16_t pwm)
         break;
     case AP_MOTORS_HELI_QUAD_NUM_MOTORS+1:
         // main rotor
-        rc_write(AP_MOTORS_HELI_QUAD_RSC, pwm);
+        rc_write(AP_MOTORS_HELI_QUAD_RSC, pwm); // PSt: set pwm output of motors
         break;
     default:
         // do nothing

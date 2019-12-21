@@ -126,15 +126,15 @@ enum AltCtrlMode : uint8_t {
 
 // actual parameter definitions
 
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
 #define PHYSICAL_MODEL_TIME_CONSTANT_MICROS                 149000  // PT1-time constant tau of the copter (including deadtime) [us]
-#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s == 1/Ms]
+#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s == 1/us]
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
 
@@ -144,7 +144,7 @@ enum AltCtrlMode : uint8_t {
 // #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
 #define IS_DO_XPI2_DEBUGGING_LOGGING                true    // verbose additional info to XPID
 #define EXTENDED_PID_ZERO_EPSILON                   (1e-6)
-#define EXTENDED_PID_MAX_PROJECTION_FATOR           (5.0f)       // don't extrapolate more than this
+#define EXTENDED_PID_MAX_PROJECTION_FACTOR           (5.0f)       // don't extrapolate more than this
 
 //
 ///////////////////////////////////////////////////////////////////////////////

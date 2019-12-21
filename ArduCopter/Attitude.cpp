@@ -334,9 +334,9 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
             rangefinder_weight_factor = 0;
         }
         // constrain extrapolation for better accuracy
-        if (fabs(rangefinder_weight_factor) > EXTENDED_PID_MAX_PROJECTION_FATOR) {
+        if (fabs(rangefinder_weight_factor) > EXTENDED_PID_MAX_PROJECTION_FACTOR) {
             rangefinder_weight_factor = (rangefinder_weight_factor < 0) ? 
-                -EXTENDED_PID_MAX_PROJECTION_FATOR : +EXTENDED_PID_MAX_PROJECTION_FATOR;
+                -EXTENDED_PID_MAX_PROJECTION_FACTOR : +EXTENDED_PID_MAX_PROJECTION_FACTOR;
         }
         // projected altitude (over ground)
         rangefinder_alt_diff = rangefinder_state_alt_cm - rangefinder2_alt_cm_float;
