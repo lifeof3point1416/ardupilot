@@ -126,9 +126,9 @@ enum AltCtrlMode : uint8_t {
 
 // actual parameter definitions
 
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
 
 // physical model parameters

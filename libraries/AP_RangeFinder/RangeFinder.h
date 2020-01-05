@@ -324,6 +324,7 @@ public:
         ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO = 1,
         ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO = 2,
         ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO = 3,
+        ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,   // no return state, only intermediate value!
     };
 #if IS_DO_CLF_DEBUGGING_LOGGING
     void log_consecutive_linear_fitting(int n_values, int8_t validity_status,

@@ -1502,7 +1502,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     // variables with "_mult" suffix are multiplied by a multiplicator, to prevent some of the higher derivation z values' precision
     //  the precision is (2^(-GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT)), so eg. 1/16 for a mult exp of 4
     //  TODO: prio 6: is this precise enough? consider that rangefinder is only precise to ca. 1 cm, values are also filtered
-    int grade;                                  // grade of derivation
+    int grade = 0;                                  // grade of derivation
     int x, i;
     int x_sum;
     int z_sum_mult;                             
@@ -1554,6 +1554,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                     // only inc this, if there has been a new valid value
         }
     }
+
+#if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
+        x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_INTERMEDIATE_CLF_LOGGING
 
     // loop through 1st to 3rd grade of derivation
     for (grade = 1; grade <= 3; grade++) {
@@ -1630,7 +1635,12 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                 // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
                 z_sum_mult += dzdx_last_mult;
             }
-        }   
+        }
+
+#if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
+        x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+#endif // IS_DO_INTERMEDIATE_CLF_LOGGING
     }
 
     // waste derivation_vector[0] for the sake of clarity
