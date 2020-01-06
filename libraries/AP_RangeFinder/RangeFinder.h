@@ -327,10 +327,20 @@ public:
         ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,   // no return state, only intermediate value!
     };
 #if IS_DO_CLF_DEBUGGING_LOGGING
+    // log data under tag "CLF" for before function return, or intermediate
     void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
         int x_sum, int z_sum_mult_i, int grade_i, float xx_diff_sum_f, float xz_diff_sum_f,
         AC_GroundProfileDerivator::DistanceDerivations derivations);
-#endif
+#endif // IS_DO_CLF_DEBUGGING_LOGGING
+#if IS_VERBOSE_CLF_LOGGING
+    // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
+    //  tag "CLF2"
+    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int grade_i);
+ #if IS_TEST_INT32_INT16_LOGGING
+    // this will be used for log_consecutive_linear_fitting2
+    void test_logging_int32ar_as_int16ar(void);
+ #endif // IS_TEST_INT32_INT16_LOGGING
+#endif // IS_VERBOSE_CLF_LOGGING
     DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES

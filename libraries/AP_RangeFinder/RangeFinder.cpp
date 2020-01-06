@@ -1459,29 +1459,90 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
 
         DataFlash_Class::instance()->Log_Write("CLF",
             "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
-            "s---m?-??no?-",
+            "s---mm-??no?-",
             "F0-0BB0--BBB-",
             "QibBiibfffffB",
-            AP_HAL::micros64(),
-            n_values,
-            validity_status,
-            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),
-            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,
-            z_sum_mult_i,
-            ((int8_t) grade_i),
-            xx_diff_sum_f,
-            xz_diff_sum_f,
-            derivations.first,
-            derivations.second,
-            derivations.third,
-            ((uint8_t) derivations.is_valid)
+            AP_HAL::micros64(),                                             // TimeUS   Q
+            n_values,                                                       // N        i
+            validity_status,                                                // Stat     b
+            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
+            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
+            z_sum_mult_i,                                                   // ZSumMI   i
+            ((int8_t) grade_i),                                             // GrdI     b
+            xx_diff_sum_f,                                                  // XXDSum   f
+            xz_diff_sum_f,                                                  // XZDSum   f
+            derivations.first,                                              // D1       f
+            derivations.second,                                             // D2       f
+            derivations.third,                                              // D3       f
+            ((uint8_t) derivations.is_valid)                                // DOk      B
         );
     }
 }
 #endif
 
+#if IS_VERBOSE_CLF_LOGGING
+void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
+        int n_values, int *x_vector, int *z_vector_mult, int grade_i) {
+    // constrain grade_i; values should be [0 .. 3] anyways
+    if (abs(grade_i) > 127) {
+        grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+    }
+    // check if the vectors are not too big
+    //  for using this function with x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX] and 
+    //  z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]
+    // logging int16[32], equivalent to int32[16]
+    static_assert(GROUND_PROFILE_DERIVATOR_DX_APPROX < 16,
+        "GROUND_PROFILE_DERIVATOR_DX_APPROX must be 16 or smaller, to be logged with int16[32] (formatter 'a')");
+    //
+    DataFlash_Class::instance()->Log_Write("CLF2",
+        "TimeUS,N,XVecAsI16,ZVecMAsI16,MExp,GrdI",
+        "s-mm--",
+        "F0BB00",
+        "QiaaBB",
+        AP_HAL::micros64(),
+        n_values,
+        x_vector,
+        z_vector_mult,
+        ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),
+        ((int8_t) grade_i)
+    );
+}
+
+ #if IS_TEST_INT32_INT16_LOGGING
+void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
+    int32_t test_array1[] = {-1, 0, 1, 2, 
+        3, 10, 32767, 32768,
+        65535, 65536, 100000, -100000,
+        INT32_MAX, INT32_MIN, -2, -3};
+    const int test_array2_len = 19, test_array3_len = 19;
+    int i;
+    int32_t test_array2[test_array2_len];
+    for (i = 0; i < test_array2_len; i++) {
+        test_array2[i] = i;
+    }
+    int32_t test_array3[test_array3_len];
+    for (i = 0; i < test_array3_len; i++) {
+        test_array3[i] = i;
+    }
+    //
+    DataFlash_Class::instance()->Log_Write("CLF0",
+    "TimeUS,TstAr1,TstAr2,TstAr3,TstMsg",
+    "s----",
+    "F----",
+    "QaaaN",
+    AP_HAL::micros64(),
+    test_array1, test_array2, test_array3,"This is a test, this string is too long");
+}
+ #endif // IS_TEST_INT32_INT16_LOGGING
+#endif // IS_VERBOSE_CLF_LOGGING
+
 AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition) {
     set_ground_profile(_ground_profile_acquisition);
+#if IS_TEST_INT32_INT16_LOGGING
+    // test twice for checking, if the arrays (which are too long for the log function) overwrite the second log
+    test_logging_int32ar_as_int16ar();
+    test_logging_int32ar_as_int16ar();
+#endif // IS_TEST_INT32_INT16_LOGGING
 }
 
 // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
