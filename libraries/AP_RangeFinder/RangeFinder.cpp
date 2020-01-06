@@ -1451,6 +1451,33 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int8_t validity_status,
         int x_sum, int z_sum_mult_i, int grade_i, float xx_diff_sum_f, float xz_diff_sum_f,
         AC_GroundProfileDerivator::DistanceDerivations derivations) {
+    #if IS_VERBOSE_CLF_LOGGING
+    // for verbose clf logging: log every time (this spams log files)
+    if (abs(grade_i) > 127) {
+        grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+    }
+
+    DataFlash_Class::instance()->Log_Write("CLF",
+        "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
+        "s---mm-??no?-",
+        "F0-0BB0--BBB-",
+        "QibBiibfffffB",
+        AP_HAL::micros64(),                                             // TimeUS   Q
+        n_values,                                                       // N        i
+        validity_status,                                                // Stat     b
+        ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
+        x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
+        z_sum_mult_i,                                                   // ZSumMI   i
+        ((int8_t) grade_i),                                             // GrdI     b
+        xx_diff_sum_f,                                                  // XXDSum   f
+        xz_diff_sum_f,                                                  // XZDSum   f
+        derivations.first,                                              // D1       f
+        derivations.second,                                             // D2       f
+        derivations.third,                                              // D3       f
+        ((uint8_t) derivations.is_valid)                                // DOk      B
+    );
+    #else // IS_VERBOSE_CLF_LOGGING
+    // for non-verbose clf logging: only log every 1/GPD2_LOGGING_FREQUENCY seconds
     if (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0) {
         // values should be [0 .. 3] anyways
         if (abs(grade_i) > 127) {
@@ -1477,6 +1504,7 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
             ((uint8_t) derivations.is_valid)                                // DOk      B
         );
     }
+    #endif // IS_VERBOSE_CLF_LOGGING
 }
 #endif
 
@@ -1514,6 +1542,13 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
         3, 10, 32767, 32768,
         65535, 65536, 100000, -100000,
         INT32_MAX, INT32_MIN, -2, -3};
+    // because test_array1 is logged as int16[32], it should appear as the following array in the log files:
+    // [-1, -1, 0, 0, 1, 0, 2, 0, 3, 0, 10, 0, 32767, 0, -32768, 0, -1, 0, 0, 1, -31072, 1, 31072, -2,
+    //   -1, 32767, 0, -32768, -2, -1, -3, -1]
+    // lo byte is first
+    // this has been calculated by convert_int16_int32_arrays.py
+    // works as of 2020-01-06 17:54+01:00
+    //
     const int test_array2_len = 19, test_array3_len = 19;
     int i;
     int32_t test_array2[test_array2_len];
@@ -1615,6 +1650,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                     // only inc this, if there has been a new valid value
         }
     }
+#if IS_VERBOSE_CLF_LOGGING
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, grade);
+#endif // IS_VERBOSE_CLF_LOGGING
 
 #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
@@ -1697,6 +1735,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                 z_sum_mult += dzdx_last_mult;
             }
         }
+
+#if IS_VERBOSE_CLF_LOGGING
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, grade);
+#endif // IS_VERBOSE_CLF_LOGGING
 
 #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
