@@ -1720,7 +1720,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         if (grade < 3) {
             // adjust x_sum and n_values to next higher derivation grade
             // the rightmost (= last) x and z values are consumed by diff'ing
-            x_sum -= x_vector[n_values];                    // erase last x_value
+            x_sum -= x_vector[n_values-1];                  // erase last x_value
             n_values--;                                     // we have 1 value pair less than before
             // also calc the sum of the new z_vector (the z-derivation, which is the vector of all dz/dx values)
             z_sum_mult = 0;
