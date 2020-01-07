@@ -1510,7 +1510,7 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
 
 #if IS_VERBOSE_CLF_LOGGING
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
-        int n_values, int *x_vector, int *z_vector_mult, int grade_i) {
+        int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i) {
     // constrain grade_i; values should be [0 .. 3] anyways
     if (abs(grade_i) > 127) {
         grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
@@ -1519,18 +1519,20 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
     //  for using this function with x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX] and 
     //  z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]
     // logging int16[32], equivalent to int32[16]
-    static_assert(GROUND_PROFILE_DERIVATOR_DX_APPROX < 16,
-        "GROUND_PROFILE_DERIVATOR_DX_APPROX must be 16 or smaller, to be logged with int16[32] (formatter 'a')");
+    static_assert(GROUND_PROFILE_DERIVATOR_DX_APPROX+1 <= 16,
+        "GROUND_PROFILE_DERIVATOR_DX_APPROX+1 must be 16 or smaller, to be logged with int16[32] (formatter 'a')\
+        use a smaller derivation window or different logging, if this condition is violated");
     //
     DataFlash_Class::instance()->Log_Write("CLF2",
-        "TimeUS,N,XVecAsI16,ZVecMAsI16,MExp,GrdI",
-        "s-mm--",
-        "F0BB00",
-        "QiaaBB",
+        "TimeUS,N,XVecAsI16,ZVecMAsI16,DXVecAsI16,MExp,GrdI",
+        "s-mm---",
+        "F0BB000",
+        "QiaaaBB",
         AP_HAL::micros64(),
         n_values,
         x_vector,
         z_vector_mult,
+        dx_vector,
         ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),
         ((int8_t) grade_i)
     );
@@ -1547,7 +1549,7 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     //   -1, 32767, 0, -32768, -2, -1, -3, -1]
     // lo byte is first
     // this has been calculated by convert_int16_int32_arrays.py
-    // works as of 2020-01-06 17:54+01:00
+    // works as of 2020-01-06 17:54+01:00 :)
     //
     const int test_array2_len = 19, test_array3_len = 19;
     int i;
@@ -1651,7 +1653,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
 #if IS_VERBOSE_CLF_LOGGING
-    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, grade);
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
 #endif // IS_VERBOSE_CLF_LOGGING
 
 #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
@@ -1737,10 +1739,15 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
 
 #if IS_VERBOSE_CLF_LOGGING
-    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, grade);
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
 #endif // IS_VERBOSE_CLF_LOGGING
 
 #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+    // waste derivation_vector[0] for the sake of clarity
+    derivations.first =     derivation_vector[1];
+    derivations.second =    derivation_vector[2];
+    derivations.third =     derivation_vector[3];
+    derivations.is_valid =  false;
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
         x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
 #endif // IS_DO_INTERMEDIATE_CLF_LOGGING

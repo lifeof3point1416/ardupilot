@@ -347,10 +347,14 @@ void Copter::ModeMeasurement::loiterlike_run()
 
         // PeterSt:
         #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
-        // TODO: prio 8: run GPD tests
+        // run GPD tests
         bool is_log_GPDTester, is_GPDTester_return_valid = false; 
         // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
+        #if IS_VERBOSE_GPD_LOGGING
+        is_log_GPDTester = true;
+        #else // IS_VERBOSE_GPD_LOGGING
         is_log_GPDTester = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
+        #endif // IS_VERBOSE_GPD_LOGGING
         #if IS_VERBOSE_DEBUG_GPD
         // for verbose debugging: also log first call
         is_log_GPDTester = is_log_GPDTester || (copter.call_update_gpa_counter == 1);

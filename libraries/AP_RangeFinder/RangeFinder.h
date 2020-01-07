@@ -335,7 +335,7 @@ public:
 #if IS_VERBOSE_CLF_LOGGING
     // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
     //  tag "CLF2"
-    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int grade_i);
+    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
  #if IS_TEST_INT32_INT16_LOGGING
     // this will be used for log_consecutive_linear_fitting2
     void test_logging_int32ar_as_int16ar(void);
