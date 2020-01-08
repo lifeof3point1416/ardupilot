@@ -140,7 +140,7 @@ enum AltCtrlMode : uint8_t {
 
 // for extended PID
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
-#define IS_DO_XPID_DEBUGGING_LOGGING                true    // do logging for all PIDs, especially useful for Extended PID
+#define IS_DO_XPID_DEBUGGING_LOGGING                false   // do logging for all PIDs, especially useful for Extended PID, very verbose!
 // #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
 #define IS_DO_XPI2_DEBUGGING_LOGGING                true    // verbose additional info to XPID
 #define EXTENDED_PID_ZERO_EPSILON                   (1e-6)

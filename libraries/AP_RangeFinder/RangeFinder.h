@@ -341,6 +341,9 @@ public:
     void test_logging_int32ar_as_int16ar(void);
  #endif // IS_TEST_INT32_INT16_LOGGING
 #endif // IS_VERBOSE_CLF_LOGGING
+#if IS_LOG_CLF_CLF2_ONLY_IN_MEASUREMENT_MODE
+    bool is_measurement_mode = false;
+#endif // IS_LOG_CLF_CLF2_ONLY_IN_MEASUREMENT_MODE
     DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
