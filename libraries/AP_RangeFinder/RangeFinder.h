@@ -329,7 +329,7 @@ public:
 #if IS_DO_CLF_DEBUGGING_LOGGING
     // log data under tag "CLF" for before function return, or intermediate
     void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
-        int x_sum, int z_sum_mult_i, int grade_i, float xx_diff_sum_f, float xz_diff_sum_f,
+        int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
         AC_GroundProfileDerivator::DistanceDerivations derivations);
 #endif // IS_DO_CLF_DEBUGGING_LOGGING
 #if IS_VERBOSE_CLF_LOGGING
