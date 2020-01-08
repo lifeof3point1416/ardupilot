@@ -1739,17 +1739,17 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
 
 #if IS_VERBOSE_CLF_LOGGING
-    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
+        log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
 #endif // IS_VERBOSE_CLF_LOGGING
 
 #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
-    // waste derivation_vector[0] for the sake of clarity
-    derivations.first =     derivation_vector[1];
-    derivations.second =    derivation_vector[2];
-    derivations.third =     derivation_vector[3];
-    derivations.is_valid =  false;
-    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
-        x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
+        // waste derivation_vector[0] for the sake of clarity
+        derivations.first =     derivation_vector[1];
+        derivations.second =    derivation_vector[2];
+        derivations.third =     derivation_vector[3];
+        derivations.is_valid =  false;
+        log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
+            x_sum, z_sum_mult, grade, xx_diff_sum_f, xz_diff_sum_f, derivations);
 #endif // IS_DO_INTERMEDIATE_CLF_LOGGING
     }
 

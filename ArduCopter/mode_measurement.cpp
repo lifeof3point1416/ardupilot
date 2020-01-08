@@ -349,10 +349,10 @@ void Copter::ModeMeasurement::loiterlike_run()
         #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
         // run GPD tests
         bool is_log_GPDTester, is_GPDTester_return_valid = false; 
-        // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
         #if IS_VERBOSE_GPD_LOGGING
         is_log_GPDTester = true;
         #else // IS_VERBOSE_GPD_LOGGING
+        // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
         is_log_GPDTester = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
         #endif // IS_VERBOSE_GPD_LOGGING
         #if IS_VERBOSE_DEBUG_GPD
