@@ -429,66 +429,71 @@ void Copter::one_hz_loop()
     // debug stuff by PeterSt
     // TODO: prio 6: remove all commented out debug lines that are not needed
     call_1hz_loop_counter++;
-    #if IS_PRINT_REPEATET_GCS_MESSAGE
-        if (call_1hz_loop_counter % REPEATET_GCS_MESSAGE_INTERVAL == 1) {   // so that it's also executed in 1st loop
-            gcs().send_text(MAV_SEVERITY_DEBUG, "Schalalalala :)");
-            uint64_t micros = AP_HAL::micros();
-            hal.console->printf("Time since start: %4d.%06d s\n", (int) (micros/1000000), (int) (micros%1000000));
-            //hal.console->printf("Time since start: %" PRIu64 " us\n", AP_HAL::micros());
-        }
-    #endif 
-    #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
-        gcs().send_text(MAV_SEVERITY_DEBUG, "Moin :)");          // works
-    #endif
-    #if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
-        if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
-            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
-                rangefinder_state.alt_cm);
-            #if IS_ENABLE_SECOND_RANGEFINDER
-            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder2_state.dist_cm: %" PRIi16 "",
-                rangefinder2_state.dist_cm);
-            #endif
-            // get particular rangefinder by its orientation, set in MP by RNGFND<N>_ORIENT
-            //  as of 2019-11-08: (MP-->Config/Tuning/Full Param List)
-            //  RNGFND_ORIENT:  0   ("Forward")     forward facing rangefinder (tilted ca 45°)
-            //  RNGFND2_ORIENT: 25  ("Down")        downward facing rangefinder
-            //  orientation-enum DOES NOT MATCH arducopter's from libraries/AP_Math/rotations.h
-            //      fwd should have ROTATION_PITCH_315, dwn NONE
-            //      actually our "forward facing rangefinder" is backward, due to practability reasons
-            //      but lets assume, its forward, as it is only a prototype
-            //  
-            gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder.distance_cm_orient(");
-            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_NONE     ): %4" PRIi16 "; ori: %d",
-            //     rangefinder.distance_cm_orient(ROTATION_NONE     ), ROTATION_NONE);
-            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_270): %4" PRIi16 "; ori: %d",
-            //     rangefinder.distance_cm_orient(ROTATION_PITCH_270), ROTATION_PITCH_270);
-            // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_315): %4" PRIi16 "; ori: %d",
-            //     rangefinder.distance_cm_orient(ROTATION_PITCH_315), ROTATION_PITCH_315);
-            gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): %4" PRIi16 "; ori: %d",
-                rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING),
-                RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
-            gcs().send_text(MAV_SEVERITY_DEBUG, "<forward facing>):  %4" PRIi16 "; ori: %d",
-                rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING),
-                RANGEFINDER_ORIENTATION_FORWARD_FACING);
-            // gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): ");
-            // gcs().send_text(MAV_SEVERITY_DEBUG, "%4" PRIi16 "; ori: %d",
-            //     rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING), 
-            //     RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
-            
-            // PeterSt play with different values, finding out about altitude frames
-            //hal.console->printf( "this->get_frame_string(): %s\n", this->get_frame_string() );
-            // in sitl: "QUAD"
-            //
-            // hal.console->printf("copter.current_loc.get_alt_frame(): %d\n", copter.current_loc.get_alt_frame());
-            // in sitl: 0; ALT_FRAME_ABSOLUTE = 0
-            int32_t alt_cm_in_frame = -99;
-            bool is_answer_alt_cm_in_frame = false;
-            is_answer_alt_cm_in_frame = copter.current_loc.get_alt_cm(
-                Location_Class::ALT_FRAME::ALT_FRAME_ABOVE_TERRAIN, alt_cm_in_frame);
-            hal.console->printf("copter.current_loc.get_alt_cm(<above terrain>): %d; ok? %d\n",
-                alt_cm_in_frame, (int) is_answer_alt_cm_in_frame);
-        }
-    #endif
+#if IS_PRINT_REPEATET_GCS_MESSAGE
+    if (call_1hz_loop_counter % REPEATET_GCS_MESSAGE_INTERVAL == 1) {   // so that it's also executed in 1st loop
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Schalalalala :)");
+        uint64_t micros = AP_HAL::micros();
+        hal.console->printf("Time since start: %4d.%06d s\n", (int) (micros/1000000), (int) (micros%1000000));
+        //hal.console->printf("Time since start: %" PRIu64 " us\n", AP_HAL::micros());
+    }
+#endif // IS_PRINT_REPEATET_GCS_MESSAGE
+#if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
+    gcs().send_text(MAV_SEVERITY_DEBUG, "Moin :)");          // works
+#endif // IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
+#if IS_LOG_GPA
+    if (is_started_ground_profile_acquisition) {
+        ground_profile_acquisition->log_ground_profile();
+    }
+#endif // IS_LOG_GPA
+#if IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
+    if (call_1hz_loop_counter % (PRINT_MESSAGE_VALUE_INTERVAL * 1) == 1) {
+        gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder_state.alt_cm:   %" PRIi16 "",
+            rangefinder_state.alt_cm);
+        #if IS_ENABLE_SECOND_RANGEFINDER
+        gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder2_state.dist_cm: %" PRIi16 "",
+            rangefinder2_state.dist_cm);
+        #endif
+        // get particular rangefinder by its orientation, set in MP by RNGFND<N>_ORIENT
+        //  as of 2019-11-08: (MP-->Config/Tuning/Full Param List)
+        //  RNGFND_ORIENT:  0   ("Forward")     forward facing rangefinder (tilted ca 45°)
+        //  RNGFND2_ORIENT: 25  ("Down")        downward facing rangefinder
+        //  orientation-enum DOES NOT MATCH arducopter's from libraries/AP_Math/rotations.h
+        //      fwd should have ROTATION_PITCH_315, dwn NONE
+        //      actually our "forward facing rangefinder" is backward, due to practability reasons
+        //      but lets assume, its forward, as it is only a prototype
+        //  
+        gcs().send_text(MAV_SEVERITY_DEBUG, "value: rangefinder.distance_cm_orient(");
+        // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_NONE     ): %4" PRIi16 "; ori: %d",
+        //     rangefinder.distance_cm_orient(ROTATION_NONE     ), ROTATION_NONE);
+        // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_270): %4" PRIi16 "; ori: %d",
+        //     rangefinder.distance_cm_orient(ROTATION_PITCH_270), ROTATION_PITCH_270);
+        // gcs().send_text(MAV_SEVERITY_DEBUG, "ROTATION_PITCH_315): %4" PRIi16 "; ori: %d",
+        //     rangefinder.distance_cm_orient(ROTATION_PITCH_315), ROTATION_PITCH_315);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): %4" PRIi16 "; ori: %d",
+            rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING),
+            RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "<forward facing>):  %4" PRIi16 "; ori: %d",
+            rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_FORWARD_FACING),
+            RANGEFINDER_ORIENTATION_FORWARD_FACING);
+        // gcs().send_text(MAV_SEVERITY_DEBUG, "<downward facing>): ");
+        // gcs().send_text(MAV_SEVERITY_DEBUG, "%4" PRIi16 "; ori: %d",
+        //     rangefinder.distance_cm_orient(RANGEFINDER_ORIENTATION_DOWNWARD_FACING), 
+        //     RANGEFINDER_ORIENTATION_DOWNWARD_FACING);
+        
+        // PeterSt play with different values, finding out about altitude frames
+        //hal.console->printf( "this->get_frame_string(): %s\n", this->get_frame_string() );
+        // in sitl: "QUAD"
+        //
+        // hal.console->printf("copter.current_loc.get_alt_frame(): %d\n", copter.current_loc.get_alt_frame());
+        // in sitl: 0; ALT_FRAME_ABSOLUTE = 0
+        int32_t alt_cm_in_frame = -99;
+        bool is_answer_alt_cm_in_frame = false;
+        is_answer_alt_cm_in_frame = copter.current_loc.get_alt_cm(
+            Location_Class::ALT_FRAME::ALT_FRAME_ABOVE_TERRAIN, alt_cm_in_frame);
+        hal.console->printf("copter.current_loc.get_alt_cm(<above terrain>): %d; ok? %d\n",
+            alt_cm_in_frame, (int) is_answer_alt_cm_in_frame);
+    }
+#endif // IS_PRINT_MESSAGE_VALUE_RANGEFINDER_DIST
 
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);

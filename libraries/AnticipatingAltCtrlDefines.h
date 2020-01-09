@@ -114,6 +114,7 @@ enum AltCtrlMode : uint8_t {
 // for ground profile derivator (GPD)
 
 #define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        true
+#define GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE        3
 #define IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION  true        // check for validity in get_deviations
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
 #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING

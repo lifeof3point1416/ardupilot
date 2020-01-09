@@ -1335,6 +1335,8 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
             x_p, y_p, z_p, 
             x_f, z_f, false,
             ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH);
+
+        log_ground_profile();
         #endif 
 
         return ScanPointInvalidReturnValue_GROUND_PROFILE_INDEX_TOO_HIGH;
@@ -1649,6 +1651,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int xz_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
     int xx_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x})^2}
     int z_mult;
+#if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    int z_mult_raw;                             // raw data from GPA
+    int z_mult_filt;                            // filtered
+    int z_mult_filt_sum;                        // for calculating filtered values, using Central Simple Moving Average
+#endif
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
         derivation_vector[i] = 0;
@@ -1660,6 +1667,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     
     int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of the corresponding valid z values
     int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
+#if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    int z_vector_mult_raw[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // as z_vector_mult, but unfiltered
+#endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int x_last;                                             // equivalent of x_vector[i-1], when read
     int z_last_mult;                                        // equivalent of z_vector_mult[i-1], when read
     int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
@@ -1669,7 +1679,60 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     //  at the same time calculate sums for x and z, which are used for mean values later
     x_sum = 0;
     z_sum_mult = 0;
+
     // for this loop, n_values counts up, ie it is the index variable of valid data (ie i)
+#if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    // only extract raw z values for filtering afterwards
+    // OLD:
+    for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
+            z_mult_raw = ((int) ground_profile_acquisition->get_ground_profile_datum(x)) 
+                << GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT;
+            x_vector[n_values] = x;
+            x_sum += x;
+            if (n_values > 0) {
+                dx_vector[n_values-1] = x - x_last;
+                x_last = x;                                 // for next valid x
+            } else {
+                x_last = x;                                 // first valid x is "x_last" of the second valid x
+            }
+            z_vector_mult_raw[n_values] = z_mult_raw;
+            // z_sum_mult += z_mult;                        // this will be done after filtering
+            //
+            n_values++;                                     // only inc this, if there has been a new valid value
+        }
+    }
+    // filter valid z values
+    z_mult_filt_sum = 0;
+    if (n_values >= GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) {
+        // get first central sum, leave all values until here unfiltered
+        //  this central sum is valid for index (<filter_window_size>/2)
+        for (i = 0; (i < GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) && (i < n_values); i++) {
+            z_mult_filt_sum += z_vector_mult_raw[i];            // sum up raw z values
+            z_vector_mult[i] = z_vector_mult_raw[i];            // unfiltered
+            z_sum_mult += z_vector_mult[i];
+        }
+        // filter first filterable point
+        i = GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2;
+        z_vector_mult[i] = z_mult_filt_sum / GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+        z_sum_mult += z_vector_mult[i];
+        i++;
+        // apply central moving average for to further points
+        for (; i < (n_values - GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2); i++) {
+            z_mult_filt_sum -= z_vector_mult_raw[i - GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2];
+            z_mult_filt_sum += z_vector_mult_raw[i + GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2];
+            z_vector_mult[i] = z_mult_filt_sum / GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+            z_sum_mult += z_vector_mult[i];
+        }
+        // leave the right edge unfiltered
+        for (; i < n_values; i++) {
+            z_vector_mult[i] = z_vector_mult_raw[i];
+            z_sum_mult += z_vector_mult[i];
+        }
+    }
+    // else: leave unfiltered, not enough values for filtering!
+#else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
         // indices must have been checked before
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
@@ -1689,6 +1752,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                     // only inc this, if there has been a new valid value
         }
     }
+#endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
 #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
 #endif // IS_VERBOSE_CLF_LOGGING
@@ -1975,8 +2039,6 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
         hal.console->printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
         printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
         #endif // IS_VERBOSE_DEBUG_GPD
-
-        ground_profile_derivator->log_ground_profile();
     }
 
     // run gpd
