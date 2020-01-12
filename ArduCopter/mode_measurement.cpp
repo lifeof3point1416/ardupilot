@@ -141,7 +141,11 @@ bool Copter::ModeMeasurement::handle_invalid_ground_profile_acquisition_index(in
             scan_point_return_value);
         break;
     case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN:
-        gcs().send_text(MAV_SEVERITY_ERROR, "GPA: frozen, didn't store point", 
+        gcs().send_text(MAV_SEVERITY_WARNING, "GPA: frozen, didn't store point", 
+            scan_point_return_value);
+        break;
+    case AC_GroundProfileAcquisition::ScanPointInvalidReturnValue_USE_GROUND_PROFILE_ACQUISITION_DATA_FROM_FILE:
+        gcs().send_text(MAV_SEVERITY_WARNING, "GPA: using old GPA data from file", 
             scan_point_return_value);
         break;
     default:

@@ -205,6 +205,9 @@ public:
 
     AC_GroundProfileAcquisition(void);
     bool init(void);
+#if IS_USE_GPA_MAP_FROM_FILE
+    bool read_gpa_from_file(void);
+#endif // IS_USE_GPA_MAP_FROM_FILE
     // start scanning with the current orientation and set position_neu_cm as reference point for absolute position
     bool start(uint16_t _heading, Vector3f position_neu_cm);                      
     #if 0 
@@ -226,6 +229,7 @@ public:
         ScanPointInvalidReturnValue_VALUE_OUT_OF_RANGE = -5,
         ScanPointInvalidReturnValue_FWD_RANGEFINDER_NOT_HEALTHY = -6,       // actually no Scan Point return value
         ScanPointInvalidReturnValue_GROUND_PROFILE_ACQUISITION_FROZEN = -7,
+        ScanPointInvalidReturnValue_USE_GROUND_PROFILE_ACQUISITION_DATA_FROM_FILE = -8,  // no scanning necessary
     };
     bool is_scan_point_index_valid(int scan_point_return_value) { return scan_point_return_value >= 0;}
     inline int16_t get_ground_profile_datum(int index) {return ground_profile[index];}

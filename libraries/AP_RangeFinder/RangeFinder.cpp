@@ -972,6 +972,94 @@ AC_GroundProfileAcquisition::AC_GroundProfileAcquisition(void) {
     ;
 }
 
+#if IS_USE_GPA_MAP_FROM_FILE
+// read a predefined GPA map from a file, given in #define GPA_MAP_FROM_FILE_FILENAME, for debugging GPD without
+//  real test flights
+// returns bool: could the map be read?
+bool AC_GroundProfileAcquisition::read_gpa_from_file(void) {
+    FILE *gpa_map_file;
+    char line_buf[GPA_MAP_LINE_BUFSIZ], *token_str, *save_ptr_str, *save_ptr_str_line_no;
+    char *number_str;
+    int first_of_line_index, map_value, line_cnt, col_cnt;
+    bool is_found_eol = false;
+    const char comment_marker = '#';
+    const char *csv_delim_str = " ";
+    const char additional_eol_marker = ';';
+    // reset map values just in case
+    int i;
+    for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
+        ground_profile[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    }
+    //
+#if IS_PRINT_GPA_MAP_FROM_FILE_DATA
+            printf("parsing GPA map data from file %s\n", GPA_MAP_FROM_FILE_FILENAME);
+#endif // IS_PRINT_GPA_MAP_FROM_FILE_DATA
+    gpa_map_file = fopen(GPA_MAP_FROM_FILE_FILENAME, "r");
+    //
+    if (!gpa_map_file) {
+        printf("Cannot parse GPA map file, %s not found!\n", GPA_MAP_FROM_FILE_FILENAME);
+        return false;
+    }
+
+    // read gpa map
+    // example row:
+    // "MSG", TimeUS, MapLineNo: Val Val Val <...> Val;
+    // MSG, 247421022, 0060: 00 00 00 00 00 00 00 80 80 7F;
+    for (line_cnt = 0; fgets(line_buf, GPA_MAP_LINE_BUFSIZ, gpa_map_file); line_cnt++) {
+        // comments are not implemented!
+        // check if line starts with a '#' (counts only for first line!!!)
+        // if ((line_cnt == 0) && (line_buf[0] == comment_marker)) {
+        //     // split until newline, throw away everything until the newline marker
+        //     token_str = strtok_r(line_buf, "\n", &save_ptr_str);    // this contains the commented out first line
+        //     token_str = strtok_r(NULL, "\n", &save_ptr_str);        
+        // }
+        //
+        token_str = strtok_r(line_buf, csv_delim_str, &save_ptr_str);   // should be "MSG" ==> ignore it
+        // check if it is a comment
+        if (token_str[0] == comment_marker) {
+            continue;   // ignore this line
+        }
+        //
+        token_str = strtok_r(NULL, csv_delim_str, &save_ptr_str);       // TimeUS ==> ignore
+        token_str = strtok_r(NULL, csv_delim_str, &save_ptr_str);       // LineNo: "LLLL:" ==> parse
+        number_str = strtok_r(token_str, ":", &save_ptr_str_line_no);  // remove colon from LineNo
+        first_of_line_index = atoi(number_str);
+#if IS_PRINT_GPA_MAP_FROM_FILE_DATA
+            printf("first_of_line_index: %4d,\nmap values: [", first_of_line_index);
+#endif // IS_PRINT_GPA_MAP_FROM_FILE_DATA
+        // parse further 10 columns in this line
+        for (col_cnt = 0, is_found_eol = false; (col_cnt < 10) && !is_found_eol; col_cnt++) {
+            token_str = strtok_r(NULL, csv_delim_str, &save_ptr_str);   // Vali: ==> parse
+            // check for additional end of line marker ';'
+            if (strchr(token_str, additional_eol_marker) != NULL) {
+                // extract number, dropping eol marker
+                number_str = strtok_r(token_str, ";", &save_ptr_str_line_no);
+                token_str = number_str;
+                is_found_eol = true;
+            }
+            // parse value
+            map_value = strtol(token_str, NULL, 16);
+            // reconvert condensed GPA map value (eg. 0x7f or 0x00) into 
+            //  real map value (eg. -1 or GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE)
+            map_value = UNBIASED_GPA_VALUE(map_value);
+#if IS_PRINT_GPA_MAP_FROM_FILE_DATA
+            if (!is_found_eol) {
+                printf("%d, ", map_value);
+            } else {
+                printf("%d]\n", map_value);
+            }
+#endif // IS_PRINT_GPA_MAP_FROM_FILE_DATA
+            // store data
+            ground_profile[first_of_line_index + col_cnt] = map_value;
+        }
+        
+    }
+    //
+    fclose(gpa_map_file);
+    return true;
+}
+#endif // IS_USE_GPA_MAP_FROM_FILE
+
 // init array map for ground profile points to be scanned
 // return: successfully initialized?
 bool AC_GroundProfileAcquisition::init(void) {
@@ -980,6 +1068,10 @@ bool AC_GroundProfileAcquisition::init(void) {
     for (i = 0; i < GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE; i++) {
         ground_profile[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
     }
+
+    #if IS_USE_GPA_MAP_FROM_FILE
+    read_gpa_from_file();
+    #endif // IS_USE_GPA_MAP_FROM_FILE
 
     #if IS_PRINT_GPA_TESTS
     hal.console->printf("GroundProfileAcquisition after init: ground_profile[0]: %" PRIi16 "\n",
@@ -1203,6 +1295,18 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
     y_p = main_dir_coo.y;
     int z_p;                    // altitude in home-position-space
     z_p = (int) roundf(position_neu_cm.z);
+
+#if IS_USE_GPA_MAP_FROM_FILE
+    #if IS_LOG_GPA
+    log_scan_point(AP_HAL::micros64(), fwd_rangefinder_dist_cm, 
+        position_neu_cm.x, position_neu_cm.y, position_neu_cm.z,
+        x_p, y_p, z_p, 
+        GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, false,
+        ScanPointInvalidReturnValue_USE_GROUND_PROFILE_ACQUISITION_DATA_FROM_FILE);
+    #endif 
+
+    return ScanPointInvalidReturnValue_USE_GROUND_PROFILE_ACQUISITION_DATA_FROM_FILE;
+#endif // IS_USE_GPA_MAP_FROM_FILE
 
 #if IS_USE_GPA_MAP_FREEZE_MODE
     if (is_frozen()) {
