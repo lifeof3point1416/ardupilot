@@ -1003,11 +1003,11 @@ bool AC_GroundProfileAcquisition::read_gpa_from_file(void) {
 
     // read gpa map
     // example row:
-    // "MSG", TimeUS, MapLineNo: Val Val Val <...> Val;
+    // "MSG", TimeUS, FirstOfLineIndex: Val Val Val <...> Val;
     // MSG, 247421022, 0060: 00 00 00 00 00 00 00 80 80 7F;
-    for (line_cnt = 0; fgets(line_buf, GPA_MAP_LINE_BUFSIZ, gpa_map_file); line_cnt++) {
+    for (line_cnt = 0; fgets(line_buf, GPA_MAP_LINE_BUFSIZ, gpa_map_file) != NULL; line_cnt++) {
         // comments are not implemented!
-        // check if line starts with a '#' (counts only for first line!!!)
+        // check if line starts with a '#'
         // if ((line_cnt == 0) && (line_buf[0] == comment_marker)) {
         //     // split until newline, throw away everything until the newline marker
         //     token_str = strtok_r(line_buf, "\n", &save_ptr_str);    // this contains the commented out first line
@@ -1029,7 +1029,7 @@ bool AC_GroundProfileAcquisition::read_gpa_from_file(void) {
 #endif // IS_PRINT_GPA_MAP_FROM_FILE_DATA
         // parse further 10 columns in this line
         for (col_cnt = 0, is_found_eol = false; (col_cnt < 10) && !is_found_eol; col_cnt++) {
-            token_str = strtok_r(NULL, csv_delim_str, &save_ptr_str);   // Vali: ==> parse
+            token_str = strtok_r(NULL, csv_delim_str, &save_ptr_str);   // Val_i: ==> parse
             // check for additional end of line marker ';'
             if (strchr(token_str, additional_eol_marker) != NULL) {
                 // extract number, dropping eol marker
@@ -1043,10 +1043,11 @@ bool AC_GroundProfileAcquisition::read_gpa_from_file(void) {
             //  real map value (eg. -1 or GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE)
             map_value = UNBIASED_GPA_VALUE(map_value);
 #if IS_PRINT_GPA_MAP_FROM_FILE_DATA
+            printf("%d", map_value);
             if (!is_found_eol) {
-                printf("%d, ", map_value);
+                printf(", ");
             } else {
-                printf("%d]\n", map_value);
+                printf("]\n");
             }
 #endif // IS_PRINT_GPA_MAP_FROM_FILE_DATA
             // store data
