@@ -1788,7 +1788,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     // for this loop, n_values counts up, ie it is the index variable of valid data (ie i)
 #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // only extract raw z values for filtering afterwards
-    // OLD:
     for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
         // indices must have been checked before
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
@@ -1808,6 +1807,12 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                     // only inc this, if there has been a new valid value
         }
     }
+
+    // log unfiltered values
+ #if IS_VERBOSE_CLF_LOGGING
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult_raw, dx_vector, grade);
+ #endif // IS_VERBOSE_CLF_LOGGING
+
     // filter valid z values
     z_mult_filt_sum = 0;
     if (n_values >= GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) {
@@ -1858,6 +1863,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
 #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+// log filtered values
 #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
 #endif // IS_VERBOSE_CLF_LOGGING

@@ -338,7 +338,8 @@ public:
 #endif // IS_DO_CLF_DEBUGGING_LOGGING
 #if IS_VERBOSE_CLF_LOGGING
     // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
-    //  tag "CLF2"
+    //  tag "CLF2"; note that if a filter is used, unfiltered values are logged, too
+    //  ==> two CLF2 logs with GrdI==0, first with unfiltered, second with filtered values
     void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
  #if IS_TEST_INT32_INT16_LOGGING
     // this will be used for log_consecutive_linear_fitting2
