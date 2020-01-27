@@ -306,6 +306,7 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
     return get_throttle_hover() + ((1.0-get_throttle_hover())*_throttle_limit);
 }
 
+// PSt: Motor Thrust Scaling happens here
 // apply_thrust_curve_and_volt_scaling - returns throttle in the range 0 ~ 1
 float AP_MotorsMulticopter::apply_thrust_curve_and_volt_scaling(float thrust) const
 {

@@ -56,6 +56,8 @@ public:
     ///     updates z axis accel controller's D term filter
     void set_dt(float delta_sec);
     float get_dt() const { return _dt; }
+    inline void set_ffc(AC_FeedForwardController *ffc) {_ffc = ffc;}
+    inline AC_FeedForwardController *get_ffc(void) {return _ffc;}
 
     ///
     /// z position controller
@@ -146,7 +148,9 @@ public:
     bool is_active_z() const;
 
     /// update_z_controller - fly to altitude in cm above home
-    void update_z_controller();
+    // void update_z_controller();
+    inline void update_z_controller() {update_z_controller(false);}
+    void update_z_controller(bool is_use_ffc);      // added by PeterSt
 
     // get_leash_down_z, get_leash_up_z - returns vertical leash lengths in cm
     float get_leash_down_z() const { return _leash_down_z; }
@@ -330,7 +334,9 @@ protected:
     //          set_alt_target
     //          set_target_to_stopping_point_z
     //          init_takeoff
-    void run_z_controller();
+    void run_z_controller();                        // overwritten by PeterSt
+    void run_z_controller(bool is_use_ffc);         // added by PeterSt
+    void run_z_controller(bool is_use_ffc, AC_FeedForwardController ffc);         // added by PeterSt
 
     ///
     /// xy controller private methods
@@ -369,6 +375,8 @@ protected:
     const AP_InertialNav&       _inav;
     const AP_Motors&            _motors;
     AC_AttitudeControl&         _attitude_control;
+
+    AC_FeedForwardController    *_ffc = nullptr;    // PeterSt: Feed Forward Controller instance
 
     // parameters
     AP_Float    _accel_xy_filt_hz;      // XY acceleration filter cutoff frequency

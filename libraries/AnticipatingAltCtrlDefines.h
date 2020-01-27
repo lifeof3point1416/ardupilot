@@ -239,3 +239,6 @@ static_assert(GPA_MAP_LOG_CHUNK_SIZE == 32, "GPA map chunk sizes must be 32, in 
 #if IS_DO_CLF_DEBUGGING_LOGGING && (!IS_DO_GPD2_DEBUGGING_LOGGING)
 #error CLF logging requires GDP2 logging!
 #endif
+
+static_assert(IS_LOG_GPA >= IS_VERBOSE_THROTTLE_LOGGING_FFC,
+    "for logging within Rangefinder.cpp IS_LOG_GPA must be true.");

@@ -52,9 +52,10 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define PRINT_GPA_MAP_INTERVAL                      30
 #define IS_PRINT_GPA_MAIN_DIRECTION_COO             true        // print them in an interval
 #define IS_USE_GPA_MAP_FROM_FILE                    true        // use predefined map instead (to avoid testflights each time we debug GPD)
-#define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file.txt"
+// #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_191206T1317P0100.txt"
+#define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_spline_mockup.txt"
 #define GPA_MAP_LINE_BUFSIZ                         80          // MUST be longer than a line of the csv file
-#define IS_PRINT_GPA_MAP_FROM_FILE_DATA             true        // print data when parsing
+#define IS_PRINT_GPA_MAP_FROM_FILE_DATA             true        // print data when parsing, using printf
 
 // concerning Ground Profile Derivator
 #define IS_VERBOSE_DEBUG_GPD                        false        // very verbose debugs for Ground Profile Derivator
@@ -64,12 +65,15 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_TEST_INT32_INT16_LOGGING                 true        // run a test logging int32[] as int16[]
 #define IS_VERBOSE_GPD_LOGGING                      true        // log GPD every time, not just once a second
 
+// concerning FFC itself
+#define IS_VERBOSE_THROTTLE_LOGGING_FFC             true
+#define IS_FFC_ENABLED                              false       // false: disable already existing code for tests not concerning untested FFC code
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2020-01-18 18:11+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2020-01-27 14:37+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but not LAST_CODE_CHANGE
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]

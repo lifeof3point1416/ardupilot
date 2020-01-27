@@ -1944,7 +1944,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                 // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
                 z_sum_mult += dzdx_last_mult;
             }
-            n_values--;                                     // we have 1 value pair less than before
+            n_values--;                                     // we have 1 value pair less than before, because diff'ing consumed it
         }
 
 #if IS_VERBOSE_CLF_LOGGING
@@ -2126,7 +2126,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 // tests GroundProfileDerivator featuring the GroundProfileAcquisition
 // logs only if is_log is true - be careful not to spam logging
 // returns derivations.is_valid
-bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log) {
+bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, float horiz_speed, 
+    int32_t heading, bool is_log) {
+
     #if IS_VERBOSE_DEBUG_GPD
      #if 0              // disable if done
         printf("!");    // on x-term
@@ -2162,4 +2164,54 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
 
 #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
+// // get throttle output from FFC, using altitude over ground derivations
+// // if derivations are invalid, return value is 0, effectively causing FFC to be ignored
+// // returns throttle [1] in range [0 .. 1]
+// float AC_FeedForwardController::get_throttle_output(
+//     AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations) {
+    
+//     float thrust_output;
+//     float throttle_output;
+//     // check if derivations are valid
+//     if (!altitude_over_ground_derivations.is_valid) {
+//         return 0;
+//     }
+//     // calc thrust output in cgs system, dyn = [g*cm/s/s]
+//     thrust_output = copter_mass * (
+//         copter_time_const/1e6*altitude_over_ground_derivations.third + 
+//         (copter_time_const*copter_air_resist_const/1e12 + 1)*altitude_over_ground_derivations.second + 
+//         copter_air_resist_const/1e6*altitude_over_ground_derivations.first +
+//         copter_gravitation_const
+//         );
+//     // convert [g*cm/s/s] into N = [kg*m/s/s]
+//     thrust_output /= 1e5;
+//     throttle_output = get_throttle_from_thrust(thrust_output);
+//     return throttle_output;
+// }
 
+// get thrust output from FFC, using altitude over ground derivations
+// if derivations are invalid, return value is 0, effectively causing FFC to be ignored
+// returns thrust [N]
+float AC_FeedForwardController::get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations) {
+    float thrust_output;
+    // check if derivations are valid
+    if (!altitude_over_ground_derivations.is_valid) {
+        return 0;
+    }
+    // calc thrust output in cgs system, dyn = [g*cm/s/s]
+    thrust_output = copter_mass * (
+        copter_time_const/1e6*altitude_over_ground_derivations.third + 
+        (copter_time_const*copter_air_resist_const/1e12 + 1)*altitude_over_ground_derivations.second + 
+        copter_air_resist_const/1e6*altitude_over_ground_derivations.first +
+        copter_gravitation_const
+        );
+    // convert [g*cm/s/s] into N = [kg*m/s/s]
+    thrust_output /= 1e5;
+    return thrust_output;
+}
+
+float AC_FeedForwardController::get_thrust_output(void) {
+#if IS_FFC_ENABLED
+    #error TODO: IMPLEMENT THIS
+#endif // IS_FFC_ENABLED
+}

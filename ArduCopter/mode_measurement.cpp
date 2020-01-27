@@ -92,6 +92,17 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
      #endif // IS_VERBOSE_DEBUG_GPD
     #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
+    // init FFC
+
+    copter.pos_control->set_ffc(new AC_FeedForwardController(copter.ground_profile_derivator));
+    if (copter.pos_control->get_ffc() == nullptr) {
+        AP_HAL::panic("Unable to allocate FeedForwardController");
+    }
+#if IS_FFC_ENABLED
+    #error CONTINUE HERE !!
+    // TODO: prio 7: start working ffc from scheduler
+#endif // IS_FFC_ENABLED
+
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
 #if IS_DO_GPD2_DEBUGGING_LOGGING
@@ -266,7 +277,7 @@ void Copter::ModeMeasurement::loiterlike_run()
 #endif
         loiter_nav->update(ekfGndSpdLimit, ekfNavVelGainScaler);
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
-        pos_control->update_z_controller();
+        pos_control->update_z_controller(false);
         break;
 
     case Loiter_Takeoff:
@@ -297,7 +308,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         // update altitude target and call position controller
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
         pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
-        pos_control->update_z_controller();
+        pos_control->update_z_controller(false);
         break;
 
     case Loiter_Landed:
@@ -312,7 +323,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         attitude_control->set_yaw_target_to_current_heading();
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0, 0, 0);
         pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
-        pos_control->update_z_controller();
+        pos_control->update_z_controller(false);
         break;
 
     case Loiter_Flying:
@@ -386,7 +397,11 @@ void Copter::ModeMeasurement::loiterlike_run()
 
         // update altitude target and call position controller
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
-        pos_control->update_z_controller();
+        #if IS_FFC_ENABLED
+            pos_control->update_z_controller(true);
+        #else // IS_FFC_ENABLED
+            pos_control->update_z_controller(false);
+        #endif // IS_FFC_ENABLED
         break;
     }
 }

@@ -389,3 +389,30 @@ private:
 
 };
 #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+
+class AC_FeedForwardController {
+
+public:
+    AC_FeedForwardController(AC_GroundProfileDerivator *_ground_profile_derivator) {
+        ground_profile_derivator = _ground_profile_derivator;
+    }
+
+    float get_throttle_from_thrust(float thrust_N);     // inverse motor control function f_m^-1
+    float get_thrust_from_throttle(float throttle);     // motor control function f_m
+    float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
+    // float get_throttle_output(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
+    float get_thrust_output(void);                      // use inherent derivation data
+#if IS_VERBOSE_THROTTLE_LOGGING_FFC
+    void log_throttle(float throttle_out, float throttle_pid, float throttle_ffc, bool is_ffc_active);
+#endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
+
+    const float copter_mass = PHYSICAL_MODEL_COPTER_MASS;                                   // [g]
+    const float copter_time_const = PHYSICAL_MODEL_TIME_CONSTANT_MICROS;                    // [us]
+    const float copter_air_resist_const = PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST;   // [1e6 1/s] = [1/us]
+    const float copter_gravitation_const = PHYSICAL_MODEL_GRAVITATION_CONST;                // [cm/s/s]
+
+protected:
+    AC_GroundProfileDerivator *ground_profile_derivator = nullptr;  // also contains GroundProfileAcquisition instance
+
+private:
+};
