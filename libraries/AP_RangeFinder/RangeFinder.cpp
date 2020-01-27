@@ -2058,6 +2058,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     int32_t heading_deviation;
     float horizontal_speed_deviation_compensation_factor;
     heading_deviation = heading - ((int32_t) ground_profile_acquisition->get_main_direction());
+    // #error CONTINUE HERE!!!
+    // TODO: prio 8: check horizontal_speed_deviation_compensation_factor, conversion rad vs. deg!
+    // TODO: prio 8: check if heading-wraparound works (1°-359° ==> 2°)
     horizontal_speed_deviation_compensation_factor = cosf((float) abs(heading_deviation));
     horiz_speed *= horizontal_speed_deviation_compensation_factor;
 #endif // IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
