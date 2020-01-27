@@ -136,7 +136,7 @@ enum AltCtrlMode : uint8_t {
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
 #define PHYSICAL_MODEL_TIME_CONSTANT_MICROS                 149000  // PT1-time constant tau of the copter (including deadtime) [us]
-#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s == 1/us]
+#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s] == [1/Ms]
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
 

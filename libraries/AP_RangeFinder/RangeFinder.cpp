@@ -2207,14 +2207,14 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(AC_GroundProf
     if (!altitude_over_ground_derivations.is_valid) {
         return 0;
     }
-    // calc thrust output in cgs system, dyn = [g*cm/s/s]
+    // calc thrust output in cgs system, [dyn] = [g*cm/s/s]
     thrust_output = copter_mass * (
         copter_time_const/1e6*altitude_over_ground_derivations.third + 
         (copter_time_const*copter_air_resist_const/1e12 + 1)*altitude_over_ground_derivations.second + 
         copter_air_resist_const/1e6*altitude_over_ground_derivations.first +
         copter_gravitation_const
         );
-    // convert [g*cm/s/s] into N = [kg*m/s/s]
+    // convert [g*cm/s/s] into [N] = [kg*m/s/s]
     thrust_output /= 1e5;
     return thrust_output;
 }
