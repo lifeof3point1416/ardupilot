@@ -354,6 +354,7 @@ public:
     DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);
     //DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);
     inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
+    int32_t get_opposite_heading_cd(int32_t heading_cd);
     int32_t get_heading_diff_cd(int32_t heading1, int32_t heading2);
 #if IS_DO_HSC_LOGGING
     void log_horizontal_speed_compensation(int32_t heading, int32_t main_direction, int32_t heading_deviation,

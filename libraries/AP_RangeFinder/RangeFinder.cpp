@@ -1112,6 +1112,7 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
 // set main direction of the current measurement flight
 #if IS_REVERSE_GPA_MAIN_DIRECTION                           
     // in case we fly backwards (if "fwd rangefinder" is mounted in the back due to practicability reasons)
+    // TODO: prio 5: use get_opposite_direction instead
     main_direction = (18000 + _heading) % 36000;
 # else // IS_REVERSE_GPA_MAIN_DIRECTION
     main_direction = _heading;
@@ -2155,12 +2156,25 @@ void AC_GroundProfileDerivator::log_horizontal_speed_compensation(int32_t headin
 }
 #endif // IS_DO_HSC_LOGGING
 
+// returns the opposite direction of a heading in range 0 <= heading < 360 deg
+int32_t AC_GroundProfileDerivator::get_opposite_heading_cd(int32_t heading_cd)
+{   
+    // this is not fully tested
+    const int32_t full_circle = 36000;
+    int32_t opposite_heading = heading_cd - (full_circle/2);
+    if (opposite_heading < 0) {
+        opposite_heading += full_circle;
+    }
+    return opposite_heading;
+}
+
 // calculates the difference between two headings in centi degrees
 //  note that heading is clockwise, as opposed to mathematical angle direction,
 //  which is counter-clockwise
 // positive results mean an angle clockwise from heading1 to heading2
 // negative results mean an angle counter-clockwise from heading1 to heading2
-int32_t AC_GroundProfileDerivator::get_heading_diff_cd(int32_t heading1_cd, int32_t heading2_cd) {
+int32_t AC_GroundProfileDerivator::get_heading_diff_cd(int32_t heading1_cd, int32_t heading2_cd)
+{
     // tested this with heading_diff.py
     const int32_t full_circle = 36000;          // for centi degrees
     
