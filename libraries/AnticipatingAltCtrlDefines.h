@@ -113,8 +113,8 @@ enum AltCtrlMode : uint8_t {
 
 // for ground profile derivator (GPD)
 
-// #define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        true
-#define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        false
+#define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        true
+// #define IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES        false
 #define GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE        3
 #define IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION  true        // check for validity in get_deviations
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
@@ -125,6 +125,7 @@ enum AltCtrlMode : uint8_t {
 #define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
 #define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation
 #define CLF_LOGGING_FREQUENCY                               400         // [Hz]
+#define IS_DO_HSC_LOGGING                                   true
 
 // actual parameter definitions
 

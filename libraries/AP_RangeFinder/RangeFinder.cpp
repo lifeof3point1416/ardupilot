@@ -2057,12 +2057,19 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 #if IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
     int32_t heading_deviation;
     float horizontal_speed_deviation_compensation_factor;
-    heading_deviation = heading - ((int32_t) ground_profile_acquisition->get_main_direction());
-    // #error CONTINUE HERE!!!
+    // heading_deviation = heading - ((int32_t) ground_profile_acquisition->get_main_direction());
+    heading_deviation = abs( get_heading_diff_cd((int32_t) ground_profile_acquisition->get_main_direction(), 
+        heading) );
     // TODO: prio 8: check horizontal_speed_deviation_compensation_factor, conversion rad vs. deg!
     // TODO: prio 8: check if heading-wraparound works (1°-359° ==> 2°)
-    horizontal_speed_deviation_compensation_factor = cosf((float) abs(heading_deviation));
+ #if IS_DO_HSC_LOGGING
+    float horiz_speed_orig = horiz_speed;
+ #endif // IS_DO_HSC_LOGGING
+    horizontal_speed_deviation_compensation_factor = cosf( (float) abs(heading_deviation) / DEGX100 );
     horiz_speed *= horizontal_speed_deviation_compensation_factor;
+    log_horizontal_speed_compensation(heading, (int32_t) ground_profile_acquisition->get_main_direction(),
+        heading_deviation, horizontal_speed_deviation_compensation_factor, 
+        horiz_speed_orig, horiz_speed);
 #endif // IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
     // TODO: prio 7: test if this works, even for invalid derivations
     // get derivations over time instead of over distance
@@ -2126,6 +2133,55 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     }
     
     return derivations;
+}
+
+#if IS_DO_HSC_LOGGING
+void AC_GroundProfileDerivator::log_horizontal_speed_compensation(int32_t heading, int32_t main_direction, int32_t heading_deviation,
+        float horizontal_speed_compensation_factor, float horiz_speed_before, float horiz_speed_after)
+{
+    DataFlash_Class::instance()->Log_Write("HSC",                       // Horizontal Speed Compensation
+        "TimeUS,Hdg,MDHdg,DHdg,HSCF,VHor0,VHor1",
+        "shhd-nn",
+        "FBBB0BB",
+        "Qiiifff",
+        AP_HAL::micros64(),
+        heading,
+        main_direction,
+        heading_deviation,
+        horizontal_speed_compensation_factor,
+        horiz_speed_before,
+        horiz_speed_after
+    );
+}
+#endif // IS_DO_HSC_LOGGING
+
+// calculates the difference between two headings in centi degrees
+//  note that heading is clockwise, as opposed to mathematical angle direction,
+//  which is counter-clockwise
+// positive results mean an angle clockwise from heading1 to heading2
+// negative results mean an angle counter-clockwise from heading1 to heading2
+int32_t AC_GroundProfileDerivator::get_heading_diff_cd(int32_t heading1_cd, int32_t heading2_cd) {
+    // tested this with heading_diff.py
+    const int32_t full_circle = 36000;          // for centi degrees
+    
+    // TODO: range checks 0 <= heading <= 36000
+
+    if (heading1_cd == full_circle) {
+        heading1_cd = 0;
+    }
+    if (heading2_cd == full_circle) {
+        heading2_cd = 0;
+    }
+    //
+    int32_t heading_diff = heading2_cd - heading1_cd;
+    //
+    if (heading_diff < 0) {                     // wrap around 360°
+        heading_diff += full_circle;
+    }
+    if (heading_diff > (full_circle/2)) {       // ccw ==> negative number
+        heading_diff -= full_circle;
+    }
+    return heading_diff;
 }
 
 ///// GPDTester

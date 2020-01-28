@@ -361,36 +361,44 @@ void Copter::ModeMeasurement::loiterlike_run()
         #endif // IS_PRINT_VALUE_LOITER_ALT_TARGET
 
         // PeterSt:
-        #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
+    #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
         // run GPD tests
         bool is_log_GPDTester, is_GPDTester_return_valid = false; 
-        #if IS_VERBOSE_GPD_LOGGING
+     #if IS_VERBOSE_GPD_LOGGING
         is_log_GPDTester = true;
-        #else // IS_VERBOSE_GPD_LOGGING
+     #else // IS_VERBOSE_GPD_LOGGING
         // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
         is_log_GPDTester = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
-        #endif // IS_VERBOSE_GPD_LOGGING
-        #if IS_VERBOSE_DEBUG_GPD
+     #endif // IS_VERBOSE_GPD_LOGGING
+     #if IS_VERBOSE_DEBUG_GPD
         // for verbose debugging: also log first call
         is_log_GPDTester = is_log_GPDTester || (copter.call_update_gpa_counter == 1);
-        #endif
+     #endif
 
-         #if IS_VERBOSE_DEBUG_GPD
+     #if IS_VERBOSE_DEBUG_GPD
             printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
-         #endif // IS_VERBOSE_DEBUG_GPD   
+     #endif // IS_VERBOSE_DEBUG_GPD   
         
+        float horiz_speed;
+        int32_t heading;
+        horiz_speed = inertial_nav.get_velocity_xy();   // []
+        heading = ahrs.yaw_sensor;                      // [cdeg]
+        #if IS_REVERSE_GPA_MAIN_DIRECTION
+            horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
+            
+        #endif // IS_REVERSE_GPA_MAIN_DIRECTION
         is_GPDTester_return_valid = copter.ground_profile_derivator_tester->test_using_gpa(
-            inertial_nav.get_position(), inertial_nav.get_velocity_xy(), ahrs.yaw_sensor, is_log_GPDTester);
-         #if 0  // temporary debug
+            inertial_nav.get_position(), horiz_speed, ahrs.yaw_sensor, is_log_GPDTester);
+     #if 0  // temporary debug
         printf("%d", is_GPDTester_return_valid);
-         #else
+     #else
         is_GPDTester_return_valid;
-         #endif // 1
-         #if IS_VERBOSE_DEBUG_GPD
-            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
-         #endif // IS_VERBOSE_DEBUG_GPD 
+     #endif // 1
+     #if IS_VERBOSE_DEBUG_GPD
+        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
+     #endif // IS_VERBOSE_DEBUG_GPD 
 
-        #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+    #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
