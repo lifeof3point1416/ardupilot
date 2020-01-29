@@ -1759,8 +1759,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int z_mult;
     // for anticipating equal values during deviating z vector
     bool is_z_equal_to_last = false;
-    int i_same_first = 0, i_same_last = 0, i_same;  // pointing to consecutive equal z's
-    int dzdx_same_mult = 0;                         // for to consecutive equal z's
+    int i_same_first = -1, i_same = -1;         // pointing to consecutive equal z's; init with invalid values
+    int dzdx_same_mult = 0;                     // for to consecutive equal z's
 
 #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int z_mult_raw;                             // raw data from GPA
@@ -1967,20 +1967,18 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
                     z_sum_mult += dzdx_last_mult;
                 } else {
                     // scan for next different value
-                    if (z_vector_mult[i] == z_vector_mult[i-1]) {
-                        // ...
-                    } else {
+                    if (z_vector_mult[i] != z_vector_mult[i-1]) {
                         is_z_equal_to_last = false;
-                        i_same_last = i-1;                      // for clarity; a good compiler will optimize this away
                         // calculate fractional derivations < 1
-                        dzdx_same_mult = (z_vector_mult[i_same_last] - z_vector_mult[i_same_first]) / 
-                            (x_vector[i_same_last] - x_vector[i_same_first]);
+                        dzdx_same_mult = (z_vector_mult[i] - z_vector_mult[i_same_first]) / 
+                            (x_vector[i] - x_vector[i_same_first]);
                         // write them into all applicable vector elements
-                        for (i_same = i_same_first; i_same <= i_same_last; i_same++) {
+                        for (i_same = i_same_first; i_same <= i; i_same++) {
                             z_vector_mult[i_same] = dzdx_same_mult;
                             z_sum_mult += dzdx_same_mult;
                         }
                     }
+                    // else: scan next, until the end of the consecutive equal values
                 }
             }
             // optimized version, without anticipating equal values
