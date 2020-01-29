@@ -1757,6 +1757,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int xz_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
     int xx_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x})^2}
     int z_mult;
+    // for anticipating equal values during deviating z vector
+    bool is_z_equal_to_last = false;
+    int i_same_first = 0, i_same_last = 0, i_same;  // pointing to consecutive equal z's
+    int dzdx_same_mult = 0;                         // for to consecutive equal z's
+
 #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int z_mult_raw;                             // raw data from GPA
     int z_mult_filt;                            // filtered
@@ -1831,7 +1836,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         i++;
         // apply central moving average for to further points
         for (; i < (n_values - GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2); i++) {
-            z_mult_filt_sum -= z_vector_mult_raw[i - GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2];
+            z_mult_filt_sum -= z_vector_mult_raw[i - GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2 - 1];
             z_mult_filt_sum += z_vector_mult_raw[i + GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2];
             z_vector_mult[i] = z_mult_filt_sum / GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
             z_sum_mult += z_vector_mult[i];
@@ -1932,7 +1937,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         // factors cancel each other out
         derivation_vector[grade] = ((float) xz_diff_sum_mult) / ((float) xx_diff_sum_mult);
 
-        // prepare next higher grade derivation
+        // prepare next higher grade derivation:
+        // calculate derivation of z_vector_mult, and overwrite old z_vector_mult with its own derivation
         if (grade < 3) {
             // adjust x_sum and n_values to next higher derivation grade
             // the rightmost (= last) x and z values are consumed by diff'ing
@@ -1942,15 +1948,53 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // x_last = x_vector[0];    // deprecated
             // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
             z_last_mult = z_vector_mult[0];
+            // optimized version, with anticipating equal values:
             for (i = 1; i < n_values; i++) {
-                dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
-                z_last_mult = z_vector_mult[i];             // for next i
-                z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
-                // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
-                //  as the total number of value pairs decreases 1 per differentiation
-                // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
-                z_sum_mult += dzdx_last_mult;
+                // state machine for changeing z's and consecutive equal z's
+                if (!is_z_equal_to_last) {
+                    if (z_vector_mult[i] == z_last_mult) {
+                        is_z_equal_to_last = true;
+                        i_same_first = i;
+                        continue;   // immediately enter equal z state
+                    }
+                    // standard derivation calculation
+                    dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
+                    z_last_mult = z_vector_mult[i];             // for next i
+                    z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
+                    // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
+                    //  as the total number of value pairs decreases 1 per differentiation
+                    // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+                    z_sum_mult += dzdx_last_mult;
+                } else {
+                    // scan for next different value
+                    if (z_vector_mult[i] == z_vector_mult[i-1]) {
+                        // ...
+                    } else {
+                        is_z_equal_to_last = false;
+                        i_same_last = i-1;                      // for clarity; a good compiler will optimize this away
+                        // calculate fractional derivations < 1
+                        dzdx_same_mult = (z_vector_mult[i_same_last] - z_vector_mult[i_same_first]) / 
+                            (x_vector[i_same_last] - x_vector[i_same_first]);
+                        // write them into all applicable vector elements
+                        for (i_same = i_same_first; i_same <= i_same_last; i_same++) {
+                            z_vector_mult[i_same] = dzdx_same_mult;
+                            z_sum_mult += dzdx_same_mult;
+                        }
+                    }
+                }
             }
+            // optimized version, without anticipating equal values
+            // OLD {
+            // for (i = 1; i < n_values; i++) {
+            //     dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
+            //     z_last_mult = z_vector_mult[i];             // for next i
+            //     z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
+            //     // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
+            //     //  as the total number of value pairs decreases 1 per differentiation
+            //     // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+            //     z_sum_mult += dzdx_last_mult;
+            // }
+            // OLD }
             n_values--;                                     // we have 1 value pair less than before, because diff'ing consumed it
         }
 
