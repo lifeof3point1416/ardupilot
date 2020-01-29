@@ -383,12 +383,12 @@ void Copter::ModeMeasurement::loiterlike_run()
         int32_t heading;
         horiz_speed = inertial_nav.get_velocity_xy();   // []
         heading = ahrs.yaw_sensor;                      // [cdeg]
-        #if IS_REVERSE_GPA_MAIN_DIRECTION
+        #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
             horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
             heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
         #endif // IS_REVERSE_GPA_MAIN_DIRECTION
         is_GPDTester_return_valid = copter.ground_profile_derivator_tester->test_using_gpa(
-            inertial_nav.get_position(), horiz_speed, ahrs.yaw_sensor, is_log_GPDTester);
+            inertial_nav.get_position(), horiz_speed, heading, is_log_GPDTester);
      #if 0  // temporary debug
         printf("%d", is_GPDTester_return_valid);
      #else
