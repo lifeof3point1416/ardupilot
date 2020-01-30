@@ -1575,22 +1575,23 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
 
         DataFlash_Class::instance()->Log_Write("CLF",
             "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
-            "s---mm-??no?-",
+            "s---mm-?????-",                                                // units for derivates below:
             "F0-0BB0--BBB-",
             "QibBiibiifffB",
-            AP_HAL::micros64(),                                             // TimeUS   Q
-            n_values,                                                       // N        i
-            validity_status,                                                // Stat     b
-            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
-            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
-            z_sum_mult_i,                                                   // ZSumMI   i
-            ((int8_t) grade_i),                                             // GrdI     b
-            xx_diff_sum_mult,                                               // XXDSum   i
-            xz_diff_sum_mult,                                               // XZDSum   i
-            derivations.first,                                              // D1       f
-            derivations.second,                                             // D2       f
-            derivations.third,                                              // D3       f
-            ((uint8_t) derivations.is_valid)                                // DOk      B
+            //                                                              // label    data type   unit
+            AP_HAL::micros64(),                                             // TimeUS   Q           us
+            n_values,                                                       // N        i           1
+            validity_status,                                                // Stat     b           1
+            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B           1
+            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i           cm
+            z_sum_mult_i,                                                   // ZSumMI   i           cm/(2^MExp)
+            ((int8_t) grade_i),                                             // GrdI     b           1
+            xx_diff_sum_mult,                                               // XXDSum   i           ...
+            xz_diff_sum_mult,                                               // XZDSum   i           ...
+            derivations.first,                                              // D1       f           cm/cm       ==  1
+            derivations.second,                                             // D2       f           cm/cm/cm    ==  1/cm
+            derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
+            ((uint8_t) derivations.is_valid)                                // DOk      B           bool
         );
     }
     
@@ -1946,15 +1947,17 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // also calc the sum of the new z_vector (the z-derivation, which is the vector of all dz/dx values)
             z_sum_mult = 0;
             // x_last = x_vector[0];    // deprecated
+            //
+            // optimized version, with anticipating equal values:
             // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
             z_last_mult = z_vector_mult[0];
-            // optimized version, with anticipating equal values:
+            is_z_equal_to_last = false;
             for (i = 1; i < n_values; i++) {
                 // state machine for changeing z's and consecutive equal z's
                 if (!is_z_equal_to_last) {
                     if (z_vector_mult[i] == z_last_mult) {
                         is_z_equal_to_last = true;
-                        i_same_first = i;
+                        i_same_first = i - 1;
                         continue;   // immediately enter equal z state
                     }
                     // standard derivation calculation
@@ -2119,9 +2122,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     //  conversion contains the derivation grade n as exponent of the speed. 
     //  (d^n z)/(d x^n) * (x/t)^n   = (d^n z)/(d t^n)
     //  (d^n z)/(d x^n) *   v_x^n   = (d^n z)/(d t^n)
-    derivations.first *= horiz_speed;   
-    derivations.second *= horiz_speed * horiz_speed;                        //
-    derivations.third *= horiz_speed * horiz_speed * horiz_speed;           //
+    derivations.first *= horiz_speed;                                       // changes unit [cm/cm]         to [cm/s]
+    derivations.second *= horiz_speed * horiz_speed;                        // changes unit [cm/cm/cm]      to [cm/s/s]
+    derivations.third *= horiz_speed * horiz_speed * horiz_speed;           // changes unit [cm/cm/cm/cm]   to [cm/s/s/s]
 #elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
     // TODO: prio 5:
     // implement single polynome fitting
