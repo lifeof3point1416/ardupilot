@@ -1663,11 +1663,11 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
         grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
     }
     // check if the vectors are not too big
-    //  for using this function with x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX] and 
-    //  z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]
+    //  for using this function with x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE] and 
+    //  z_vector_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE]
     // logging int16[32], equivalent to int32[16]
-    static_assert(GROUND_PROFILE_DERIVATOR_DX_APPROX+1 <= 16,
-        "GROUND_PROFILE_DERIVATOR_DX_APPROX+1 must be 16 or smaller, to be logged with int16[32] (formatter 'a')\
+    static_assert(GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE+1 <= 16,
+        "GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE+1 must be 16 or smaller, to be logged with int16[32] (formatter 'a')\
         use a smaller derivation window or different logging, if this condition is violated");
     //
     DataFlash_Class::instance()->Log_Write("CLF2",
@@ -1759,9 +1759,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     int xx_diff_sum_mult = 0;                   // sum for all i of {(x_i - mean{x})^2}
     int z_mult;
     // for anticipating equal values during deviating z vector
-    bool is_z_equal_to_last = false;
-    int i_same_first = -1, i_same = -1;         // pointing to consecutive equal z's; init with invalid values
-    int dzdx_same_mult = 0;                     // for to consecutive equal z's
+    // bool is_z_equal_to_last = false;
+    // int i_same_first = -1, i_same = -1;         // pointing to consecutive equal z's; init with invalid values
+    // int dzdx_same_mult = 0;                     // for to consecutive equal z's
 
 #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int z_mult_raw;                             // raw data from GPA
@@ -1777,15 +1777,15 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     //  done here: https://stackoverflow.com/questions/5524552/access-struct-members-as-if-they-are-a-single-array
 
     
-    int x_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];       // contains x values of the corresponding valid z values
-    int z_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
+    int x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];       // contains x values of the corresponding valid z values
+    int z_vector_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
 #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
-    int z_vector_mult_raw[GROUND_PROFILE_DERIVATOR_DX_APPROX];  // as z_vector_mult, but unfiltered
+    int z_vector_mult_raw[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];  // as z_vector_mult, but unfiltered
 #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int x_last;                                             // equivalent of x_vector[i-1], when read
     int z_last_mult;                                        // equivalent of z_vector_mult[i-1], when read
-    int dx_vector[GROUND_PROFILE_DERIVATOR_DX_APPROX];      // contains diff{x}
-    // int dz_vector_mult[GROUND_PROFILE_DERIVATOR_DX_APPROX]; // contains diff{z}, all multiplied by a factor
+    int dx_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];      // contains diff{x}
+    // int dz_vector_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE]; // contains diff{z}, all multiplied by a factor
     int dzdx_last_mult;                                     // equivalent of imaginary dxdz_vector_mult[i-1], when read
     // scan once for valid values and fill x_vector and z_vector_mult with the valid values
     //  at the same time calculate sums for x and z, which are used for mean values later
@@ -1941,61 +1941,59 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         // prepare next higher grade derivation:
         // calculate derivation of z_vector_mult, and overwrite old z_vector_mult with its own derivation
         if (grade < 3) {
+            // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
             // adjust x_sum and n_values to next higher derivation grade
             // the rightmost (= last) x and z values are consumed by diff'ing
             x_sum -= x_vector[n_values-1];                  // erase last x_value from x_sum
             // also calc the sum of the new z_vector (the z-derivation, which is the vector of all dz/dx values)
             z_sum_mult = 0;
-            // x_last = x_vector[0];    // deprecated
-            //
-            // optimized version, with anticipating equal values:
-            // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
             z_last_mult = z_vector_mult[0];
-            is_z_equal_to_last = false;
+            // optimized version, without scanning for equal values
             for (i = 1; i < n_values; i++) {
-                // state machine for changeing z's and consecutive equal z's
-                if (!is_z_equal_to_last) {
-                    if (z_vector_mult[i] == z_last_mult) {
-                        is_z_equal_to_last = true;
-                        i_same_first = i - 1;
-                        continue;   // immediately enter equal z state
-                    }
-                    // standard derivation calculation
-                    dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
-                    z_last_mult = z_vector_mult[i];             // for next i
-                    z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
-                    // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
-                    //  as the total number of value pairs decreases 1 per differentiation
-                    // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
-                    z_sum_mult += dzdx_last_mult;
-                } else {
-                    // scan for next different value
-                    if (z_vector_mult[i] != z_vector_mult[i-1]) {
-                        is_z_equal_to_last = false;
-                        // calculate fractional derivations < 1
-                        dzdx_same_mult = (z_vector_mult[i] - z_vector_mult[i_same_first]) / 
-                            (x_vector[i] - x_vector[i_same_first]);
-                        // write them into all applicable vector elements
-                        for (i_same = i_same_first; i_same <= i; i_same++) {
-                            z_vector_mult[i_same] = dzdx_same_mult;
-                            z_sum_mult += dzdx_same_mult;
-                        }
-                    }
-                    // else: scan next, until the end of the consecutive equal values
-                }
+                dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
+                z_last_mult = z_vector_mult[i];             // for next i
+                z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
+                // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
+                //  as the total number of value pairs decreases 1 per differentiation
+                // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+                z_sum_mult += dzdx_last_mult;
             }
-            // optimized version, without anticipating equal values
-            // OLD {
+
+            // optimized version, with scanning for equal values:
+            // WRONG!!!
+            // is_z_equal_to_last = false;
             // for (i = 1; i < n_values; i++) {
-            //     dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
-            //     z_last_mult = z_vector_mult[i];             // for next i
-            //     z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
-            //     // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
-            //     //  as the total number of value pairs decreases 1 per differentiation
-            //     // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
-            //     z_sum_mult += dzdx_last_mult;
+            //     // state machine for changeing z's and consecutive equal z's
+            //     if (!is_z_equal_to_last) {
+            //         if (z_vector_mult[i] == z_last_mult) {
+            //             is_z_equal_to_last = true;
+            //             i_same_first = i - 1;
+            //             continue;   // immediately enter equal z state
+            //         }
+            //         // standard derivation calculation
+            //         dzdx_last_mult = (z_vector_mult[i] - z_last_mult) / dx_vector[i-1];
+            //         z_last_mult = z_vector_mult[i];             // for next i
+            //         z_vector_mult[i-1] = dzdx_last_mult;        // gradually overwrite z_vector_mult with its own derivation by x_vector
+            //         // the last value of the old z_vector_mult will not be overwritten, but ignored in the next higher derivation grade
+            //         //  as the total number of value pairs decreases 1 per differentiation
+            //         // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+            //         z_sum_mult += dzdx_last_mult;
+            //     } else {
+            //         // scan for next different value
+            //         if (z_vector_mult[i] != z_vector_mult[i-1]) {
+            //             is_z_equal_to_last = false;
+            //             // calculate fractional derivations < 1
+            //             dzdx_same_mult = (z_vector_mult[i] - z_vector_mult[i_same_first]) / 
+            //                 (x_vector[i] - x_vector[i_same_first]);
+            //             // write them into all applicable vector elements
+            //             for (i_same = i_same_first; i_same <= i; i_same++) {
+            //                 z_vector_mult[i_same] = dzdx_same_mult;
+            //                 z_sum_mult += dzdx_same_mult;
+            //             }
+            //         }
+            //         // else: scan next, until the end of the consecutive equal values
+            //     }
             // }
-            // OLD }
             n_values--;                                     // we have 1 value pair less than before, because diff'ing consumed it
         }
 

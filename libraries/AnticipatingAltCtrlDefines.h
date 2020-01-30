@@ -164,6 +164,10 @@ enum AltCtrlMode : uint8_t {
     ( ((( (micros) >> 10) >> 7) & 0b111) / N == 0 ) && ( ((( (micros - ((1<<20)/freq)) >> 10) >> 7) & 0b111) / N != 0 ) \
 )
 
+// keep some reserve: window might include 1 element to the left and to the right, also we might add 1 element for each
+//  derivation, to counter that the rightmost element is consumed by diffing
+#define GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE  (GROUND_PROFILE_DERIVATOR_DX_APPROX + 5)
+
 // use analogue to ~_MICROS, but this is not as reliable
 #define IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MILLIS(N, millis, freq) (   \
     ( (( (millis) >> 7) & 0b111) / N == 0 ) && ( (( (millis - ((1<<10)/freq)) >> 7) & 0b111) / N != 0 ) \
