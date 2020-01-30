@@ -1798,7 +1798,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
             x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
  #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
-    }
+    }   // end of loop through 1st to 3rd grade of derivation
 
     // waste derivation_vector[0] for the sake of clarity
     derivations.first =     derivation_vector[1];
