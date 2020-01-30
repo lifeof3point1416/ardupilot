@@ -1619,10 +1619,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     //  at the same time calculate sums for x and z, which are used for mean values later
     x_sum = 0;
     z_sum = 0;
-    #if IS_VERBOSE_DEBUG_GPD && 1
-    printf("RF line %d ok.\n", __LINE__);
-    #endif // IS_VERBOSE_DEBUG_GPD && 1
-
     // for this loop, n_values counts up, ie. it is the index variable of valid data (ie. i)
  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // only extract raw z values for filtering afterwards
@@ -1644,18 +1640,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                             // only inc this, if there has been a new valid value
         }
     }
-    #if IS_VERBOSE_DEBUG_GPD && 1
-    printf("RF line %d ok.\n", __LINE__);                           // last ok
-    #endif // IS_VERBOSE_DEBUG_GPD && 1
 
     // log unfiltered values
   #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_raw, dx_vector, grade);
   #endif // IS_VERBOSE_CLF_LOGGING
-
-    #if IS_VERBOSE_DEBUG_GPD && 1
-    printf("RF line %d ok.\n", __LINE__);
-    #endif // IS_VERBOSE_DEBUG_GPD && 1
 
     // filter valid z values
     z_filt_sum = 0;
@@ -1706,9 +1695,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
- #if IS_VERBOSE_DEBUG_GPD && 1
-    printf("RF line %d ok.\n", __LINE__);                           // not ok!!!
- #endif // IS_VERBOSE_DEBUG_GPD && 1
 // log filtered values
  #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
@@ -1892,26 +1878,19 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(int n_values,
     for (i = 0; (i < n_values) && (i < float_array_size); i++) {
         double int_part, frac_part;                         // modf seems to be implemented only for double
         //
-        #if IS_VERBOSE_DEBUG_GPD && 1
-        printf("RF line %d ok.\n", __LINE__);
-        #endif // IS_VERBOSE_DEBUG_GPD && 1
-        
         frac_part = modf(x_vector[i], &int_part);
-        
-        #if IS_VERBOSE_DEBUG_GPD && 1
-        printf("RF line %d ok.\n", __LINE__);
-        #endif // IS_VERBOSE_DEBUG_GPD && 1
-        
         x_vector_as_int[2*i]        = (int16_t) int_part;
         x_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
         //
         frac_part = modf(z_vector[i], &int_part);
         z_vector_as_int[2*i]        = (int16_t) int_part;
         z_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
-        //
-        frac_part = modf(dx_vector[i], &int_part);
-        dx_vector_as_int[2*i]        = (int16_t) int_part;
-        dx_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
+        //  dx_vector has only (n_values - 1) elements!
+        if (i < (n_values - 1)) {
+            frac_part = modf(dx_vector[i], &int_part);
+            dx_vector_as_int[2*i]        = (int16_t) int_part;
+            dx_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
+        }
     }
     //
     DataFlash_Class::instance()->Log_Write("CLF3",
@@ -2494,11 +2473,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     // TODO: prio 7: check distance from main_direction axis (check y_p)
 
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
-    #if IS_VERBOSE_DEBUG_GPD && 1
+    #if IS_VERBOSE_DEBUG_GPD && 0
         printf("RF line %d ok.\n", __LINE__);
     #endif // IS_VERBOSE_DEBUG_GPD   
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
-    #if IS_VERBOSE_DEBUG_GPD && 1
+    #if IS_VERBOSE_DEBUG_GPD && 0
         printf("RF line %d ok.\n", __LINE__);
     #endif // IS_VERBOSE_DEBUG_GPD   
 
@@ -2655,7 +2634,7 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
     int32_t heading, bool is_log) {
 
     #if IS_VERBOSE_DEBUG_GPD
-     #if 01              // disable if done
+     #if 0              // disable if done
         printf("!");    // on x-term
      #endif // 1
     #endif // IS_VERBOSE_DEBUG_GPD
@@ -2676,13 +2655,7 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
     // run gpd
     AC_GroundProfileDerivator::DistanceDerivations derivations{
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
-    #if IS_VERBOSE_DEBUG_GPD
-        printf("A");
-    #endif // IS_VERBOSE_DEBUG_GPD   
     derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, heading, is_log);
-    #if IS_VERBOSE_DEBUG_GPD
-        printf("B");
-    #endif // IS_VERBOSE_DEBUG_GPD   
 
     // if (is_log) {
     //     log_profile_derivations(position_neu_cm, horiz_speed, derivations);
