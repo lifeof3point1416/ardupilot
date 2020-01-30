@@ -1548,7 +1548,8 @@ bool AC_GroundProfileAcquisition::log_ground_profile(void) {
 // definition part is in RangeFinder.cpp
 // using static or singleton variables would be better, cf. rangefinder
 
-AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition) {
+AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition *_ground_profile_acquisition)
+{
     set_ground_profile(_ground_profile_acquisition);
 #if IS_TEST_INT32_INT16_LOGGING
     // test twice for checking, if the arrays (which are too long for the log function) overwrite the second log
@@ -1558,7 +1559,410 @@ AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition
 }
 
 #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
- #error TODO: implement float arithmetic functions
+//  #error TODO: implement float arithmetic functions
+ // BEGIN   OLD CODE
+ // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
+//  specified by x_target_left <= x <= x_target_right
+//  these two arguments must be checked before, if they are within the valid range of ground_profile!
+//  this function uses the consecutive linear fitting method
+AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_consecutive_linear_fitting(
+    int x_target_left, int x_target_right) 
+{
+    DistanceDerivations derivations;
+    derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.second = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.third = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.is_valid = false;
+
+    /// using method of least squares
+    // using float arithmetics for the loops that cycle over each value within the derivation window, for each derivation grade
+    // integer arithmetics seems to be to imprecise for 2nd or higher derivations
+    int grade = 0;                              // grade of derivation
+    int x_int, i;
+    float x_sum;
+    float z_sum;
+    int n_values;                               // number of values
+    float x_mean, z_mean;
+    float x_diff_i = 0;                         // (x_i - mean{x})
+    float z_diff_i = 0;                         // (z_i - mean{z})
+    float xz_diff_sum = 0;                      // sum for all i of {(x_i - mean{x}) * (z_i - mean{z})}
+    float xx_diff_sum = 0;                      // sum for all i of {(x_i - mean{x})^2}
+    float z;
+
+ #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    float z_raw;                                // raw data from GPA
+    float z_filt;                               // filtered
+    float z_filt_sum;                           // for calculating filtered values, using Central Simple Moving Average
+ #endif
+    float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
+    for (i = 0; i < 4; i++) {
+        derivation_vector[i] = 0;
+    }
+    // using an additional array for derivation values prevents if checks for
+    //  each derivation cycle, or referencing a struct as an array as
+    //  done here: https://stackoverflow.com/questions/5524552/access-struct-members-as-if-they-are-a-single-array
+
+    
+    float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
+    float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains (grade-1)-th derivation of valid z values over x values
+ #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    float z_vector_raw[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE]; // as z_vector, but unfiltered
+ #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    float x_int_last;                                               // int equivalent of x_vector[i-1], when read
+    float z_last;                                                   // equivalent of z_vector[i-1], when read
+    float dx_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];    // contains diff{x}
+    float dzdx_last;                                                // equivalent of imaginary dxdz_vector_mult[i-1], when read
+
+    // scan once for valid values and fill x_vector and z_vector with the valid values
+    //  at the same time calculate sums for x and z, which are used for mean values later
+    x_sum = 0;
+    z_sum = 0;
+
+    // for this loop, n_values counts up, ie. it is the index variable of valid data (ie. i)
+ #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    // only extract raw z values for filtering afterwards
+    for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x_int)) {
+            z_raw = (float) ground_profile_acquisition->get_ground_profile_datum(x_int);
+            x_vector[n_values] = (float) x_int;
+            x_sum += (float) x_int;
+            if (n_values > 0) {
+                dx_vector[n_values-1] = x_int - x_int_last;
+                x_int_last = x_int;                                 // for next valid x_int
+            } else {
+                x_int_last = x_int;                                 // first valid x is "x_int_last" of the second valid x_int
+            }
+            z_vector_raw[n_values] = z_raw;
+            // z_sum_mult += z_mult;                                // this will be done after filtering
+            //
+            n_values++;                                             // only inc this, if there has been a new valid value
+        }
+    }
+
+    // log unfiltered values
+  #if IS_VERBOSE_CLF_LOGGING
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector_raw, dx_vector, grade);
+  #endif // IS_VERBOSE_CLF_LOGGING
+
+    // filter valid z values
+    z_filt_sum = 0;
+    if (n_values >= GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) {
+        // get first central sum, leave all values until here unfiltered
+        //  this central sum is valid for index (<filter_window_size>/2)
+        for (i = 0; (i < GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) && (i < n_values); i++) {
+            z_filt_sum += z_vector_raw[i];                          // sum up raw z values
+            z_vector[i] = z_vector_raw[i];                          // init first data with unfiltered raw data
+            z_sum += z_vector[i];
+        }
+        // filter first filterable point
+        i = (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2);
+        z_vector[i] = z_filt_sum / GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+        z_sum += z_vector[i];
+        i++;
+        // apply central moving average for to further points
+        for (; i < (n_values - (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2)); i++) {
+            z_filt_sum -= z_vector_raw[i - (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2) - 1];   // subtract old value
+            z_filt_sum += z_vector_raw[i + (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2)];       // add      new value
+            z_vector[i] = z_filt_sum / GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;                // calc filtered value
+            z_sum += z_vector[i];
+        }
+        // adopt right edge unfiltered
+        for (; i < n_values; i++) {
+            z_vector[i] = z_vector_raw[i];
+            z_sum += z_vector[i];
+        }
+    }
+    // else: leave unfiltered, not enough values for filtering!
+ #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
+            z = (float) ground_profile_acquisition->get_ground_profile_datum(x_int);
+            x_vector[n_values] = (float) x_int;
+            x_sum += (float) x_int;
+            if (n_values > 0) {
+                dx_vector[n_values-1] = x_int - x_int_last;
+                x_int_last = x_int;                                 // for next valid x_int
+            } else {
+                x_int_last = x_int;                                 // first valid x is "x_int_last" of the second valid x_int
+            }
+            z_vector_raw[n_values] = z_raw;
+            z_sum += z;
+            //
+            n_values++;   
+        }
+    }
+ #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+// log filtered values
+ #if IS_VERBOSE_CLF_LOGGING
+    log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
+ #endif // IS_VERBOSE_CLF_LOGGING
+
+ #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
+        x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+
+    // loop through 1st to 3rd grade of derivation
+    for (grade = 1; grade <= 3; grade++) {
+        // get mean values
+
+        // prevent division by 0
+        if (n_values == 0) {
+            // no valid values within derivation window ==> derivations.is_valid == false
+            // TODO: prio 6: discard all derivations, even valid ones of lower order?
+            //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
+            //  if we decide to do this, we will need to describe this specific behavior
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO, 
+                x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+        x_mean = x_sum / n_values;
+        z_mean = z_sum / n_values;
+
+        // use Consecutive Linear Fitting to get an approximated derivation of z by x
+        // following formula is based on Simple Linear Regression
+        xx_diff_sum = 0;
+        xz_diff_sum = 0;
+        // loop through all valid values
+        for (i = 0; i < n_values; i++) {
+            x_diff_i = x_vector[i] - x_mean;
+            z_diff_i = z_vector[i] - z_mean;
+            xz_diff_sum += x_diff_i * z_diff_i;
+            xx_diff_sum += x_diff_i * x_diff_i;
+        }
+
+        // need minimum 2 valid values for calculating derivations!
+        // TODO: prio 6: we could do this check immediately after n_values == 0 check, or is there something to it, putting it here?
+        if (n_values < 2) {
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO, 
+                x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+        // avoid zero-division
+        if (xx_diff_sum == 0) {
+            // this should not occur with more than 2 values
+            printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
+            printf("!!! xx_diff_sum_mult == 0 !!!\nThis should not occur with more than 2 values.\n");
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+            log_consecutive_linear_fitting(n_values, 
+                (int8_t) ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO, 
+                x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+            return derivations;
+        }
+
+        // the resulting numerical derivation is precise to 2^(-<multiplicator exponent>)
+        // factors cancel each other out
+        derivation_vector[grade] = xz_diff_sum / xx_diff_sum;
+
+        // prepare next higher grade derivation:
+        // calculate derivation of z_vector_mult, and overwrite old z_vector_mult with its own derivation
+        if (grade < 3) {
+            // new z_vector_mult is the derivation of the old z_vector_mult by x_vector
+            // adjust x_sum and n_values to next higher derivation grade
+            // the rightmost (= last) x and z values are consumed by diff'ing
+            x_sum -= x_vector[n_values-1];                          // erase last x_value from x_sum
+            // also calc the sum of the new z_vector (the z-derivation, which is the vector of all dz/dx values)
+            z_sum = 0;
+            z_last = z_vector[0];
+            // optimized version, without scanning for equal values
+            for (i = 1; i < n_values; i++) {
+                dzdx_last = (z_vector[i] - z_last) / dx_vector[i-1];
+                z_last = z_vector[i];                               // for next i
+                z_vector[i-1] = dzdx_last;          // gradually overwrite z_vector_mult with its own derivation by x_vector
+                //  the last value of the old z_vector_mult will not be overwritten, but ignored in the next 
+                //  higher derivation grade as the total number of value pairs decreases 1 per differentiation
+                // build sum of new z_vector_mult (the derivation of the old one) for new z_mean_mult
+                z_sum += dzdx_last;
+            }
+
+            n_values--;                             // we have 1 value pair less than before, because diff'ing consumed it
+        }
+
+ #if IS_VERBOSE_CLF_LOGGING
+        log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
+ #endif // IS_VERBOSE_CLF_LOGGING
+
+ #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+        // waste derivation_vector[0] for the sake of clarity
+        derivations.first =     derivation_vector[1];
+        derivations.second =    derivation_vector[2];
+        derivations.third =     derivation_vector[3];
+        derivations.is_valid =  false;
+        log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
+            x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+    }
+
+    // waste derivation_vector[0] for the sake of clarity
+    derivations.first =     derivation_vector[1];
+    derivations.second =    derivation_vector[2];
+    derivations.third =     derivation_vector[3];
+    derivations.is_valid =  true;
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+    log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_VALID_RESULT, 
+        x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+    return derivations;
+}
+
+
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int8_t validity_status,
+        float x_sum, float z_sum_i, int grade_i, float xx_diff_sum, float xz_diff_sum,
+        AC_GroundProfileDerivator::DistanceDerivations derivations) 
+{
+    if (
+  #if IS_VERBOSE_CLF_LOGGING
+        true
+  #else // IS_VERBOSE_CLF_LOGGING
+        // for non-verbose clf logging: only log with GPD2_LOGGING_FREQUENCY 
+        (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0)
+  #endif // IS_VERBOSE_CLF_LOGGING
+    ) {
+        // constrain grade_i, its values should be [0 .. 3] anyways
+        if (abs(grade_i) > 127) {
+            grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+        }
+
+        DataFlash_Class::instance()->Log_Write("CLF",
+            "TimeUS,N,Stat,XSum,ZSumI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
+            "s--mm-?????-",                                                // units for derivates below:
+            "F0-BB0--BBB-",
+            "QibffbfffffB",
+            //                                                              // label    data type   unit
+            AP_HAL::micros64(),                                             // TimeUS   Q           us
+            n_values,                                                       // N        i           1
+            validity_status,                                                // Stat     b           1
+            x_sum,                                                          // XSum     f           cm
+            z_sum_i,                                                        // ZSumI    f           cm
+            ((int8_t) grade_i),                                             // GrdI     b           1
+            xx_diff_sum,                                                    // XXDSum   f           cm*cm
+            xz_diff_sum,                                                    // XZDSum   f           cm*cm
+            derivations.first,                                              // D1       f           cm/cm       ==  1
+            derivations.second,                                             // D2       f           cm/cm/cm    ==  1/cm
+            derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
+            ((uint8_t) derivations.is_valid)                                // DOk      B           bool
+        );
+    }
+    
+    // OLD FROM HERE
+  #if 0
+    #if IS_VERBOSE_CLF_LOGGING
+    // for verbose clf logging: log every time (this spams log files)
+    if (abs(grade_i) > 127) {
+        grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+    }
+
+    DataFlash_Class::instance()->Log_Write("CLF",
+        "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
+        "s---mm-??no?-",
+        "F0-0BB0--BBB-",
+        "QibBiibiifffB",
+        AP_HAL::micros64(),                                             // TimeUS   Q
+        n_values,                                                       // N        i
+        validity_status,                                                // Stat     b
+        ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
+        x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
+        z_sum_mult_i,                                                   // ZSumMI   i
+        ((int8_t) grade_i),                                             // GrdI     b
+        xx_diff_sum_mult,                                               // XXDSum   i
+        xz_diff_sum_mult,                                               // XZDSum   i
+        derivations.first,                                              // D1       f
+        derivations.second,                                             // D2       f
+        derivations.third,                                              // D3       f
+        ((uint8_t) derivations.is_valid)                                // DOk      B
+    );
+    #else // IS_VERBOSE_CLF_LOGGING
+    // for non-verbose clf logging: only log every 1/GPD2_LOGGING_FREQUENCY seconds
+    if (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0) {
+        // values should be [0 .. 3] anyways
+        if (abs(grade_i) > 127) {
+            grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+        }
+
+        DataFlash_Class::instance()->Log_Write("CLF",
+            "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
+            "s---mm-??no?-",
+            "F0-0BB0--BBB-",
+            "QibBiibfffffB",
+            AP_HAL::micros64(),                                             // TimeUS   Q
+            n_values,                                                       // N        i
+            validity_status,                                                // Stat     b
+            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
+            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
+            z_sum_mult_i,                                                   // ZSumMI   i
+            ((int8_t) grade_i),                                             // GrdI     b
+            xx_diff_sum_f,                                                  // XXDSum   f
+            xz_diff_sum_f,                                                  // XZDSum   f
+            derivations.first,                                              // D1       f
+            derivations.second,                                             // D2       f
+            derivations.third,                                              // D3       f
+            ((uint8_t) derivations.is_valid)                                // DOk      B
+        );
+    }
+    #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // 0
+}
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+
+ #if IS_VERBOSE_CLF_LOGGING
+void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(int n_values, 
+    float *x_vector, float *z_vector, float *dx_vector, int grade_i)
+{
+    // constrain grade_i; values should be [0 .. 3] anyways
+    if (abs(grade_i) > 127) {
+        grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
+    }
+    // check if the vectors are not too big
+    //  for using this function with x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE] and 
+    //  z_vector_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE]
+    // logging int16[32], equivalent to int32[16]
+    static_assert(GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE+1 <= 16,
+        "GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE+1 must be 16 or smaller, to be logged with int16[32] (formatter 'a')\
+        use a smaller derivation window or different logging, if this condition is violated");
+    // convert float vectors[16] into int16_t[32] vectors
+    int16_t x_vector_as_int[32], z_vector_as_int[32], dx_vector_as_int[32];
+    int i;
+    for (i = 0; i < 16; i++) {
+        double int_part, frac_part;                         // modf seems to be implemented only for double
+        const double frac_factor = 1e4;                     // 10^N for max{N for all 10^N < INT16_MAX == 32767}
+        //
+        frac_part = modf(x_vector[i], &int_part);
+        x_vector_as_int[2*i]        = (int16_t) int_part;
+        x_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+        //
+        frac_part = modf(z_vector[i], &int_part);
+        z_vector_as_int[2*i]        = (int16_t) int_part;
+        z_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+        //
+        frac_part = modf(dx_vector[i], &int_part);
+        dx_vector_as_int[2*i]        = (int16_t) int_part;
+        dx_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+    }
+    //
+    DataFlash_Class::instance()->Log_Write("CLF3",
+        "TimeUS,N,XVecAsI16,ZVecAsI16,DXVecAsI16,GrdI",
+        "s-mmm-",
+        "F0BBB0",
+        "QiaaaB",
+        AP_HAL::micros64(),
+        n_values,
+        x_vector_as_int,
+        z_vector_as_int,
+        dx_vector_as_int,
+        ((int8_t) grade_i)
+    );
+}
+ #endif // IS_VERBOSE_CLF_LOGGING
+
+ // END     OLD CODE
 #else // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
 //  specified by x_target_left <= x <= x_target_right
@@ -2007,18 +2411,30 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     for (i = 0; i < test_array2_len; i++) {
         test_array2[i] = i;
     }
+    #if 0
     int32_t test_array3[test_array3_len];
     for (i = 0; i < test_array3_len; i++) {
         test_array3[i] = i;
     }
+    #endif // 0
+    // NEW: log floats is int16_t with 4 post decimal digits
+    const int test_array4_len = 16;
+    float test_array4[] = {-1.5, -1, -0, +0,
+        1, 1.5, 3.1416, 3.9999999,
+        4.0, 12.34567, 32767.9999, 987.6543210,
+        1000000.12345678, 5e4, -987.6543210, 42.42
+    };
     //
     DataFlash_Class::instance()->Log_Write("CLF0",
-    "TimeUS,TstAr1,TstAr2,TstAr3,TstMsg",
+    "TimeUS,TstAr1,TstAr2,TstAr4,TstMsg",
     "s----",
     "F----",
     "QaaaN",
     AP_HAL::micros64(),
-    test_array1, test_array2, test_array3,"This is a test, this string is too long");
+    test_array1, test_array2, 
+    // test_array3,
+    test_array4,
+    "This is a test, this string is too long");
 }
 #endif // IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
 

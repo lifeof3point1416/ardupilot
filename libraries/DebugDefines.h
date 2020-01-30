@@ -64,7 +64,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_VERBOSE_CLF_LOGGING                      true        // log data actually used for GPD, tag "CLF2"
 #define IS_TEST_INT32_INT16_LOGGING                 true        // run a test logging int32[] as int16[]
 #define IS_VERBOSE_GPD_LOGGING                      true        // log GPD every time, not just once a second
-#define IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION      false       // as opposed to fixed integer arithmetic
+#define IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION      true        // as opposed to fixed integer arithmetic
 
 // concerning FFC itself
 #define IS_VERBOSE_THROTTLE_LOGGING_FFC             true
@@ -74,7 +74,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2020-01-30 15:12+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2020-01-30 15:17+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but not LAST_CODE_CHANGE
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>]

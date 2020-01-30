@@ -333,18 +333,20 @@ public:
     // logging functions
     inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
 #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
-#error TODO: implement this, adjust the following declarations
  #if IS_DO_CLF_DEBUGGING_LOGGING
     // log data under tag "CLF" for before function return, or intermediate
     void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
-        int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
+        float x_sum, float z_sum_i, int grade_i, float xx_diff_sum, float xz_diff_sum,
         AC_GroundProfileDerivator::DistanceDerivations derivations);
  #endif // IS_DO_CLF_DEBUGGING_LOGGING
  #if IS_VERBOSE_CLF_LOGGING
     // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
-    //  tag "CLF2"; note that if a filter is used, unfiltered values are logged, too
+    //  tag "CLF2" or "CLF3"; note that if a filter is used, unfiltered values are logged, too
     //  ==> two CLF2 logs with GrdI==0, first with unfiltered, second with filtered values
-    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
+    // "CLF2" for int arithmetic
+    // "CLF3" for float arithmetic, inherent conversion, example:
+    // <full> <fraction*10000> ==> [4.5 42.0 3.1416 0.12345] ==> [4 5000 42 0 3 1416 0 1235]
+    void log_consecutive_linear_fitting2(int n_values, float *x_vector, float *z_vector, float *dx_vector, int grade_i);
   #if IS_TEST_INT32_INT16_LOGGING
     // this will be used for log_consecutive_linear_fitting2
     void test_logging_int32ar_as_int16ar(void);
