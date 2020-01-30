@@ -64,6 +64,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_VERBOSE_CLF_LOGGING                      true        // log data actually used for GPD, tag "CLF2"
 #define IS_TEST_INT32_INT16_LOGGING                 true        // run a test logging int32[] as int16[]
 #define IS_VERBOSE_GPD_LOGGING                      true        // log GPD every time, not just once a second
+#define IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION      false       // as opposed to fixed integer arithmetic
 
 // concerning FFC itself
 #define IS_VERBOSE_THROTTLE_LOGGING_FFC             true

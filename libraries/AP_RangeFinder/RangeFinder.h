@@ -260,7 +260,7 @@ public:
         int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret);
     bool scan_point_unhealthy_fwd_rangefinder(int16_t fwd_rangefinder_dist_cm, Vector3f position_neu_cm);
 #endif // IS_LOG_GPA
-    bool log_ground_profile(void);              // TODO: prio 8: implement this
+    bool log_ground_profile(void);
     inline uint32_t get_ground_profile_map_seq_no(void) {
         return ground_profile_map_seq_no;
     }
@@ -308,8 +308,6 @@ public:
         ground_profile_acquisition = _ground_profile_acquisition;
     }
 
-    // TODO: prio 6: check weather float or int
-    // TODO: prio 6: check units. use s/th like micro meters for int arithmetics?
     #if 1
     struct DistanceDerivations {                    // the first three derivates of distance over time
         float first;                                // [cm/s]
@@ -330,6 +328,7 @@ public:
         ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO = 3,
         ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,   // no return state, only intermediate value!
     };
+// #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION   // TODO: prio 8: CONTINUE HERE
 #if IS_DO_CLF_DEBUGGING_LOGGING
     // log data under tag "CLF" for before function return, or intermediate
     void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
@@ -349,7 +348,6 @@ public:
     DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
-    // TODO: think about return value: int or float?
     //  internally use int, because it is faster
     DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);
     //DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);

@@ -1189,7 +1189,6 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
 bool AC_GroundProfileAcquisition::log_scan_point(uint64_t TimeUS, int16_t FwdRF, float PosX, float PosY, float PosZ,
     int32_t XP, int32_t YP, int32_t ZP, int16_t XF, int16_t ZF, bool IsValid, int Ret) {
     // dataflash tag "GPA" is already preoccupied by GPS-Auxilliary - use GPAQ instead
-    // TODO: prio 7: log ground_profile instead of sending it via gcs message
 
     // see https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_Logger/LogStructure.h#L6 for specifiers
     #if IS_LOG_EXTRA_XF_ZF_CONSTRAINT
@@ -1499,12 +1498,6 @@ int AC_GroundProfileAcquisition::scan_point(int16_t fwd_rangefinder_dist_cm, Vec
 // new style:
 bool AC_GroundProfileAcquisition::log_ground_profile(void) {
     uint16_t chunk_seq_no;
-    // int16_t map_chunk[GPA_MAP_LOG_CHUNK_SIZE];
-    // TODO: prio 8: double check map_chunk logging
-    //  are they persistent, as soon as Log_Write is called?
-    //  or do we need a lot of different map_chunk arrays until they are persisted?
-    // int i_map;
-    // uint8_t i_chunk, i_chunk_copy;
     uint8_t n_last_chunk_size;                                          // number of valid data of last chunk
     // use offsets cf. ISBD:
     //  &ground_profile[chunk_seq_no*GPA_MAP_LOG_CHUNK_SIZE]
@@ -2104,8 +2097,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     // heading_deviation = heading - ((int32_t) ground_profile_acquisition->get_main_direction());
     heading_deviation = abs( get_heading_diff_cd((int32_t) ground_profile_acquisition->get_main_direction(), 
         heading) );
-    // TODO: prio 8: check horizontal_speed_deviation_compensation_factor, conversion rad vs. deg!
-    // TODO: prio 8: check if heading-wraparound works (1°-359° ==> 2°)
  #if IS_DO_HSC_LOGGING
     float horiz_speed_orig = horiz_speed;
  #endif // IS_DO_HSC_LOGGING
@@ -2275,9 +2266,6 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
     derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, heading, is_log);
 
-    // // TODO: prio 8: log results,
-    // //  perhaps conditional logging (with defines) inside consecutive linear fitting function is necessary
-    // //  for logging with more detail
     // if (is_log) {
     //     log_profile_derivations(position_neu_cm, horiz_speed, derivations);
     // }
