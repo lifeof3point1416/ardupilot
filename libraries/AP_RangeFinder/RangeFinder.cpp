@@ -1851,64 +1851,6 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
             ((uint8_t) derivations.is_valid)                                // DOk      B           bool
         );
     }
-    
-    // OLD FROM HERE
-  #if 0
-    #if IS_VERBOSE_CLF_LOGGING
-    // for verbose clf logging: log every time (this spams log files)
-    if (abs(grade_i) > 127) {
-        grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
-    }
-
-    DataFlash_Class::instance()->Log_Write("CLF",
-        "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
-        "s---mm-??no?-",
-        "F0-0BB0--BBB-",
-        "QibBiibiifffB",
-        AP_HAL::micros64(),                                             // TimeUS   Q
-        n_values,                                                       // N        i
-        validity_status,                                                // Stat     b
-        ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
-        x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
-        z_sum_mult_i,                                                   // ZSumMI   i
-        ((int8_t) grade_i),                                             // GrdI     b
-        xx_diff_sum_mult,                                               // XXDSum   i
-        xz_diff_sum_mult,                                               // XZDSum   i
-        derivations.first,                                              // D1       f
-        derivations.second,                                             // D2       f
-        derivations.third,                                              // D3       f
-        ((uint8_t) derivations.is_valid)                                // DOk      B
-    );
-    #else // IS_VERBOSE_CLF_LOGGING
-    // for non-verbose clf logging: only log every 1/GPD2_LOGGING_FREQUENCY seconds
-    if (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0) {
-        // values should be [0 .. 3] anyways
-        if (abs(grade_i) > 127) {
-            grade_i = (grade_i < 0) ? INT8_MIN : INT8_MAX;
-        }
-
-        DataFlash_Class::instance()->Log_Write("CLF",
-            "TimeUS,N,Stat,MExp,XSumM,ZSumMI,GrdI,XXDSum,XZDSum,D1,D2,D3,DOk",
-            "s---mm-??no?-",
-            "F0-0BB0--BBB-",
-            "QibBiibfffffB",
-            AP_HAL::micros64(),                                             // TimeUS   Q
-            n_values,                                                       // N        i
-            validity_status,                                                // Stat     b
-            ((uint8_t) GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT),    // MExp     B
-            x_sum<<GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT,         // XSumM    i
-            z_sum_mult_i,                                                   // ZSumMI   i
-            ((int8_t) grade_i),                                             // GrdI     b
-            xx_diff_sum_f,                                                  // XXDSum   f
-            xz_diff_sum_f,                                                  // XZDSum   f
-            derivations.first,                                              // D1       f
-            derivations.second,                                             // D2       f
-            derivations.third,                                              // D3       f
-            ((uint8_t) derivations.is_valid)                                // DOk      B
-        );
-    }
-    #endif // IS_VERBOSE_CLF_LOGGING
-  #endif // 0
 }
  #endif // IS_DO_CLF_DEBUGGING_LOGGING
 
