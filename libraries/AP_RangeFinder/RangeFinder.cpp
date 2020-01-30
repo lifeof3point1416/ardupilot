@@ -1553,8 +1553,10 @@ AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition
     set_ground_profile(_ground_profile_acquisition);
 #if IS_TEST_INT32_INT16_LOGGING
     // test twice for checking, if the arrays (which are too long for the log function) overwrite the second log
+    printf("executing test_logging_int32ar_as_int16ar()\n");
     test_logging_int32ar_as_int16ar();
     test_logging_int32ar_as_int16ar();
+    printf("executing test_logging_int32ar_as_int16ar() was successful\n");
 #endif // IS_TEST_INT32_INT16_LOGGING
 }
 
@@ -1617,6 +1619,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     //  at the same time calculate sums for x and z, which are used for mean values later
     x_sum = 0;
     z_sum = 0;
+    #if IS_VERBOSE_DEBUG_GPD && 1
+    printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD && 1
 
     // for this loop, n_values counts up, ie. it is the index variable of valid data (ie. i)
  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
@@ -1639,11 +1644,18 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                             // only inc this, if there has been a new valid value
         }
     }
+    #if IS_VERBOSE_DEBUG_GPD && 1
+    printf("RF line %d ok.\n", __LINE__);                           // last ok
+    #endif // IS_VERBOSE_DEBUG_GPD && 1
 
     // log unfiltered values
   #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_raw, dx_vector, grade);
   #endif // IS_VERBOSE_CLF_LOGGING
+
+    #if IS_VERBOSE_DEBUG_GPD && 1
+    printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD && 1
 
     // filter valid z values
     z_filt_sum = 0;
@@ -1694,6 +1706,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+ #if IS_VERBOSE_DEBUG_GPD && 1
+    printf("RF line %d ok.\n", __LINE__);                           // not ok!!!
+ #endif // IS_VERBOSE_DEBUG_GPD && 1
 // log filtered values
  #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
@@ -1870,23 +1885,33 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(int n_values,
         "GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE+1 must be 16 or smaller, to be logged with int16[32] (formatter 'a')\
         use a smaller derivation window or different logging, if this condition is violated");
     // convert float vectors[16] into int16_t[32] vectors
+    const double frac_factor = 1e4;                         // 10^N for max{N for all 10^N < INT16_MAX == 32767}
+    const int float_array_size = 16;
     int16_t x_vector_as_int[32], z_vector_as_int[32], dx_vector_as_int[32];
     int i;
-    for (i = 0; i < 16; i++) {
+    for (i = 0; (i < n_values) && (i < float_array_size); i++) {
         double int_part, frac_part;                         // modf seems to be implemented only for double
-        const double frac_factor = 1e4;                     // 10^N for max{N for all 10^N < INT16_MAX == 32767}
         //
+        #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+        #endif // IS_VERBOSE_DEBUG_GPD && 1
+        
         frac_part = modf(x_vector[i], &int_part);
+        
+        #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+        #endif // IS_VERBOSE_DEBUG_GPD && 1
+        
         x_vector_as_int[2*i]        = (int16_t) int_part;
-        x_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+        x_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
         //
         frac_part = modf(z_vector[i], &int_part);
         z_vector_as_int[2*i]        = (int16_t) int_part;
-        z_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+        z_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
         //
         frac_part = modf(dx_vector[i], &int_part);
         dx_vector_as_int[2*i]        = (int16_t) int_part;
-        dx_vector_as_int[2*i + 1]    = (int16_t) (frac_part * frac_factor);
+        dx_vector_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
     }
     //
     DataFlash_Class::instance()->Log_Write("CLF3",
@@ -2347,7 +2372,8 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     // this has been calculated by convert_int16_int32_arrays.py
     // works as of 2020-01-06 17:54+01:00 :)
     //
-    const int test_array2_len = 19, test_array3_len = 19;
+    const int test_array2_len = 19;
+    // const int test_array3_len = 19;
     int i;
     int32_t test_array2[test_array2_len];
     for (i = 0; i < test_array2_len; i++) {
@@ -2359,13 +2385,29 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
         test_array3[i] = i;
     }
     #endif // 0
-    // NEW: log floats is int16_t with 4 post decimal digits
+    // log floats is int16_t with 4 post decimal digits
     const int test_array4_len = 16;
     float test_array4[] = {-1.5, -1, -0, +0,
         1, 1.5, 3.1416, 3.9999999,
         4.0, 12.34567, 32767.9999, 987.6543210,
         1000000.12345678, 5e4, -987.6543210, 42.42
     };
+    // convert float[16] vector into int16_t[32] vector
+    const double frac_factor = 1e4;                     // 10^N for max{N for all 10^N < INT16_MAX == 32767}
+    int16_t test_array4_as_int[32];
+    #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD && 1
+    for (i = 0; i < test_array4_len; i++) {
+        double int_part, frac_part;                         // modf seems to be implemented only for double
+        //
+        frac_part = modf(test_array4[i], &int_part);
+        test_array4_as_int[2*i]        = (int16_t) int_part;
+        test_array4_as_int[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
+    }
+    #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD && 1
     //
     DataFlash_Class::instance()->Log_Write("CLF0",
     "TimeUS,TstAr1,TstAr2,TstAr4,TstMsg",
@@ -2373,9 +2415,10 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     "F----",
     "QaaaN",
     AP_HAL::micros64(),
-    test_array1, test_array2, 
+    test_array1,
+    test_array2, 
     // test_array3,
-    test_array4,
+    test_array4_as_int,
     "This is a test, this string is too long");
 }
 #endif // IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
@@ -2451,7 +2494,13 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     // TODO: prio 7: check distance from main_direction axis (check y_p)
 
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+    #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD   
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
+    #if IS_VERBOSE_DEBUG_GPD && 1
+        printf("RF line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD   
 
     // compensate deviation from main_direction in horiz_speed!
 #if IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
@@ -2606,7 +2655,7 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
     int32_t heading, bool is_log) {
 
     #if IS_VERBOSE_DEBUG_GPD
-     #if 0              // disable if done
+     #if 01              // disable if done
         printf("!");    // on x-term
      #endif // 1
     #endif // IS_VERBOSE_DEBUG_GPD
@@ -2619,15 +2668,21 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
         _micros = AP_HAL::micros();
         sec_full = _micros / 1000000;
         sec_part_micros = _micros % 1000000;
-        hal.console->printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
-        printf("GPDTester: about to call log_ground_profile() at %d.%06d \n", sec_full, sec_part_micros);
+        hal.console->printf("GPDTester: about to call log_ground_profile() at %d.%06d sec \n", sec_full, sec_part_micros);
+        printf("GPDTester: about to call log_ground_profile() at %d.%06d sec \n", sec_full, sec_part_micros);
         #endif // IS_VERBOSE_DEBUG_GPD
     }
 
     // run gpd
     AC_GroundProfileDerivator::DistanceDerivations derivations{
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
+    #if IS_VERBOSE_DEBUG_GPD
+        printf("A");
+    #endif // IS_VERBOSE_DEBUG_GPD   
     derivations = ground_profile_derivator->get_profile_derivations(position_neu_cm, horiz_speed, heading, is_log);
+    #if IS_VERBOSE_DEBUG_GPD
+        printf("B");
+    #endif // IS_VERBOSE_DEBUG_GPD   
 
     // if (is_log) {
     //     log_profile_derivations(position_neu_cm, horiz_speed, derivations);

@@ -64,11 +64,15 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     copter.is_started_ground_profile_acquisition = false;      // force restart after fresh switch to MEASUREMENT
     
     // init GPD
+    #if IS_VERBOSE_DEBUG_GPD
+    printf("MEAS line %d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_GPD
     copter.ground_profile_derivator = new AC_GroundProfileDerivator(copter.ground_profile_acquisition);
     if (copter.ground_profile_derivator == nullptr) {
         AP_HAL::panic("Unable to allocate GroundProfileDerivator");
     }
     #if IS_VERBOSE_DEBUG_GPD
+    printf("MEAS line %d ok.\n", __LINE__);
     if (copter.ground_profile_derivator == nullptr) {
         hal.console->printf("init copter.ground_profile_derivator didn't work!!!\n");
     } else {
@@ -84,11 +88,13 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     }
 
      #if IS_VERBOSE_DEBUG_GPD
+    printf("MEAS line %d ok.\n", __LINE__);
     if (copter.ground_profile_derivator_tester == nullptr) {
         hal.console->printf("init copter.ground_profile_derivator_tester didn't work!!!\n");
     } else {
         hal.console->printf("init copter.ground_profile_derivator_tester ok.\n");   // ok
     }
+    printf("MEAS line %d ok.\n", __LINE__);
      #endif // IS_VERBOSE_DEBUG_GPD
     #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
 
@@ -376,7 +382,7 @@ void Copter::ModeMeasurement::loiterlike_run()
      #endif
 
      #if IS_VERBOSE_DEBUG_GPD
-            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // not ok!!!
+            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
      #endif // IS_VERBOSE_DEBUG_GPD   
         
         float horiz_speed;
@@ -387,8 +393,16 @@ void Copter::ModeMeasurement::loiterlike_run()
             horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
             heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
         #endif // IS_REVERSE_GPA_MAIN_DIRECTION
+        
+        #if IS_VERBOSE_DEBUG_GPD
+            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_GPD   
         is_GPDTester_return_valid = copter.ground_profile_derivator_tester->test_using_gpa(
             inertial_nav.get_position(), horiz_speed, heading, is_log_GPDTester);
+        #if IS_VERBOSE_DEBUG_GPD
+            printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ???
+        #endif // IS_VERBOSE_DEBUG_GPD   
+
      #if 0  // temporary debug
         printf("%d", is_GPDTester_return_valid);
      #else
