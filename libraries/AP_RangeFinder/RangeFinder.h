@@ -308,19 +308,12 @@ public:
         ground_profile_acquisition = _ground_profile_acquisition;
     }
 
-    #if 1
     struct DistanceDerivations {                    // the first three derivates of distance over time
         float first;                                // [cm/s]
         float second;                               // [cm/s/s]
         float third;                                // [cm/s/s/s]
         bool is_valid;                              // was it possible to calculate the derivations
     };
-    #else
-    struct DistanceDerivations {
-        float derivation_vector[3];
-        bool is_valid;
-    };
-    #endif 
     enum ConsecutiveLinearFittingReturnState {
         ConsecutiveLinearFittingReturnState_VALID_RESULT = 0,   // got a valid result; deviations.is_valid == true
         ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO = 1,
@@ -328,32 +321,53 @@ public:
         ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO = 3,
         ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,   // no return state, only intermediate value!
     };
-// #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION   // TODO: prio 8: CONTINUE HERE
-#if IS_DO_CLF_DEBUGGING_LOGGING
-    // log data under tag "CLF" for before function return, or intermediate
-    void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
-        int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
-        AC_GroundProfileDerivator::DistanceDerivations derivations);
-#endif // IS_DO_CLF_DEBUGGING_LOGGING
-#if IS_VERBOSE_CLF_LOGGING
-    // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
-    //  tag "CLF2"; note that if a filter is used, unfiltered values are logged, too
-    //  ==> two CLF2 logs with GrdI==0, first with unfiltered, second with filtered values
-    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
- #if IS_TEST_INT32_INT16_LOGGING
-    // this will be used for log_consecutive_linear_fitting2
-    void test_logging_int32ar_as_int16ar(void);
- #endif // IS_TEST_INT32_INT16_LOGGING
-#endif // IS_VERBOSE_CLF_LOGGING
+
     DistanceDerivations get_consecutive_linear_fitting(int x_target_left, int x_target_right);
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     //  internally use int, because it is faster
     DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log);
     //DistanceDerivations get_profile_derivations(Vector3f position_neu_cm, float horiz_speed, bool is_log);
-    inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
     int32_t get_opposite_heading_cd(int32_t heading_cd);
     int32_t get_heading_diff_cd(int32_t heading1, int32_t heading2);
+    // logging functions
+    inline bool log_ground_profile(void) {return ground_profile_acquisition->log_ground_profile();}
+#if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
+#error TODO: implement this, adjust the following declarations
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+    // log data under tag "CLF" for before function return, or intermediate
+    void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
+        int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
+        AC_GroundProfileDerivator::DistanceDerivations derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+ #if IS_VERBOSE_CLF_LOGGING
+    // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
+    //  tag "CLF2"; note that if a filter is used, unfiltered values are logged, too
+    //  ==> two CLF2 logs with GrdI==0, first with unfiltered, second with filtered values
+    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
+  #if IS_TEST_INT32_INT16_LOGGING
+    // this will be used for log_consecutive_linear_fitting2
+    void test_logging_int32ar_as_int16ar(void);
+  #endif // IS_TEST_INT32_INT16_LOGGING
+ #endif // IS_VERBOSE_CLF_LOGGING
+#else // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
+ #if IS_DO_CLF_DEBUGGING_LOGGING
+    // log data under tag "CLF" for before function return, or intermediate
+    void log_consecutive_linear_fitting(int n_values, int8_t validity_status,
+        int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
+        AC_GroundProfileDerivator::DistanceDerivations derivations);
+ #endif // IS_DO_CLF_DEBUGGING_LOGGING
+ #if IS_VERBOSE_CLF_LOGGING
+    // log the data which will actually be used to calculate the derivations (where invalid data had been removed)
+    //  tag "CLF2"; note that if a filter is used, unfiltered values are logged, too
+    //  ==> two CLF2 logs with GrdI==0, first with unfiltered, second with filtered values
+    void log_consecutive_linear_fitting2(int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i);
+  #if IS_TEST_INT32_INT16_LOGGING
+    // this will be used for log_consecutive_linear_fitting2
+    void test_logging_int32ar_as_int16ar(void);
+  #endif // IS_TEST_INT32_INT16_LOGGING
+ #endif // IS_VERBOSE_CLF_LOGGING
+#endif // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 #if IS_DO_HSC_LOGGING
     void log_horizontal_speed_compensation(int32_t heading, int32_t main_direction, int32_t heading_deviation,
         float horizontal_speed_compensation_factor, float horiz_speed_before, float horiz_speed_after);
