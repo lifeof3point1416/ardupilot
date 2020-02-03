@@ -70,7 +70,6 @@ enum AltCtrlMode : uint8_t {
 #define ALT_CTRL_MODE_NAME_EXTENDED_PID             "EXTENDED_PID"
 #define ALT_CTRL_MODE_NAME_FFC                      "FFC"
 
-// define enum-mocks
 #define GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING    1
 #define GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING 2
 
@@ -119,6 +118,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION  true        // check for validity in get_deviations
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
 #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+// #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
 #define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
 #define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
@@ -236,9 +236,9 @@ static_assert( (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SIN
     (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING),
     "Unknown value for GROUND_PROFILE_DERIVATOR_FITTING" );
 
-#if (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING)
-#error GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING is not implemented yet
-#endif
+// #if (GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING)
+// #error GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING is not implemented yet
+// #endif
 
 static_assert(GPA_MAP_LOG_CHUNK_SIZE == 32, "GPA map chunk sizes must be 32, in order to match logging formatter 'a'");
 

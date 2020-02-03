@@ -1560,7 +1560,8 @@ AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition
 #endif // IS_TEST_INT32_INT16_LOGGING
 }
 
-#if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
+#if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+ #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 //  #error TODO: implement float arithmetic functions
  // BEGIN   OLD CODE
  // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
@@ -1591,11 +1592,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     float xx_diff_sum = 0;                      // sum for all i of {(x_i - mean{x})^2}
     float z;
 
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     float z_raw;                                // raw data from GPA
     float z_filt;                               // filtered
     float z_filt_sum;                           // for calculating filtered values, using Central Simple Moving Average
- #endif
+  #endif
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
         derivation_vector[i] = 0;
@@ -1607,9 +1608,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     
     float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
     float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains (grade-1)-th derivation of valid z values over x values
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     float z_vector_raw[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE]; // as z_vector, but unfiltered
- #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     float x_int_last;                                               // int equivalent of x_vector[i-1], when read
     float z_last;                                                   // equivalent of z_vector[i-1], when read
     float dx_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];    // contains diff{x}
@@ -1620,7 +1621,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     x_sum = 0;
     z_sum = 0;
     // for this loop, n_values counts up, ie. it is the index variable of valid data (ie. i)
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // only extract raw z values for filtering afterwards
     for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
         // indices must have been checked before
@@ -1642,9 +1643,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     }
 
     // log unfiltered values
-  #if IS_VERBOSE_CLF_LOGGING
+   #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_raw, dx_vector, grade);
-  #endif // IS_VERBOSE_CLF_LOGGING
+   #endif // IS_VERBOSE_CLF_LOGGING
 
     // filter valid z values
     z_filt_sum = 0;
@@ -1675,7 +1676,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
     // else: leave unfiltered, not enough values for filtering!
- #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
         // indices must have been checked before
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
@@ -1694,16 +1695,16 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;   
         }
     }
- #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
 // log filtered values
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
- #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // IS_VERBOSE_CLF_LOGGING
 
- #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
         x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
 
     // loop through 1st to 3rd grade of derivation
     for (grade = 1; grade <= 3; grade++) {
@@ -1715,10 +1716,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // TODO: prio 6: discard all derivations, even valid ones of lower order?
             //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
             //  if we decide to do this, we will need to describe this specific behavior
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO, 
                 x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
         x_mean = x_sum / n_values;
@@ -1739,10 +1740,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         // need minimum 2 valid values for calculating derivations!
         // TODO: prio 6: we could do this check immediately after n_values == 0 check, or is there something to it, putting it here?
         if (n_values < 2) {
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO, 
                 x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
         // avoid zero-division
@@ -1750,11 +1751,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // this should not occur with more than 2 values
             printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
             printf("!!! xx_diff_sum_mult == 0 !!!\nThis should not occur with more than 2 values.\n");
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, 
                 (int8_t) ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO, 
                 x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
 
@@ -1786,11 +1787,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values--;                             // we have 1 value pair less than before, because diff'ing consumed it
         }
 
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
         log_consecutive_linear_fitting2(n_values, x_vector, z_vector, dx_vector, grade);
- #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // IS_VERBOSE_CLF_LOGGING
 
- #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
         // waste derivation_vector[0] for the sake of clarity
         derivations.first =     derivation_vector[1];
         derivations.second =    derivation_vector[2];
@@ -1798,7 +1799,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         derivations.is_valid =  false;
         log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
             x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     }   // end of loop through 1st to 3rd grade of derivation
 
     // waste derivation_vector[0] for the sake of clarity
@@ -1806,26 +1807,26 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     derivations.second =    derivation_vector[2];
     derivations.third =     derivation_vector[3];
     derivations.is_valid =  true;
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_VALID_RESULT, 
         x_sum, z_sum, grade, xx_diff_sum, xz_diff_sum, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
     return derivations;
 }
 
 
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int8_t validity_status,
         float x_sum, float z_sum_i, int grade_i, float xx_diff_sum, float xz_diff_sum,
         AC_GroundProfileDerivator::DistanceDerivations derivations) 
 {
     if (
-  #if IS_VERBOSE_CLF_LOGGING
+   #if IS_VERBOSE_CLF_LOGGING
         true
-  #else // IS_VERBOSE_CLF_LOGGING
+   #else // IS_VERBOSE_CLF_LOGGING
         // for non-verbose clf logging: only log with GPD2_LOGGING_FREQUENCY 
         (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0)
-  #endif // IS_VERBOSE_CLF_LOGGING
+   #endif // IS_VERBOSE_CLF_LOGGING
     ) {
         // constrain grade_i, its values should be [0 .. 3] anyways
         if (abs(grade_i) > 127) {
@@ -1853,9 +1854,9 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
         );
     }
 }
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
 
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(int n_values, 
     float *x_vector, float *z_vector, float *dx_vector, int grade_i)
 {
@@ -1906,10 +1907,9 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(int n_values,
         ((int8_t) grade_i)
     );
 }
- #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // IS_VERBOSE_CLF_LOGGING
 
- // END     OLD CODE
-#else // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
+ #else // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
 //  specified by x_target_left <= x <= x_target_right
 //  these two arguments must be checked before, if they are within the valid range of ground_profile!
@@ -1944,11 +1944,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     // int i_same_first = -1, i_same = -1;         // pointing to consecutive equal z's; init with invalid values
     // int dzdx_same_mult = 0;                     // for to consecutive equal z's
 
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int z_mult_raw;                             // raw data from GPA
     int z_mult_filt;                            // filtered
     int z_mult_filt_sum;                        // for calculating filtered values, using Central Simple Moving Average
- #endif
+  #endif
     float derivation_vector[4];                 // index 0: not used, index 1: first derivation with respect to x (distance!) etc
     for (i = 0; i < 4; i++) {
         derivation_vector[i] = 0;
@@ -1960,9 +1960,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     
     int x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];       // contains x values of the corresponding valid z values
     int z_vector_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];  // contains (grade-1)-th derivation of valid z values over x values, multiplied by a factor
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int z_vector_mult_raw[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];  // as z_vector_mult, but unfiltered
- #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     int x_last;                                             // equivalent of x_vector[i-1], when read
     int z_last_mult;                                        // equivalent of z_vector_mult[i-1], when read
     int dx_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];      // contains diff{x}
@@ -1974,7 +1974,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     z_sum_mult = 0;
 
     // for this loop, n_values counts up, ie it is the index variable of valid data (ie i)
- #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     // only extract raw z values for filtering afterwards
     for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
         // indices must have been checked before
@@ -1997,9 +1997,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     }
 
     // log unfiltered values
-  #if IS_VERBOSE_CLF_LOGGING
+   #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult_raw, dx_vector, grade);
-  #endif // IS_VERBOSE_CLF_LOGGING
+   #endif // IS_VERBOSE_CLF_LOGGING
 
     // filter valid z values
     z_mult_filt_sum = 0;
@@ -2030,7 +2030,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         }
     }
     // else: leave unfiltered, not enough values for filtering!
- #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     for (x = x_target_left, n_values = 0; x <= x_target_right; x++) {
         // indices must have been checked before
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x)) {
@@ -2050,16 +2050,16 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values++;                                     // only inc this, if there has been a new valid value
         }
     }
- #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
 // log filtered values
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
     log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
- #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // IS_VERBOSE_CLF_LOGGING
 
- #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
         x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
 
     // loop through 1st to 3rd grade of derivation
     for (grade = 1; grade <= 3; grade++) {
@@ -2071,10 +2071,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // TODO: prio 6: discard all derivations, even valid ones of lower order?
             //  higher ones will be interpreted as 0 (default value) and will not harm in the FFC
             //  if we decide to do this, we will need to describe this specific behavior
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO, 
                 x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
 
@@ -2096,10 +2096,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         // need minimum 2 valid values for calculating derivations!
         // TODO: prio 6: we could do this check immediately after n_values == 0 check, or is there something to it, putting it here?
         if (n_values < 2) {
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO, 
                 x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
         // avoid zero-division
@@ -2107,11 +2107,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             // this should not occur with more than 2 values
             printf("!!! in Ground Profile Derivator's Consecutive Linear Fitting:\n");
             printf("!!! xx_diff_sum_mult == 0 !!!\nThis should not occur with more than 2 values.\n");
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
             log_consecutive_linear_fitting(n_values, 
                 (int8_t) ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO, 
                 x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
             return derivations;
         }
 
@@ -2178,11 +2178,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
             n_values--;                                     // we have 1 value pair less than before, because diff'ing consumed it
         }
 
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
         log_consecutive_linear_fitting2(n_values, x_vector, z_vector_mult, dx_vector, grade);
- #endif // IS_VERBOSE_CLF_LOGGING
+  #endif // IS_VERBOSE_CLF_LOGGING
 
- #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
         // waste derivation_vector[0] for the sake of clarity
         derivations.first =     derivation_vector[1];
         derivations.second =    derivation_vector[2];
@@ -2190,7 +2190,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
         derivations.is_valid =  false;
         log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_NOT_DONE_YET, 
             x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_INTERMEDIATE_CLF_LOGGING && IS_DO_CLF_DEBUGGING_LOGGING
     }
 
     // waste derivation_vector[0] for the sake of clarity
@@ -2198,26 +2198,26 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_co
     derivations.second =    derivation_vector[2];
     derivations.third =     derivation_vector[3];
     derivations.is_valid =  true;
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
     log_consecutive_linear_fitting(n_values, (int8_t) ConsecutiveLinearFittingReturnState_VALID_RESULT, 
         x_sum, z_sum_mult, grade, xx_diff_sum_mult, xz_diff_sum_mult, derivations);
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
     return derivations;
 }
 
 
- #if IS_DO_CLF_DEBUGGING_LOGGING
+  #if IS_DO_CLF_DEBUGGING_LOGGING
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int8_t validity_status,
         int x_sum, int z_sum_mult_i, int grade_i, int xx_diff_sum_mult, int xz_diff_sum_mult,
         AC_GroundProfileDerivator::DistanceDerivations derivations) {
 
     if (
-  #if IS_VERBOSE_CLF_LOGGING
+   #if IS_VERBOSE_CLF_LOGGING
         true
-  #else // IS_VERBOSE_CLF_LOGGING
+   #else // IS_VERBOSE_CLF_LOGGING
         // for non-verbose clf logging: only log with GPD2_LOGGING_FREQUENCY 
         (call_gpd2_log_counter % (CALL_FREQUENCY_MEASUREMENT_RUN / GPD2_LOGGING_FREQUENCY) == 0)
-  #endif // IS_VERBOSE_CLF_LOGGING
+   #endif // IS_VERBOSE_CLF_LOGGING
     ) {
         // constrain grade_i, its values should be [0 .. 3] anyways
         if (abs(grade_i) > 127) {
@@ -2247,7 +2247,7 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
     }
     
     // OLD FROM HERE
-  #if 0
+   #if 0
     #if IS_VERBOSE_CLF_LOGGING
     // for verbose clf logging: log every time (this spams log files)
     if (abs(grade_i) > 127) {
@@ -2302,11 +2302,11 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting(int n_values, int
         );
     }
     #endif // IS_VERBOSE_CLF_LOGGING
-  #endif // 0
+   #endif // 0
 }
- #endif // IS_DO_CLF_DEBUGGING_LOGGING
+  #endif // IS_DO_CLF_DEBUGGING_LOGGING
 
- #if IS_VERBOSE_CLF_LOGGING
+  #if IS_VERBOSE_CLF_LOGGING
 void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
         int n_values, int *x_vector, int *z_vector_mult, int *dx_vector, int grade_i) {
     // constrain grade_i; values should be [0 .. 3] anyways
@@ -2335,10 +2335,10 @@ void AC_GroundProfileDerivator::log_consecutive_linear_fitting2(
         ((int8_t) grade_i)
     );
 }
- #endif // IS_VERBOSE_CLF_LOGGING
-#endif // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
+  #endif // IS_VERBOSE_CLF_LOGGING
+ #endif // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 
-#if IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
+ #if IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
 void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     int32_t test_array1[] = {-1, 0, 1, 2, 
         3, 10, 32767, 32768,
@@ -2400,7 +2400,19 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
     test_array4_as_int,
     "This is a test, this string is too long");
 }
-#endif // IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
+ #endif // IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
+#elif     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
+AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_single_polynome_fitting(
+    int x_target_left, int x_target_right)
+{
+    
+}
+#error NOT IMPLEMENTED YET
+
+// TODO: prio 7: log SPF
+#else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+    #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
+#endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 
 // determines the first three derivations of the absolute altitude (ground_profile) with regard to time
 // position_neu_cm: absolute position with regard to starting point [cm] in NEU system
@@ -2472,11 +2484,17 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     x_target_right = MIN(x_target_right, GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE-1);
     // TODO: prio 7: check distance from main_direction axis (check y_p)
 
-#if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #if IS_VERBOSE_DEBUG_GPD && 0
         printf("RF line %d ok.\n", __LINE__);
     #endif // IS_VERBOSE_DEBUG_GPD   
-    derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);
+#if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+    derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);    
+#elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
+    derivations = get_single_polynome_fitting(x_target_left, x_target_right);
+#else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+    #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
+#endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+
     #if IS_VERBOSE_DEBUG_GPD && 0
         printf("RF line %d ok.\n", __LINE__);
     #endif // IS_VERBOSE_DEBUG_GPD   
@@ -2505,13 +2523,6 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
     derivations.first *= horiz_speed;                                       // changes unit [cm/cm]         to [cm/s]
     derivations.second *= horiz_speed * horiz_speed;                        // changes unit [cm/cm/cm]      to [cm/s/s]
     derivations.third *= horiz_speed * horiz_speed * horiz_speed;           // changes unit [cm/cm/cm/cm]   to [cm/s/s/s]
-#elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
-    // TODO: prio 5:
-    // implement single polynome fitting
-    #error Not implemented yet
-#else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
-    #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
-#endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 
 #if (!IS_DO_GPD2_DEBUGGING_LOGGING)
     int16_t z_pf;                               // current absolute altitude from GPA
