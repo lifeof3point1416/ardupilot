@@ -117,15 +117,19 @@ enum AltCtrlMode : uint8_t {
 #define GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE        3
 #define IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION  true        // check for validity in get_deviations
 #define GROUND_PROFILE_DERIVATOR_DX_APPROX                  10          // step size for derivations [cm]
-#define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
-// #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
-#define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
+// #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
+#define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
 #define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
 #define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
 #define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
-#define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation
-#define CLF_LOGGING_FREQUENCY                               400         // [Hz]
 #define IS_DO_HSC_LOGGING                                   true
+// for CLF
+#define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
+#define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation
+// #define CLF_LOGGING_FREQUENCY                               400         // [Hz]
+// for SPF
+#define LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE           (1.0e-10f)  // values with an abs below this are considered 0
+#define IS_DO_SPF_DEBUGGING_LOGGING                         true        // for Single Polynome FItting Derivation
 
 // actual parameter definitions
 
@@ -146,8 +150,8 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_XPID_DEBUGGING_LOGGING                false   // do logging for all PIDs, especially useful for Extended PID, very verbose!
 // #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
 #define IS_DO_XPI2_DEBUGGING_LOGGING                true    // verbose additional info to XPID
-#define EXTENDED_PID_ZERO_EPSILON                   (1e-6)
-#define EXTENDED_PID_MAX_PROJECTION_FACTOR           (5.0f)       // don't extrapolate more than this
+#define EXTENDED_PID_ZERO_EPSILON                   (1e-6f)
+#define EXTENDED_PID_MAX_PROJECTION_FACTOR          (5.0f)       // don't extrapolate more than this
 
 //
 ///////////////////////////////////////////////////////////////////////////////

@@ -308,18 +308,28 @@ public:
         ground_profile_acquisition = _ground_profile_acquisition;
     }
 
-    struct DistanceDerivations {                    // the first three derivates of distance over time
-        float first;                                // [cm/s]
-        float second;                               // [cm/s/s]
-        float third;                                // [cm/s/s/s]
+    // the first three derivates of distance over space or time, depending on context
+    struct DistanceDerivations {                    
+        float first;                                // [cm/cm]          or [cm/s]
+        float second;                               // [cm/cm/cm]       or [cm/s/s]
+        float third;                                // [cm/cm/cm/cm]    or [cm/s/s/s]
         bool is_valid;                              // was it possible to calculate the derivations
     };
+
+    // return states for CLF and SPF, respectively
     enum ConsecutiveLinearFittingReturnState {
-        ConsecutiveLinearFittingReturnState_VALID_RESULT = 0,   // got a valid result; deviations.is_valid == true
+        ConsecutiveLinearFittingReturnState_VALID_RESULT = 0,       // got a valid result; deviations.is_valid == true
         ConsecutiveLinearFittingReturnState_N_VALUES_EQ_ZERO = 1,
         ConsecutiveLinearFittingReturnState_N_VALUES_LT_TWO = 2,
         ConsecutiveLinearFittingReturnState_XX_DIFF_SUM_EQ_ZERO = 3,
-        ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,   // no return state, only intermediate value!
+        ConsecutiveLinearFittingReturnState_NOT_DONE_YET = 10,      // no return state, only intermediate value!
+    };
+    enum SinglePolynomeFittingReturnState {
+        SinglePolynomeFittingReturnState_NOT_IMPLEMENTED_YET = -1,  // not impl
+        SinglePolynomeFittingReturnState_VALID_RESULT = 0,          // deviations.is_valid == true
+        // ...
+        SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO = 4,
+        SinglePolynomeFittingReturnState_NOT_DONE_YET = 10,         // no return state, only intermediate value!
     };
 
     // get first 3 derivations of ground profile at position_neu_cm
@@ -373,7 +383,11 @@ public:
   #endif // IS_VERBOSE_CLF_LOGGING
  #endif // IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
 #elif     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
-    DistanceDerivations get_single_polynome_fitting(int x_target_left, int x_target_right);
+    DistanceDerivations get_single_polynome_fitting(int x_target_left, int x_target_right, int x_p);
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+    void log_single_polynome_fitting(int x_p, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
+        AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING

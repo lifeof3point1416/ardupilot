@@ -1562,12 +1562,10 @@ AC_GroundProfileDerivator::AC_GroundProfileDerivator(AC_GroundProfileAcquisition
 
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
  #if IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION
-//  #error TODO: implement float arithmetic functions
- // BEGIN   OLD CODE
- // calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
+// calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window, which is 
 //  specified by x_target_left <= x <= x_target_right
 //  these two arguments must be checked before, if they are within the valid range of ground_profile!
-//  this function uses the consecutive linear fitting method
+//  this function uses the Consecutive Linear Fitting (CLF) method
 AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_consecutive_linear_fitting(
     int x_target_left, int x_target_right) 
 {
@@ -2402,12 +2400,246 @@ void AC_GroundProfileDerivator::test_logging_int32ar_as_int16ar(void) {
 }
  #endif // IS_VERBOSE_CLF_LOGGING && IS_TEST_INT32_INT16_LOGGING
 #elif     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
+
+// calculates the first three derivations of AC_GroundProfileDerivator::ground_profile withing the derivation window
+//  at x = x_p. Derivation window is specified by x_target_left <= x <= x_target_right.
+//  These two arguments must be checked before, if they are within the valid range of ground_profile!
+//  This function uses the Single Polynome Fitting (SPF) method
 AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_single_polynome_fitting(
-    int x_target_left, int x_target_right)
+    int x_target_left, int x_target_right, int x_p)
 {
-    
+    // idea is to fit a cubic line into ground profile section, given by x_target_left and x_target_right
+    //  using the coefficients of this cubic line, we determine the first three derivates of ground profile
+    //  by its horizontal position (dz/dx)
+    // cubic line fitting is based on minimizing the least square error and solving a resulting 
+    //  linear equation system (LES) with a custom Gauss'ian Elimination algorithm
+
+    // in this context: derivate of altitude over ground by horizontal distance dz/dx
+    DistanceDerivations derivations;
+    derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.second = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.third = DERIVATIONS_NO_DATA_INIT_VALUE;
+    derivations.is_valid = false;
+
+    //// cubic line fitting
+
+    // find coefficients for the following cubic function: 
+    // f_cubic(x) = z = a + b*x + c*x^2 + d*x^3
+
+    /// find sums of powers of x_i and z_i, also
+    /// get x_vector, z_vector of valid value pairs within derivation window
+
+    // sum{all i, x_i}; sum{all i, x_i^2}; ...
+    float sum_xi=0, sum_xip2=0, sum_xip3=0, sum_xip4=0, sum_xip5=0, sum_xip6=0;
+    // sum{all i, z_i}; sum{all i, x_i*z_i}; sum{all i, x_i^2*z_i}; sum{all i, x_i^3*z_i}
+    float sum_zi=0, sum_xizi=0, sum_xip2zi=0, sum_xip3zi=0;
+    //
+    float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
+    float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
+    float x_i, z_i, temp_x;
+    int n_values = 0;                                               // number of values
+    int i, x_int;
+
+    // iterate through derivation window
+    for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x_int)) {
+            x_i = (float) x_int;
+            z_i = (float) ground_profile_acquisition->get_ground_profile_datum(x_int);
+            // build up sums
+            temp_x = x_i;                                           // x^1
+            sum_xi += temp_x;
+            sum_zi += z_i;
+            sum_xizi += temp_x*z_i;
+            temp_x *= x_i;                                          // x^2
+            sum_xip2 += temp_x;
+            sum_xip2zi += temp_x*z_i;
+            temp_x *= x_i;                                          // x^3
+            sum_xip3 += temp_x;
+            sum_xip3zi += temp_x*z_i;
+            temp_x *= x_i;                                          // x^4
+            sum_xip4 += temp_x;
+            temp_x *= x_i;                                          // x^5
+            sum_xip5 += temp_x;
+            temp_x *= x_i;                                          // x^6
+            sum_xip6 += temp_x;
+            // build up vectors of x and z values
+            x_vector[n_values] = x_i;
+            z_vector[n_values] = z_i;
+            //
+            n_values++;                                             // only inc this, if there has been a new valid value
+        }
+    }
+
+    /// build linear equation system
+
+    // Ax = b
+    //
+    // x: vector of curve polynome coefficients, these are the unknowns
+    //  x = [a, b, c, d]; ==> 4 variables
+    const int n_les_variables = 4;                                  // number of LES variables, cubic curve: 4 variables
+    // A: matrix of sums of powers of x_i^p for p = 1 .. 6
+    float A[n_les_variables][n_les_variables];
+    // b: vector of sums of powers of x_i^p*z_i for p = 0 .. 3
+    float b[n_les_variables];
+
+    /* use following matrix and vector layout:
+    A = [   [sum_xip3, sum_xip4, sum_xip5, sum_xip6],
+            [sum_xip2, sum_xip3, sum_xip4, sum_xip5],
+            [sum_xi,   sum_xip2, sum_xip3, sum_xip4],
+            [n_values, sum_xi,   sum_xip2, sum_xip3] ]
+    b = [sum_xip3zi, sum_xip2zi, sum_xizi, sum_zi]
+
+    // higher order sums are larger, because x is always positive
+    // ==> pivot elements are maximized and should be != 0
+    */
+    A[0][0] = sum_xip3;
+    A[0][1] = sum_xip4;
+    A[0][2] = sum_xip5;
+    A[0][3] = sum_xip6;
+    b[0]    = sum_xip3zi;
+    //
+    A[1][0] = sum_xip2;
+    A[1][1] = sum_xip3;
+    A[1][2] = sum_xip4;
+    A[1][3] = sum_xip5;
+    b[1]    = sum_xip2zi;
+    //
+    A[2][0] = sum_xi;
+    A[2][1] = sum_xip2;
+    A[2][2] = sum_xip3;
+    A[2][3] = sum_xip4;
+    b[2]    = sum_xizi;
+    //
+    A[3][0] = n_les_variables;
+    A[3][1] = sum_xi;
+    A[3][2] = sum_xip2;
+    A[3][3] = sum_xip3;
+    b[3]    = sum_zi;
+
+    /// solve linear equation system, using Gauss'ian Elimination
+
+    int col, acol, row, pivot_row;
+    float ratio;                                                    // factor for eliminating elements
+
+    /// 1. bring matrix into echelon shape
+
+    for (col = 0; col < n_les_variables-1; col++) {
+        pivot_row = col;                                            // iter pivot element through matrix from left to right
+        // check pivot element, if it is 0, something else went wrong, as sums of powers of x_i should always be >0
+        if (A[pivot_row][col] == 0.0f) {
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
+            return derivations;                                     // with .is_valid==false
+        }
+        for (row = col+1; row < n_les_variables; row++) {           // iter rows through matrix below pivot element for elimin
+            ratio = -A[row][col] / A[pivot_row][col];
+            for (acol = col; acol < n_les_variables; acol++) {      // apply changes to all columns right of element to be elimin
+                A[row][acol] += ratio*A[pivot_row][acol];
+                // ensure 0 for very small values
+                if (fabs(A[row][acol]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
+                    A[row][acol] = 0.0f;
+                }
+            }
+            b[row] += ratio*b[pivot_row];
+            if (fabs(b[row]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
+                b[row] = 0.0f;
+            }
+        }
+    }
+
+    /// 2. bring echelon shape matrix into diagonal shape
+
+    for (col = n_les_variables-1; col >= 0; col--) {                // iter through columns from right to left
+        pivot_row = col;
+        if (A[pivot_row][col] == 0.0f) {
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING            
+            return derivations;                                     // with .is_valid==false
+        }
+        for (row = col-1; row >= 0; row--) {                        // iter rows through matrix upward above pivot element
+            ratio = -A[row][col] / A[pivot_row][col];
+            for (acol = col; acol < n_les_variables; acol++) {
+                A[row][acol] += ratio*A[pivot_row][acol];
+                if (fabs(A[row][acol]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
+                    A[row][acol] = 0.0f;
+                }
+            }
+            b[row] += ratio*b[pivot_row];
+            if (fabs(b[row]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
+                b[row] = 0.0f;
+            }
+        }
+    }
+
+    /// 3. normalize diagnoal matrix
+
+    for (row = 0; row < n_les_variables; row++) {
+        pivot_row = row;
+        if (A[pivot_row][pivot_row] == 0.0f) {
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
+            return derivations;                                     // with .is_valid==false
+        }
+        ratio = 1 / A[pivot_row][pivot_row];
+        for (acol = col; acol < n_les_variables; acol++) {
+            A[row][acol] *= ratio;
+            // element in A shouldn't become 0, because we want it to become 1 (==> no 0 check)
+        }
+        b[row] *= ratio;
+        if (fabs(b[row]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
+            b[row] = 0.0f;
+        }
+    }
+
+    //// calculate derivates from cubic line coefficients
+
+    // f_cubic(x) = z = a + b*x + c*x^2 + d*x^3
+    float coeff_a, coeff_b, coeff_c, coeff_d;
+    coeff_a = b[0];
+    coeff_b = b[1];
+    coeff_c = b[2];
+    coeff_d = b[3];
+
+    derivations.first = coeff_b + 2.0f*coeff_c*x_p + 3.0f*coeff_d*x_p*x_p;
+    derivations.second = 2.0f*coeff_c + 6.0f*coeff_d*x_p;
+    derivations.third = 6.0f*coeff_d;
+    derivations.is_valid = true;
+
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting(x_p, coeff_a, coeff_b, coeff_c, coeff_d, derivations,
+        SinglePolynomeFittingReturnState_VALID_RESULT);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
+    return derivations;
 }
-#error NOT IMPLEMENTED YET
+
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+    void log_single_polynome_fitting(int x_p, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
+        AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status)
+    {
+        DataFlash_Class::instance()->Log_Write("SPF",
+            "TimeUS,XP,Stat,A,B,C,D,D1,D2,D3,DOk",
+            "sm----???-",
+            "FB----???-",
+            "QibfffffffB",
+            //
+            AP_HAL::micros64(),
+            x_p,
+            validity_status,
+            coeff_a, coeff_b, coeff_c, coeff_d,
+            derivations.first,                                              // D1       f           cm/cm       ==  1
+            derivations.second,                                             // D2       f           cm/cm/cm    ==  1/cm
+            derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
+            ((uint8_t) derivations.is_valid)                                // DOk      B           bool
+        );
+        
+    }
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
+
+
 
 // TODO: prio 7: log SPF
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
