@@ -329,6 +329,7 @@ public:
         SinglePolynomeFittingReturnState_VALID_RESULT = 0,          // deviations.is_valid == true
         // ...
         SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO = 4,
+        SinglePolynomeFittingReturnState_N_VALUES_TOO_LOW = 5,
         SinglePolynomeFittingReturnState_NOT_DONE_YET = 10,         // no return state, only intermediate value!
     };
 
@@ -385,7 +386,7 @@ public:
 #elif     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
     DistanceDerivations get_single_polynome_fitting(int x_target_left, int x_target_right, int x_p);
  #if IS_DO_SPF_DEBUGGING_LOGGING
-    void log_single_polynome_fitting(int x_p, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
+    void log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
         AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING

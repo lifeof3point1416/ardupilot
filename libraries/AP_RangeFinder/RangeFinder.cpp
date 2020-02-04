@@ -2433,12 +2433,22 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     float sum_xi=0, sum_xip2=0, sum_xip3=0, sum_xip4=0, sum_xip5=0, sum_xip6=0;
     // sum{all i, z_i}; sum{all i, x_i*z_i}; sum{all i, x_i^2*z_i}; sum{all i, x_i^3*z_i}
     float sum_zi=0, sum_xizi=0, sum_xip2zi=0, sum_xip3zi=0;
-    //
-    float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
-    float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
+    // need x_vector and z_vector only for logging!
+    // float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
+    // float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
     float x_i, z_i, temp_x;
-    int n_values = 0;                                               // number of values
-    int i, x_int;
+    int n_values;                                               // number of values
+    int x_int;
+
+    // // init x and z vectors to prevent compiler error, also it's safer
+    // int i;
+    // for (i = 0; i < GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE; i++) {
+    //     x_vector[i] = GROUND_PROFILE_ACQUISITION_INVALID_X_VALUE;
+    //     z_vector[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+    // }
+    n_values = 0;
+
+    // TODO: filter values
 
     // iterate through derivation window
     for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
@@ -2463,12 +2473,19 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             sum_xip5 += temp_x;
             temp_x *= x_i;                                          // x^6
             sum_xip6 += temp_x;
-            // build up vectors of x and z values
-            x_vector[n_values] = x_i;
-            z_vector[n_values] = z_i;
+            // // build up vectors of x and z values
+            // x_vector[n_values] = x_i;
+            // z_vector[n_values] = z_i;
             //
             n_values++;                                             // only inc this, if there has been a new valid value
         }
+    }
+
+    if (n_values < SPF_MINIMUM_N_VALUES) {
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+        log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+                (int8_t) SinglePolynomeFittingReturnState_N_VALUES_TOO_LOW);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
     }
 
     /// build linear equation system
@@ -2478,7 +2495,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     // x: vector of curve polynome coefficients, these are the unknowns
     //  x = [a, b, c, d]; ==> 4 variables
     const int n_les_variables = 4;                                  // number of LES variables, cubic curve: 4 variables
-    // A: matrix of sums of powers of x_i^p for p = 1 .. 6
+    // A: matrix of sums of powers of x_i^p for p = 1 .. 6 
     float A[n_les_variables][n_les_variables];
     // b: vector of sums of powers of x_i^p*z_i for p = 0 .. 3
     float b[n_les_variables];
@@ -2529,7 +2546,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         // check pivot element, if it is 0, something else went wrong, as sums of powers of x_i should always be >0
         if (A[pivot_row][col] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+                (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
             return derivations;                                     // with .is_valid==false
         }
@@ -2555,13 +2573,15 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         pivot_row = col;
         if (A[pivot_row][col] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+                (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING            
             return derivations;                                     // with .is_valid==false
         }
         for (row = col-1; row >= 0; row--) {                        // iter rows through matrix upward above pivot element
             ratio = -A[row][col] / A[pivot_row][col];
-            for (acol = col; acol < n_les_variables; acol++) {
+            //for (acol = col; acol < n_les_variables; acol++) {    // ignore left or right of current pivot col, when applying?
+            for (acol = 0; acol < n_les_variables; acol++) {        // safer to apply to all columns of a row, when applying
                 A[row][acol] += ratio*A[pivot_row][acol];
                 if (fabs(A[row][acol]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
                     A[row][acol] = 0.0f;
@@ -2574,18 +2594,19 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         }
     }
 
-    /// 3. normalize diagnoal matrix
+    /// 3. normalize diagonal matrix
 
     for (row = 0; row < n_les_variables; row++) {
         pivot_row = row;
         if (A[pivot_row][pivot_row] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+                (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
             return derivations;                                     // with .is_valid==false
         }
         ratio = 1 / A[pivot_row][pivot_row];
-        for (acol = col; acol < n_les_variables; acol++) {
+        for (acol = 0; acol < n_les_variables; acol++) {
             A[row][acol] *= ratio;
             // element in A shouldn't become 0, because we want it to become 1 (==> no 0 check)
         }
@@ -2611,32 +2632,33 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
     log_single_polynome_fitting(x_p, coeff_a, coeff_b, coeff_c, coeff_d, derivations,
-        SinglePolynomeFittingReturnState_VALID_RESULT);
+        (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
     return derivations;
 }
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
-    void log_single_polynome_fitting(int x_p, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
-        AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status)
-    {
-        DataFlash_Class::instance()->Log_Write("SPF",
-            "TimeUS,XP,Stat,A,B,C,D,D1,D2,D3,DOk",
-            "sm----???-",
-            "FB----???-",
-            "QibfffffffB",
-            //
-            AP_HAL::micros64(),
-            x_p,
-            validity_status,
-            coeff_a, coeff_b, coeff_c, coeff_d,
-            derivations.first,                                              // D1       f           cm/cm       ==  1
-            derivations.second,                                             // D2       f           cm/cm/cm    ==  1/cm
-            derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
-            ((uint8_t) derivations.is_valid)                                // DOk      B           bool
-        );
-        
-    }
+void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
+    AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status)
+{
+    DataFlash_Class::instance()->Log_Write("SPF",
+        "TimeUS,XP,N,Stat,A,B,C,D,D1,D2,D3,DOk",
+        "sm-----???-",
+        "FB-----???-",
+        "QiibfffffffB",
+        //
+        AP_HAL::micros64(),
+        x_p,
+        n_values,
+        validity_status,
+        coeff_a, coeff_b, coeff_c, coeff_d,
+        derivations.first,                                              // D1       f           cm/cm       ==  1
+        derivations.second,                                             // D2       f           cm/cm/cm    ==  1/cm
+        derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
+        ((uint8_t) derivations.is_valid)                                // DOk      B           bool
+    );
+    
+}
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
 
 
@@ -2722,7 +2744,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 #if     GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     derivations = get_consecutive_linear_fitting(x_target_left, x_target_right);    
 #elif   GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
-    derivations = get_single_polynome_fitting(x_target_left, x_target_right);
+    derivations = get_single_polynome_fitting(x_target_left, x_target_right, position_main_direction_coo.x);
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING

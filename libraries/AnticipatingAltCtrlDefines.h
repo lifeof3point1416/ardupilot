@@ -97,6 +97,7 @@ enum AltCtrlMode : uint8_t {
 
 #define GROUND_PROFILE_ACQUISITION_PROFILE_ARRAY_SIZE       2000
 #define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            INT16_MIN    // write this value if no data available, b/c 0 cm is a valid datum
+#define GROUND_PROFILE_ACQUISITION_INVALID_X_VALUE          INT16_MIN
 //#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
 #define IS_USE_GPA_MAP_OFFSET                               true        // so that first GPA map value is set to 0
 
@@ -130,6 +131,7 @@ enum AltCtrlMode : uint8_t {
 // for SPF
 #define LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE           (1.0e-10f)  // values with an abs below this are considered 0
 #define IS_DO_SPF_DEBUGGING_LOGGING                         true        // for Single Polynome FItting Derivation
+#define SPF_MINIMUM_N_VALUES                                4           // 4 is absolute minimum
 
 // actual parameter definitions
 
