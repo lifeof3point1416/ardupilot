@@ -2632,7 +2632,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
     log_single_polynome_fitting(x_p, n_values, coeff_a, coeff_b, coeff_c, coeff_d, derivations,
-        (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
+        (int8_t) SinglePolynomeFittingReturnState_VALID_RESULT);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
     return derivations;
 }
