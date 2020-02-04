@@ -2483,7 +2483,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
 
     if (n_values < SPF_MINIMUM_N_VALUES) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-        log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+        log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_N_VALUES_TOO_LOW);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
     }
@@ -2546,7 +2546,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         // check pivot element, if it is 0, something else went wrong, as sums of powers of x_i should always be >0
         if (A[pivot_row][col] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+            log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
             return derivations;                                     // with .is_valid==false
@@ -2573,7 +2573,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         pivot_row = col;
         if (A[pivot_row][col] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+            log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING            
             return derivations;                                     // with .is_valid==false
@@ -2600,7 +2600,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         pivot_row = row;
         if (A[pivot_row][pivot_row] == 0.0f) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
-            log_single_polynome_fitting(x_p, 0, 0, 0, 0, derivations, 
+            log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
             return derivations;                                     // with .is_valid==false
@@ -2631,7 +2631,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     derivations.is_valid = true;
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
-    log_single_polynome_fitting(x_p, coeff_a, coeff_b, coeff_c, coeff_d, derivations,
+    log_single_polynome_fitting(x_p, n_values, coeff_a, coeff_b, coeff_c, coeff_d, derivations,
         (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
     return derivations;
