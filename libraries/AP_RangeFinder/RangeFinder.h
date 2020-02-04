@@ -332,6 +332,13 @@ public:
         SinglePolynomeFittingReturnState_N_VALUES_TOO_LOW = 5,
         SinglePolynomeFittingReturnState_NOT_DONE_YET = 10,         // no return state, only intermediate value!
     };
+    enum LinearEquationSystemState {
+        LinearEquationSystemState_NOT_INITIALIZED       = 1,        
+        LinearEquationSystemState_ORIGINAL_MATRIX       = 2,        // original LES, containing sums of x_i^p*z_i^q, for q = 0..3, p = 0 .. 6
+        LinearEquationSystemState_ECHELON               = 3,
+        LinearEquationSystemState_DIAGONAL              = 4,
+        LinearEquationSystemState_NORMALIZED_DIAGONAL   = 5,
+    };
 
     // get first 3 derivations of ground profile at position_neu_cm
     //  using IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
@@ -388,6 +395,11 @@ public:
  #if IS_DO_SPF_DEBUGGING_LOGGING
     void log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
         AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status);
+    void log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, int *z_vector);
+  #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+    void log_single_polynome_fitting_linear_equation_sys(float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC],
+        float *b, int8_t les_status);
+  #endif // IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING

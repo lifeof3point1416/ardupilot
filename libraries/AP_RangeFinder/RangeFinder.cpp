@@ -2434,8 +2434,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     // sum{all i, z_i}; sum{all i, x_i*z_i}; sum{all i, x_i^2*z_i}; sum{all i, x_i^3*z_i}
     float sum_zi=0, sum_xizi=0, sum_xip2zi=0, sum_xip3zi=0;
     // need x_vector and z_vector only for logging!
-    // float x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
-    // float z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+    int x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
+    int z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
     float x_i, z_i, temp_x;
     int n_values;                                               // number of values
     int x_int;
@@ -2474,8 +2476,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             temp_x *= x_i;                                          // x^6
             sum_xip6 += temp_x;
             // // build up vectors of x and z values
-            // x_vector[n_values] = x_i;
-            // z_vector[n_values] = z_i;
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+            x_vector[n_values] = x_i;
+            z_vector[n_values] = z_i;
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
             //
             n_values++;                                             // only inc this, if there has been a new valid value
         }
@@ -2485,8 +2489,13 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
  #if IS_DO_SPF_DEBUGGING_LOGGING
         log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_N_VALUES_TOO_LOW);
+        return derivations;
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
     }
+
+ #if IS_DO_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting_profile_data(x_p, n_values, x_vector, z_vector);
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING
 
     /// build linear equation system
 
@@ -2494,11 +2503,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     //
     // x: vector of curve polynome coefficients, these are the unknowns
     //  x = [a, b, c, d]; ==> 4 variables
-    const int n_les_variables = 4;                                  // number of LES variables, cubic curve: 4 variables
+    const int n_les_variables = SPF_LES_N_VARIABLES_CUBIC;
     // A: matrix of sums of powers of x_i^p for p = 1 .. 6 
-    float A[n_les_variables][n_les_variables];
+    float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC];
     // b: vector of sums of powers of x_i^p*z_i for p = 0 .. 3
-    float b[n_les_variables];
+    float b[SPF_LES_N_VARIABLES_CUBIC];
 
     /* use following matrix and vector layout:
     A = [   [sum_xip3, sum_xip4, sum_xip5, sum_xip6],
@@ -2528,11 +2537,15 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     A[2][3] = sum_xip4;
     b[2]    = sum_xizi;
     //
-    A[3][0] = n_les_variables;
+    A[3][0] = SPF_LES_N_VARIABLES_CUBIC;
     A[3][1] = sum_xi;
     A[3][2] = sum_xip2;
     A[3][3] = sum_xip3;
     b[3]    = sum_zi;
+
+ #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting_linear_equation_sys(A, b, ((int8_t) LinearEquationSystemState_ORIGINAL_MATRIX));
+ #endif // #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
 
     /// solve linear equation system, using Gauss'ian Elimination
 
@@ -2566,6 +2579,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             }
         }
     }
+ #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting_linear_equation_sys(A, b, ((int8_t) LinearEquationSystemState_ECHELON));
+ #endif // #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
 
     /// 2. bring echelon shape matrix into diagonal shape
 
@@ -2593,6 +2609,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             }
         }
     }
+ #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting_linear_equation_sys(A, b, ((int8_t) LinearEquationSystemState_DIAGONAL));
+ #endif // #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
 
     /// 3. normalize diagonal matrix
 
@@ -2615,6 +2634,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             b[row] = 0.0f;
         }
     }
+ #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+    log_single_polynome_fitting_linear_equation_sys(A, b, ((int8_t) LinearEquationSystemState_NORMALIZED_DIAGONAL));
+ #endif // #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
 
     //// calculate derivates from cubic line coefficients
 
@@ -2638,8 +2660,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
 }
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
-void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
-    AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status)
+// log LES results under log tag "SPF"
+void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c,
+    float coeff_d, AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status)
 {
     DataFlash_Class::instance()->Log_Write("SPF",
         "TimeUS,XP,N,Stat,A,B,C,D,D1,D2,D3,DOk",
@@ -2657,13 +2680,64 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_value
         derivations.third,                                              // D3       f           cm/cm/cm/cm ==  1/cm/cm
         ((uint8_t) derivations.is_valid)                                // DOk      B           bool
     );
-    
 }
+
+// log SPF raw ground profile raw data under log tag "SPF1"
+void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, int *z_vector)
+{
+    // inherent conversion from int32_t[16] to int16_t[32]
+    DataFlash_Class::instance()->Log_Write("SPF1",
+        "TimeUS,XP,N,XAsI16,ZAsI16",
+        "sm---",
+        "FB---",
+        "Qiiaa",
+        // OLD FROM HERE
+        //
+        AP_HAL::micros64(),
+        x_p,
+        n_values,
+        x_vector,
+        z_vector
+    );
+}
+
+  #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
+// log LES intermediate results under log tag "SPF2"
+void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
+    float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC], float *b, int8_t les_status)
+{
+    // TODO: prio 8: get int16_t A_as_int16[] from float A[][]
+    const int int16_array_len = 32;                                     // for logging formatter 'a': int16_t[32]
+    int16_t A_as_int16[int16_array_len];
+    const int A_number_of_rows = SPF_LES_N_VARIABLES_CUBIC;             // number of rows in A matrix
+    const int A_number_of_cols = SPF_LES_N_VARIABLES_CUBIC;
+
+    int i, j;
+    // convert float[16] vector into int16_t[32] vector
+    const double frac_factor = 1e4f;                     // 10^N for max{N for all 10^N < INT16_MAX == 32767}
+    double int_part, frac_part;                         // modf seems to be implemented only for double
+    for (i = 0; i < A_number_of_rows; i++) {
+        for (j = 0; j < A_number_of_cols; j++) {
+            frac_part = modf(A[i][j], &int_part);
+            A_as_int16[2*(i*A_number_of_cols + j)]        = (int16_t) int_part;
+            A_as_int16[2*(i*A_number_of_cols + j) + 1]    = (int16_t) round(frac_part * frac_factor);
+        }
+    }
+
+    DataFlash_Class::instance()->Log_Write("SPF2",
+        // OLD CODE FROM HERE, 
+        "TimeUS,A,B0,B1,B2,B3,Stat",
+        "s------",
+        "F------",
+        "Qaffffb",
+        AP_HAL::micros64(),
+        A_as_int16,
+        b[0], b[1], b[2], b[3],
+        les_status
+    );
+}
+  #endif // IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
-
-
-
-// TODO: prio 7: log SPF
 #else   // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
     #error Unknown value for GROUND_PROFILE_DERIVATOR_FITTING
 #endif  // GROUND_PROFILE_DERIVATOR_FITTING == GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
@@ -2674,7 +2748,8 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_value
 // heading:         heading/direction of flight [c°]; ignore horizontal speed compenation if heading==0xffff
 // is_log:          should we log?
 AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_profile_derivations(
-    Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log) {
+    Vector3f position_neu_cm, float horiz_speed, int32_t heading, bool is_log)
+{
 
     DistanceDerivations derivations;
     derivations.first = DERIVATIONS_NO_DATA_INIT_VALUE;
@@ -2827,8 +2902,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
 }
 
 #if IS_DO_HSC_LOGGING
-void AC_GroundProfileDerivator::log_horizontal_speed_compensation(int32_t heading, int32_t main_direction, int32_t heading_deviation,
-        float horizontal_speed_compensation_factor, float horiz_speed_before, float horiz_speed_after)
+void AC_GroundProfileDerivator::log_horizontal_speed_compensation(int32_t heading, int32_t main_direction, 
+    int32_t heading_deviation, float horizontal_speed_compensation_factor, float horiz_speed_before, float horiz_speed_after)
 {
     DataFlash_Class::instance()->Log_Write("HSC",                       // Horizontal Speed Compensation
         "TimeUS,Hdg,MDHdg,DHdg,HSCF,VHor0,VHor1",
