@@ -2585,7 +2585,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     }
 
     #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
-    printf("RF, SPF, x_p: %3d, line %4 ok.\n", x_p, __LINE__);
+    printf("RF, SPF, x_p: %3d, line %4d ok.\n", x_p, __LINE__);
     #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
 
  #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
