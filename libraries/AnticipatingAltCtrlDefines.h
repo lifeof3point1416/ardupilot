@@ -132,7 +132,7 @@ enum AltCtrlMode : uint8_t {
 #define LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE           (1.0e-10f)  // values with an abs below this are considered 0
 #define IS_DO_SPF_DEBUGGING_LOGGING                         true        // for Single Polynome Fitting Derivation
 #define SPF_MINIMUM_N_VALUES                                4           // 4 is absolute minimum
-#define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 true        // log intermediate results for SPF
+#define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 true        // log intermediate results for SPF ("SPF2")
 #define SPF_LES_N_VARIABLES_CUBIC                           4           // a cubic curve has 4 parameters, which we need to find
 
 // actual parameter definitions

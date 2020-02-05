@@ -2715,6 +2715,7 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p
 void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
     float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC], float *b, int8_t les_status)
 {
+    #error causes crash, mostlikely its the convertsion of A to A_as_int16_fp
     // TODO: prio 8: get int16_t A_as_int16[] from float A[][]
     const int int16_array_len = 32;                                     // for logging formatter 'a': int16_t[32]
     int16_t A_as_int16_fix[int16_array_len];
@@ -2755,33 +2756,38 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
         }
     }
 
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);     // works
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+
     // convert float[16] vector into int16_t[32] vector as floating point representation (signed mantisse, decimal exp)
-    // int16_t sgn_mantisse;                                   // signed mantisse
-    int16_t dec_exp;                                        // decimal exponent
-    float element;                                          // matrix element as float to be converted
+    // int16_t sgn_mantisse;                               // signed mantisse
+    int16_t dec_exp = INT16_MIN;                           // decimal exponent
+    float element = -9000.0f;                              // matrix element as float to be converted
     float A_as_int16_fp[int16_array_len];
     const float min_number_full_digits = 1000.0f;          // min number with max number of digits (4 for int16_t) to be displayed
     for (i = 0; i < A_number_of_rows; i++) {
         for (j = 0; j < A_number_of_cols; j++) {
-            if (A[i][j] >= 0.0f) {
-                if (A[i][j] > INT16_MAX) {
-                    for (dec_exp = 0, element = A[i][j]; element > INT16_MAX; dec_exp++) {
+            element = A[i][j];
+            if (element >= 0.0f) {
+                if (element > INT16_MAX) {
+                    for (dec_exp = 0; element > INT16_MAX; dec_exp++) {
                         element /= 10.0f;
                     }
-                } else if (A[i][j] < min_number_full_digits) {
-                    for (dec_exp = 0, element = A[i][j]; element < min_number_full_digits; dec_exp--) {
+                } else if (element < min_number_full_digits) {
+                    for (dec_exp = 0; element < min_number_full_digits; dec_exp--) {
                         element *= 10.0f;
                     }
                 }
                 A_as_int16_fp[2*(i*A_number_of_cols + j)]        = (int16_t) element;   // signed mantisse
                 A_as_int16_fp[2*(i*A_number_of_cols + j) + 1]    = dec_exp;
             } else {
-                if (A[i][j] < INT16_MIN) {
-                    for (dec_exp = 0, element = A[i][j]; element < INT16_MIN; dec_exp++) {
+                if (element < INT16_MIN) {
+                    for (dec_exp = 0; element < INT16_MIN; dec_exp++) {
                         element /= 10.0f;
                     }
-                } else if (A[i][j] > -min_number_full_digits) {
-                    for (dec_exp = 0, element = A[i][j]; element > -min_number_full_digits; dec_exp--) {
+                } else if (element > -min_number_full_digits) {
+                    for (dec_exp = 0; element > -min_number_full_digits; dec_exp--) {
                         element *= 10.0f;
                     }
                 }
@@ -2792,7 +2798,7 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
     }
 
     #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
-    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);
+    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);     // doesn't work!!!
     #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
 
     #if 0
