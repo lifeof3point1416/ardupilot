@@ -2554,6 +2554,10 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
 
     /// 1. bring matrix into echelon shape
 
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("RF, SPF, x_p: %3d, line %4 ok.\n", x_p, __LINE__);
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+
     for (col = 0; col < n_les_variables-1; col++) {
         pivot_row = col;                                            // iter pivot element through matrix from left to right
         // check pivot element, if it is 0, something else went wrong, as sums of powers of x_i should always be >0
@@ -2579,6 +2583,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             }
         }
     }
+
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("RF, SPF, x_p: %3d, line %4 ok.\n", x_p, __LINE__);
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+
  #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
     log_single_polynome_fitting_linear_equation_sys(A, b, ((int8_t) LinearEquationSystemState_ECHELON));
  #endif // #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
@@ -2723,6 +2732,10 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
             A_as_int16[2*(i*A_number_of_cols + j) + 1]    = (int16_t) round(frac_part * frac_factor);
         }
     }
+
+    #if 0
+    // debugging crash after this log entry
+    #endif // 1
 
     DataFlash_Class::instance()->Log_Write("SPF2",
         // OLD CODE FROM HERE, 
