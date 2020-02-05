@@ -2555,7 +2555,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     /// 1. bring matrix into echelon shape
 
     #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
-    printf("RF, SPF, x_p: %3d, line %4 ok.\n", x_p, __LINE__);
+    printf("RF, SPF, x_p: %3d, line %4d ok.\n", x_p, __LINE__);
     #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
 
     for (col = 0; col < n_les_variables-1; col++) {
@@ -2717,21 +2717,83 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
 {
     // TODO: prio 8: get int16_t A_as_int16[] from float A[][]
     const int int16_array_len = 32;                                     // for logging formatter 'a': int16_t[32]
-    int16_t A_as_int16[int16_array_len];
+    int16_t A_as_int16_fix[int16_array_len];
     const int A_number_of_rows = SPF_LES_N_VARIABLES_CUBIC;             // number of rows in A matrix
     const int A_number_of_cols = SPF_LES_N_VARIABLES_CUBIC;
 
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+
     int i, j;
-    // convert float[16] vector into int16_t[32] vector
+    // convert float[16] vector into int16_t[32] vector as fixed comma 
+    //  <float> becomes <whole part as int16_t>, <first 4 decimal digits as int16_t>
+    //  3.14    ==> 3, 1400
+    //  3.1416  ==> 3, 1416
+    //  1.95583 ==> 1, 9558
+    //  5000.1  ==> 5, 1000
+    //  1000000 ==> -32768, -32768 (OVERFLOW!)
+    // A:               [3.14,      3.1416,     1.95583, 5000.1,        1E6] ==>
+    // A_as_int16_fix:  [3, 1400,   3, 1416,    1, 9558, 5000, 1000,    -32768, -32768]
+    // A_as_int16_not_ok_mask: 0b1100000000 == 768
     const double frac_factor = 1e4f;                     // 10^N for max{N for all 10^N < INT16_MAX == 32767}
     double int_part, frac_part;                         // modf seems to be implemented only for double
+    int32_t A_as_int16_not_ok_mask = 0;
     for (i = 0; i < A_number_of_rows; i++) {
         for (j = 0; j < A_number_of_cols; j++) {
             frac_part = modf(A[i][j], &int_part);
-            A_as_int16[2*(i*A_number_of_cols + j)]        = (int16_t) int_part;
-            A_as_int16[2*(i*A_number_of_cols + j) + 1]    = (int16_t) round(frac_part * frac_factor);
+            // TODO: add check for overflow
+            if ((INT16_MIN < int_part) && (int_part < INT16_MAX)) {
+                A_as_int16_fix[2*(i*A_number_of_cols + j)]        = (int16_t) int_part;
+                A_as_int16_fix[2*(i*A_number_of_cols + j) + 1]    = (int16_t) round(frac_part * frac_factor);
+            } else {
+                A_as_int16_fix[2*(i*A_number_of_cols + j)]        = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+                A_as_int16_fix[2*(i*A_number_of_cols + j) + 1]    = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+                A_as_int16_not_ok_mask |= 1 << (2*(i*A_number_of_cols + j));
+                A_as_int16_not_ok_mask |= 1 << (2*(i*A_number_of_cols + j) + 1);
+            }
         }
     }
+
+    // convert float[16] vector into int16_t[32] vector as floating point representation (signed mantisse, decimal exp)
+    // int16_t sgn_mantisse;                                   // signed mantisse
+    int16_t dec_exp;                                        // decimal exponent
+    float element;                                          // matrix element as float to be converted
+    float A_as_int16_fp[int16_array_len];
+    const float min_number_full_digits = 1000.0f;          // min number with max number of digits (4 for int16_t) to be displayed
+    for (i = 0; i < A_number_of_rows; i++) {
+        for (j = 0; j < A_number_of_cols; j++) {
+            if (A[i][j] >= 0.0f) {
+                if (A[i][j] > INT16_MAX) {
+                    for (dec_exp = 0, element = A[i][j]; element > INT16_MAX; dec_exp++) {
+                        element /= 10.0f;
+                    }
+                } else if (A[i][j] < min_number_full_digits) {
+                    for (dec_exp = 0, element = A[i][j]; element < min_number_full_digits; dec_exp--) {
+                        element *= 10.0f;
+                    }
+                }
+                A_as_int16_fp[2*(i*A_number_of_cols + j)]        = (int16_t) element;   // signed mantisse
+                A_as_int16_fp[2*(i*A_number_of_cols + j) + 1]    = dec_exp;
+            } else {
+                if (A[i][j] < INT16_MIN) {
+                    for (dec_exp = 0, element = A[i][j]; element < INT16_MIN; dec_exp++) {
+                        element /= 10.0f;
+                    }
+                } else if (A[i][j] > -min_number_full_digits) {
+                    for (dec_exp = 0, element = A[i][j]; element > -min_number_full_digits; dec_exp--) {
+                        element *= 10.0f;
+                    }
+                }
+                A_as_int16_fp[2*(i*A_number_of_cols + j)]        = (int16_t) element;   // signed mantisse
+                A_as_int16_fp[2*(i*A_number_of_cols + j) + 1]    = dec_exp;
+            }
+        }
+    }
+
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
 
     #if 0
     // debugging crash after this log entry
@@ -2739,15 +2801,21 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
 
     DataFlash_Class::instance()->Log_Write("SPF2",
         // OLD CODE FROM HERE, 
-        "TimeUS,A,B0,B1,B2,B3,Stat",
-        "s------",
-        "F------",
-        "Qaffffb",
+        "TimeUS,AAsI16Fix,AFixOf,AAsI16Fp,B0,B1,B2,B3,Stat",
+        "s--------",
+        "F--------",
+        "Qaiaffffb",
         AP_HAL::micros64(),
-        A_as_int16,
+        A_as_int16_fix,
+        A_as_int16_not_ok_mask,
+        A_as_int16_fp,
         b[0], b[1], b[2], b[3],
         les_status
     );
+
+    #if IS_VERBOSE_DEBUG_SPF_PRINTOUTS
+    printf("\tRF, log SPF2, line %4d ok.\n", __LINE__);
+    #endif // IS_VERBOSE_DEBUG_SPF_PRINTOUTS
 }
   #endif // IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
