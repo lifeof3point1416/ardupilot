@@ -3257,11 +3257,13 @@ bool AC_GroundProfileDerivatorTester::test_using_gpa(Vector3f position_neu_cm, f
 // get thrust output from FFC, using altitude over ground derivations
 // if derivations are invalid, return value is 0, effectively causing FFC to be ignored
 // returns thrust [N]
-float AC_FeedForwardController::get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations) {
+float AC_FeedForwardController::get_thrust_output_from_derivations(
+    AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations) 
+{
     float thrust_output;
     // check if derivations are valid
     if (!altitude_over_ground_derivations.is_valid) {
-        return 0;
+        return 0.0f;
     }
     // calc thrust output in cgs system, [dyn] = [g*cm/s/s]
     thrust_output = copter_mass * (
