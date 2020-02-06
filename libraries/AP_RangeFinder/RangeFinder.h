@@ -395,7 +395,8 @@ public:
  #if IS_DO_SPF_DEBUGGING_LOGGING
     void log_single_polynome_fitting(int x_p, int n_values, float coeff_a, float coeff_b, float coeff_c, float coeff_d, 
         AC_GroundProfileDerivator::DistanceDerivations derivations, int8_t validity_status);
-    void log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, int *z_vector);
+    void log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, 
+        int *z_vector_raw, float *z_vector_filtered, bool is_filter_enabled);
   #if IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING
     void log_single_polynome_fitting_linear_equation_sys(float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC],
         float *b, int8_t les_status);

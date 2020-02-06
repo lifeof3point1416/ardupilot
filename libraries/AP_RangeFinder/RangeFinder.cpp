@@ -2427,20 +2427,28 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     // f_cubic(x) = z = a + b*x + c*x^2 + d*x^3
 
     /// find sums of powers of x_i and z_i, also
-    /// get x_vector, z_vector of valid value pairs within derivation window
+    /// filter and get x_vector, z_vector of valid value pairs within derivation window, if applicable
 
     // sum{all i, x_i}; sum{all i, x_i^2}; ...
     float sum_xi=0, sum_xip2=0, sum_xip3=0, sum_xip4=0, sum_xip5=0, sum_xip6=0;
     // sum{all i, z_i}; sum{all i, x_i*z_i}; sum{all i, x_i^2*z_i}; sum{all i, x_i^3*z_i}
     float sum_zi=0, sum_xizi=0, sum_xip2zi=0, sum_xip3zi=0;
     // need x_vector and z_vector only for logging!
- #if IS_DO_SPF_DEBUGGING_LOGGING
-    int x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains x values of the corresponding valid z values
-    int z_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains valid z values
- #endif // IS_DO_SPF_DEBUGGING_LOGGING
+ #if IS_DO_SPF_DEBUGGING_LOGGING || IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    int x_vector[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];               // contains x values of the corresponding valid z values
+    int z_vector_raw[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];           // contains raw valid z values, as from GPA
+  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    int z_vector_filt_mult[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];     // contains filtered valid z values' multiples (z'*filter size)
+    float z_vector_filt_float[GROUND_PROFILE_DERIVATOR_VECTOR_ARRAY_SIZE];  // contains filtered valid z values as float
+  #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    float *z_vector_filt_float = nullptr;                                   // if no filter: nullptr for logging
+  #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+ #endif // IS_DO_SPF_DEBUGGING_LOGGING || IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+ 
     float x_i, z_i, temp_x;
-    int n_values;                                               // number of values
-    int x_int;
+    int n_values = 0;                                                       // number of values
+    int x_int;                                                              // current x as integer
+    int i;
 
     // // init x and z vectors to prevent compiler error, also it's safer
     // int i;
@@ -2448,10 +2456,91 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     //     x_vector[i] = GROUND_PROFILE_ACQUISITION_INVALID_X_VALUE;
     //     z_vector[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
     // }
-    n_values = 0;
 
-    // TODO: filter values
+ #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    /// filter valid x and z values (overwrite z_vector with its filtered values)
+    // build up vectors of valid x and z values
+    const float no_data_value_float = (float) GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;   // prevent multiple floatToInt
+    for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
+        // indices must have been checked before
+        if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x_int)) {
+            x_vector[n_values] = x_int;
+            z_vector_raw[n_values] = ground_profile_acquisition->get_ground_profile_datum(x_int);
+            // z_vector_filt[n_values] = (float) ground_profile_acquisition->get_ground_profile_datum(x_int);
+            // // TODO: prio 6: reconsider if init'ion is necessary:
+            // z_vector_filt_mult[n_values] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+            // z_vector_filt_float[n_values] = no_data_value_float;          // for initialization
+            //
+            n_values++;                                             // only inc this, if there has been a new valid value
+        }
+    }
 
+    // Use float for filtering and for summing up, this might be smaller than adding up using int arithmetics
+    //  and converting it later into float, but because conversion FloatToInt is slow, it might not be worth
+    //  changeing it. 
+    //  Even if it is worth it, it can be done later.
+
+    int z_filt_sum = 0;
+    // preventing repeated floatToInt
+    const float gpd_filter_window_size_f = (float) GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+    if (n_values >= GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) {
+        // get first central sum, leave all values until here unfiltered
+        //  this central sum is valid for index (<filter_window_size>/2), which is the 1st filterable point
+        for (i = 0; (i < GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE) && (i < n_values); i++) {
+            z_filt_sum += z_vector_raw[i];
+            z_vector_filt_mult[i] = z_vector_raw[i] * GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+        }
+        // filter first filterable point
+        i = (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2);       // step back to center of first valid filter window
+        z_vector_filt_mult[i] =  z_filt_sum;
+        i++;
+        // apply central moving average for to further points
+        for (; i < (n_values - (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2)); i++) {
+            z_filt_sum -= z_vector_raw[i - (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2) - 1];   // subtract old value
+            z_filt_sum += z_vector_raw[i + (GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE/2)];       // add      new value
+            z_vector_filt_mult[i] = z_filt_sum;                                                     // multiple of filtered value
+        }
+        // adopt right edge unfiltered
+        for (; i < n_values; i++) {
+            z_vector_filt_mult[i] = z_vector_raw[i] * GROUND_PROFILE_DERIVATION_FILTER_WINDOW_SIZE;
+        }
+
+        // calc exact z_vector_float from z_vector_mult
+        for (i = 0; i < n_values; i++) {
+            z_vector_filt_float[i] = ((float) z_vector_filt_mult[i]) / gpd_filter_window_size_f;
+        }
+    } else {
+        // use vectors unfiltered
+        for (i = 0; i < n_values; i++) {
+            z_vector_filt_float[i] = (float) z_vector_raw[i];
+            // z_vector_filt_mult[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;   // won't be used
+        }
+    } 
+
+    // sum up
+    for (i = 0; i < n_values; i++) {
+        x_i = (float) x_vector[i];
+        z_i = z_vector_filt_float[i];
+        // build up sums
+        temp_x = x_i;                                           // x^1
+        sum_xi += temp_x;
+        sum_zi += z_i;
+        sum_xizi += temp_x*z_i;
+        temp_x *= x_i;                                          // x^2
+        sum_xip2 += temp_x;
+        sum_xip2zi += temp_x*z_i;
+        temp_x *= x_i;                                          // x^3
+        sum_xip3 += temp_x;
+        sum_xip3zi += temp_x*z_i;
+        temp_x *= x_i;                                          // x^4
+        sum_xip4 += temp_x;
+        temp_x *= x_i;                                          // x^5
+        sum_xip5 += temp_x;
+        temp_x *= x_i;                                          // x^6
+        sum_xip6 += temp_x;
+    }
+ #else // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
+    // sum up and build vector without filtering
     // iterate through derivation window
     for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
         // indices must have been checked before
@@ -2476,14 +2565,15 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
             temp_x *= x_i;                                          // x^6
             sum_xip6 += temp_x;
             // // build up vectors of x and z values
- #if IS_DO_SPF_DEBUGGING_LOGGING
+  #if IS_DO_SPF_DEBUGGING_LOGGING
             x_vector[n_values] = x_i;
-            z_vector[n_values] = z_i;
- #endif // IS_DO_SPF_DEBUGGING_LOGGING
+            z_vector_raw[n_values] = z_i;
+  #endif // IS_DO_SPF_DEBUGGING_LOGGING
             //
             n_values++;                                             // only inc this, if there has been a new valid value
         }
     }
+ #endif // IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
 
     if (n_values < SPF_MINIMUM_N_VALUES) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
@@ -2494,7 +2584,8 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     }
 
  #if IS_DO_SPF_DEBUGGING_LOGGING
-    log_single_polynome_fitting_profile_data(x_p, n_values, x_vector, z_vector);
+    log_single_polynome_fitting_profile_data(x_p, n_values, x_vector, 
+        z_vector_raw, z_vector_filt_float, IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES);
  #endif // IS_DO_SPF_DEBUGGING_LOGGING
 
     /// build linear equation system
@@ -2692,21 +2783,67 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_value
 }
 
 // log SPF raw ground profile raw data under log tag "SPF1"
-void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, int *z_vector)
+//  z_vector_filtered may be nullptr or float* (for a float[<=16])
+void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p, int n_values, int *x_vector, 
+    int *z_vector_raw, float *z_vector_filtered, bool is_filter_enabled)
 {
+    const int array_float_len = 16;                                     // formatter 'a' ==> int16_t[32] ==> float[16]
+    const int array_int16_len = 32;                                     // formatter 'a' ==> int16_t[32]
+    int16_t z_vector_filtered_as_int16_fix[array_int16_len];
+    int32_t z_filt_as_int16_not_ok_mask = 0;
+    int i;
+    // convert float array into fix comma int-16 array
+    if (z_vector_filtered != nullptr) {
+        int i;
+        // convert float[16] vector into int16_t[32] vector as fixed comma 
+        //  <float> becomes <whole part as int16_t>, <first 4 decimal digits as int16_t>
+        //  3.14    ==> 3, 1400
+        //  3.1416  ==> 3, 1416
+        //  1.95583 ==> 1, 9558
+        //  5000.1  ==> 5, 1000
+        //  1000000 ==> -32768, -32768 (OVERFLOW!)
+        // A:               [3.14,      3.1416,     1.95583, 5000.1,        1E6] ==>
+        // A_as_int16_fix:  [3, 1400,   3, 1416,    1, 9558, 5000, 1000,    -32768, -32768]
+        // A_as_int16_not_ok_mask: 0b1100000000 == 768
+        const double frac_factor = 1e4f;                        // 10^N for max{N for all 10^N < INT16_MAX == 32767}
+        double int_part, frac_part;                             // modf seems to be implemented only for double
+        for (i = 0; i < array_float_len; i++) {
+            frac_part = modf(z_vector_filtered[i], &int_part);
+            // TODO: add check for overflow
+            if ((INT16_MIN <= int_part) && (int_part <= INT16_MAX)) {
+                z_vector_filtered_as_int16_fix[2*i]        = (int16_t) int_part;
+                z_vector_filtered_as_int16_fix[2*i + 1]    = (int16_t) round(frac_part * frac_factor);
+            } else {
+                z_vector_filtered_as_int16_fix[2*i]        = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+                z_vector_filtered_as_int16_fix[2*i + 1]    = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+                // mark invalid values in mask
+                z_filt_as_int16_not_ok_mask |= 1 << (2*i);
+                z_filt_as_int16_not_ok_mask |= 1 << (2*i + 1);
+            }
+        }
+    } else {
+        // fill with invalid data value, if there is no z_vector_filtered given (eg. because filtering is disabled)
+        for (i = 0; i < array_int16_len; i++) {
+            z_vector_filtered_as_int16_fix[i] = GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;
+        }
+    }
+
     // inherent conversion from int32_t[16] to int16_t[32]
     DataFlash_Class::instance()->Log_Write("SPF1",
-        "TimeUS,XP,N,XAsI16,ZAsI16",
-        "sm---",
-        "FB---",
-        "Qiiaa",
+        "TimeUS,XP,N,XAsI16,ZRawAsI16,ZFiltAsI16Fix,ZFiltOf,IsFilt",
+        "sm------",
+        "FB------",
+        "QiiaaaiB",
         // OLD FROM HERE
         //
         AP_HAL::micros64(),
         x_p,
         n_values,
         x_vector,
-        z_vector
+        z_vector_raw,
+        z_vector_filtered_as_int16_fix,
+        z_filt_as_int16_not_ok_mask,
+        (uint8_t) is_filter_enabled
     );
 }
 
