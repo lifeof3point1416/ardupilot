@@ -3279,6 +3279,10 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
 
 float AC_FeedForwardController::get_thrust_output(void) {
 #if IS_FFC_ENABLED
+    // TODO: prio 7: implement logging?
+    float thrust_output;
+    // TODO: prio 7: check if data fresh enough
+    thrust_output = get_thrust
     #error TODO: IMPLEMENT THIS
 #endif // IS_FFC_ENABLED
 }

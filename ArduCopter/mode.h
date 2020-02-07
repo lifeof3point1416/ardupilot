@@ -1254,6 +1254,7 @@ public:
     bool init(bool ignore_checks) override;                         // TODO: prio 7 implement
     void run() override;                                            // TODO: prio 7 implement
     void loiterlike_run();                                          // copied from LOITER plus MEASUREMENT fts.
+    void update_derivations(void);                                  // PeterSt, called from scheduler, updates last_derivations
 
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
@@ -1272,6 +1273,11 @@ protected:
     // int last_scan_point_return_value;                               // init value in ::init()!
     // // send messages only after this point of time [us], to avoid spamming messages
     uint32_t send_message_scan_point_error_timeout = 0;
+    
+    // PeterSt:
+    AC_GroundProfileDerivator::DistanceDerivations last_derivations = {
+        DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
+    uint64_t last_derivations_update = 0;                           // time of last update for last_derivatios [us]
 
 private:
 
