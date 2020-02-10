@@ -2024,11 +2024,35 @@ void AP_Param::load_embedded_param_defaults(bool last_pass)
         AP_Param *vp = find(pname, &var_type);
         if (!vp) {
             if (last_pass) {
+                // PeterSt: existing AC implementation raises Warning, when compiling for SITL:
+                /*
+                ../../libraries/AP_Param/AP_Param.cpp: In static member function 
+                    ‘static void AP_Param::load_embedded_param_defaults(bool)’:
+../../libraries/AP_Param/AP_Param.cpp:2028:63: warning: format ‘%u’ expects argument of 
+    type ‘unsigned int’, but argument 3 has type ‘long int’ [-Wformat=]
+                          pname, ptr - param_defaults_data.data);
+                                                               ^
+../../libraries/AP_Param/AP_Param.cpp:2031:63: warning: format ‘%u’ expects argument of 
+    type ‘unsigned int’, but argument 4 has type ‘long int’ [-Wformat=]
+                          pname, ptr - param_defaults_data.data);
+
+                */
+                // ==> fixed this with conversion
+                #if 1 && IS_USE_SITL_CONFIGURATION
+                // fixed conversion for SITL
+                ::printf("Ignored unknown param %s from embedded region (offset=%u)\n",
+                         pname, (unsigned) (ptr - param_defaults_data.data));
+                hal.console->printf(
+                         "Ignored unknown param %s from embedded region (offset=%u)\n",
+                         pname, (unsigned) (ptr - param_defaults_data.data));
+                #else
+                // code as it was before PeterSt changed it
                 ::printf("Ignored unknown param %s from embedded region (offset=%u)\n",
                          pname, ptr - param_defaults_data.data);
                 hal.console->printf(
                          "Ignored unknown param %s from embedded region (offset=%u)\n",
                          pname, ptr - param_defaults_data.data);
+                #endif
             }
             continue;
         }

@@ -139,10 +139,11 @@ enum AltCtrlMode : uint8_t {
 
 // actual parameter definitions
 
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_STANDARD_PID
-// #define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_EXTENDED_PID
-#define MEASUREMENT_ALTITUDE_CONTROL_MODE           ALT_CTRL_MODE_FFC               // only FOR TESTING yet
-#define MEASUREMENT_FLIGHTMODE_BEHAVIOR             MEASUREMENT_BEHAVIOR_LOITER
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE                ALT_CTRL_MODE_STANDARD_PID
+// #define MEASUREMENT_ALTITUDE_CONTROL_MODE                ALT_CTRL_MODE_EXTENDED_PID
+#define MEASUREMENT_ALTITUDE_CONTROL_MODE                   ALT_CTRL_MODE_FFC               // only FOR TESTING yet
+#define MEASUREMENT_FLIGHTMODE_BEHAVIOR                     MEASUREMENT_BEHAVIOR_LOITER
+#define FFC_IS_ENABLE_GRAVITATION                           true                            // should we add g in FFC?     
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
@@ -150,6 +151,16 @@ enum AltCtrlMode : uint8_t {
 #define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s] == [1/Ms]
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
+// for motor control function:
+#if 1
+// exponential motor control function
+// thrust = a + b * throttle^c
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.214470f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.2171481191077011f; // b^(1/c)
+
+#endif
 
 // for extended PID
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID

@@ -454,8 +454,8 @@ public:
         ground_profile_derivator = _ground_profile_derivator;
     }
 
-    float get_throttle_from_thrust(float thrust_N);     // inverse motor control function f_m^-1
     float get_thrust_from_throttle(float throttle);     // motor control function f_m
+    float get_throttle_from_thrust(float thrust_N);     // inverse motor control function f_m^-1
     float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     // float get_throttle_output(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     float get_thrust_output(void);                      // use inherent derivation data
@@ -464,6 +464,8 @@ public:
 #endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
     inline AC_GroundProfileDerivator *get_gpd(void) {return ground_profile_derivator;}
     void update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations);
+    // float get_thrust_from_throttle(float throttle);     // converts throttle [1] (0 .. 1) to thrust [N]
+    // float get_throttle_from_thrust(float thrust);       // converts thrust [N] to throttle [1] (0 .. 1)
 
     const float copter_mass = PHYSICAL_MODEL_COPTER_MASS;                                   // [g]
     const float copter_time_const = PHYSICAL_MODEL_TIME_CONSTANT_MICROS;                    // [us]

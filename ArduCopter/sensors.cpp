@@ -282,10 +282,6 @@ void Copter::update_ground_profile_deviator(void)
         // printf("?")
     }
     
-    // #error CONTINUE HERE
-    // TODO: prio 8: implement
-    // BEGIN OLD CODE
-    
     float horiz_speed;
     int32_t heading;
     horiz_speed = inertial_nav.get_velocity_xy();   // [cm/s]
@@ -307,12 +303,13 @@ void Copter::update_ground_profile_deviator(void)
     // ffc->last_derivations = copter.ground_profile_derivator->get_profile_derivations(
     //     inertial_nav.get_position(), horiz_speed, heading, is_log_gpd);
     // ffc->last_derivations_update = AP_HAL::micros64();
+
+    // calculate derivates and update last_derivates in FFC controller's instance
     ffc->update_last_derivation(ffc->get_gpd()->get_profile_derivations(
         inertial_nav.get_position(), horiz_speed, heading, is_log_gpd));
     #if IS_VERBOSE_DEBUG_GPD
         printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ???
     #endif // IS_VERBOSE_DEBUG_GPD   
-    // END OLD CODE
 }
 
 /*

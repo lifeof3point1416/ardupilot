@@ -2794,7 +2794,6 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p
     int i;
     // convert float array into fix comma int-16 array
     if (z_vector_filtered != nullptr) {
-        int i;
         // convert float[16] vector into int16_t[32] vector as fixed comma 
         //  <float> becomes <whole part as int16_t>, <first 4 decimal digits as int16_t>
         //  3.14    ==> 3, 1400
@@ -3271,7 +3270,11 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
         copter_time_const/1e6*altitude_over_ground_derivations.third + 
         (copter_time_const*copter_air_resist_const/1e12 + 1)*altitude_over_ground_derivations.second + 
         copter_air_resist_const/1e6*altitude_over_ground_derivations.first +
+#if FFC_IS_ENABLE_GRAVITATION
         copter_gravitation_const
+#else // FFC_IS_ENABLE_GRAVITATION
+        0.0f
+#endif // FFC_IS_ENABLE_GRAVITATION
         );
     // convert [g*cm/s/s] into [N] = [kg*m/s/s]
     thrust_output /= 1e5;
@@ -3291,6 +3294,8 @@ float AC_FeedForwardController::get_thrust_output(void) {
     }
     thrust_output = get_thrust_output_from_derivations(last_derivations);
     return thrust_output;
+#else
+    return 0.0f;
 #endif // IS_FFC_ENABLED
 }
 
@@ -3299,4 +3304,46 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
 
     last_derivations = new_derivations;
     last_derivations_update = AP_HAL::micros64();
+}
+
+// converts throttle [1] (0 .. 1) to thrust [N]
+float AC_FeedForwardController::get_thrust_from_throttle(float throttle)
+{
+    // parameters for motor control function:
+    // thrust = a + b * throttle^c
+    const float parameter_exp_a = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A;
+    const float parameter_exp_b = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B;
+    const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
+    
+    float thrust;
+
+    throttle = constrain_float(throttle, 0.0f, 1.0f);
+    // TODO: prio 7: scale throttle
+
+    thrust = parameter_exp_a + parameter_exp_b * powf(throttle, parameter_exp_c);
+    return thrust;
+}
+
+// converts thrust [N] to throttle [1] (0 .. 1)
+float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N)
+{
+    // parameters for motor control function:
+    // thrust = a + b * throttle^c
+    const float parameter_exp_a = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A;
+    // const float parameter_exp_b = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B;
+    const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
+    const float parameter_exp_b_pow_inv_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C; // b^(1/c)
+
+    float throttle;                                                 // throttle [1], 0..1
+
+    if (thrust_N < 0.0f) {
+        return 0.0f;
+    }
+
+    // inverse function gets throttle [%], which we have to convert to [1]
+    throttle = powf((thrust_N - parameter_exp_a), (1/parameter_exp_c)) / parameter_exp_b_pow_inv_c;
+    throttle /= 100.0f;                                             // now throttle [1]
+    // TODO: prio 7: scale throttle
+    throttle = constrain_float(throttle, 0.0f, 1.0f);
+    return throttle;
 }
