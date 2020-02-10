@@ -392,7 +392,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         #if IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER
         uint64_t _micros;
         _micros = AP_HAL::micros64();
-        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(10, _micros, 400)) {
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
             hal.console->printf("MEAS: before reverse flight check: horiz_speed: %f\n", horiz_speed);
         }
         #endif // 0
@@ -402,7 +402,7 @@ void Copter::ModeMeasurement::loiterlike_run()
         #endif // IS_REVERSE_GPA_MAIN_DIRECTION
         #if IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER
         _micros = AP_HAL::micros64();
-        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(10, _micros, 400)) {
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(1, _micros, 400)) {
             hal.console->printf("MEAS: after reverse flight check: horiz_speed: %f\n\n", horiz_speed);
         }
         #endif // 0
