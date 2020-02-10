@@ -64,7 +64,7 @@ void AP_MotorsTailsitter::output_to_motors()
             break;
         case SPIN_WHEN_ARMED:
             // sends output to motors when armed but not flying
-            throttle = constrain_float(_spin_up_ratio, 0.0f, 1.0f) * _spin_min;
+            throttle = constrain_float(_spin_up_ratio, 0.0f, 1.0f) * _spin_min; // PSt: MOT_SPIN_MIN comes into play here???
             // set limits flags
             limit.roll_pitch = true;
             limit.yaw = true;

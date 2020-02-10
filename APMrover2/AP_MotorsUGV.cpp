@@ -672,6 +672,7 @@ void AP_MotorsUGV::set_limits_from_input(bool armed, float steering, float throt
 }
 
 // scale a throttle using the _throttle_min and _thrust_curve_expo parameters.  throttle should be in the range -100 to +100
+// PSt: Motor Thrust Scaling happens here
 float AP_MotorsUGV::get_scaled_throttle(float throttle) const
 {
     // exit immediately if throttle is zero

@@ -53,7 +53,9 @@ enum AltCtrlMode : uint8_t {
 #define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 7: test this
 #define DIST_MINIMUM_ALTITUDE_OVER_GROUND_CM        50      // do not go below this altitude           
 
-#define CALL_FREQUENCY_UPDATE_GPA                   50     // in Hz for the scheduler
+// call frequencies for functions that are called by scheduler in Hz
+#define CALL_FREQUENCY_UPDATE_GPA                   50      
+#define CALL_FREQUENCY_UPDATE_GPD                   25
 
 //
 // for different altitude control methods
@@ -123,6 +125,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
 #define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
 #define IS_DO_HSC_LOGGING                                   true
+#define GPD_TIMEOUT_MICROS                                  50000       // maximum age for ffc.last_derivations [us]
 // for CLF
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
 #define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation

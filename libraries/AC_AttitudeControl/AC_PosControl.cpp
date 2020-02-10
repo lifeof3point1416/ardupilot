@@ -827,21 +827,21 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     thr_pid = (p+i+d)*0.001f +_motors.get_throttle_hover();
 
     float thrust_out_ffc = 0;
+
+    if (is_use_ffc) {
+        if (_ffc == nullptr) {
+            is_use_ffc = false;
+        }
+    }
+
 #if IS_FFC_ENABLED
     if (is_use_ffc) {
-        // TODO: prio8: get throttle out from FFC    
-
-        #error CONTINUE HERE
-        // TODO: prio 7: ensure that GPD's are called in scheduler!
-
         // log thrust_out_ffc, thr_ffc and thr_out if necessary, check with CTUN.ThO log
         //  also compare if CTUN.Th0 matches motor_control_function(thrust_out_ffc)
         //  ==> does motor thrust scaling mess up our motor control function?
         //      If yes: countersteer, actual motor throttle must be set correctly
         //
-        // thr_ffc = ...
         thrust_out_ffc = _ffc->get_thrust_output();
-        // thr_ffc = _ffc->get_throttle_from_thrust(thrust_out_ffc);
 
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;

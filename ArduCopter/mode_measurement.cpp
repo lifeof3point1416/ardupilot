@@ -105,7 +105,7 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
         AP_HAL::panic("Unable to allocate FeedForwardController");
     }
 #if IS_FFC_ENABLED
-    #error CONTINUE HERE !!
+    // #error CONTINUE HERE !!
     // TODO: prio 7: start working ffc from scheduler
 #endif // IS_FFC_ENABLED
 
@@ -426,35 +426,6 @@ void Copter::ModeMeasurement::loiterlike_run()
         #endif // IS_FFC_ENABLED
         break;
     }
-}
-
-// PeterSt:
-// updates last_derivations, the status variable for derivations for FFC controller
-//  this function is called from the scheduler
-// TODO: prio 7: call from scheduler
-void Copter::ModeMeasurement::update_derivations(void)
-{
-    float horiz_speed;
-    int32_t heading;
-    horiz_speed = inertial_nav.get_velocity_xy();   // [cm/s]
-    heading = ahrs.yaw_sensor;                      // [cdeg]
-    bool is_log_gpd = false;                        // TODO: prio 6: think about logging
-    // TODO: prio 7: reverse heading here or elsewhere??
-    #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
-        horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
-        heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
-    #endif // IS_REVERSE_GPA_MAIN_DIRECTION
-    
-    #if IS_VERBOSE_DEBUG_GPD
-        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
-    #endif // IS_VERBOSE_DEBUG_GPD   
-    last_derivations = copter.ground_profile_derivator->get_profile_derivations(
-        inertial_nav.get_position(), horiz_speed, heading, is_log_gpd);
-    last_derivations_update = AP_HAL::micros64();
-    // BEGIN OLD CODE
-    #if IS_VERBOSE_DEBUG_GPD
-        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ???
-    #endif // IS_VERBOSE_DEBUG_GPD   
 }
 
 // guided_run - runs the guided controller

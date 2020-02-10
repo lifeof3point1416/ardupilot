@@ -462,6 +462,8 @@ public:
 #if IS_VERBOSE_THROTTLE_LOGGING_FFC
     void log_throttle(float throttle_out, float throttle_pid, float throttle_ffc, bool is_ffc_active);
 #endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
+    inline AC_GroundProfileDerivator *get_gpd(void) {return ground_profile_derivator;}
+    void update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations);
 
     const float copter_mass = PHYSICAL_MODEL_COPTER_MASS;                                   // [g]
     const float copter_time_const = PHYSICAL_MODEL_TIME_CONSTANT_MICROS;                    // [us]
@@ -470,6 +472,9 @@ public:
 
 protected:
     AC_GroundProfileDerivator *ground_profile_derivator = nullptr;  // also contains GroundProfileAcquisition instance
+    AC_GroundProfileDerivator::DistanceDerivations last_derivations = {
+        DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
+    uint64_t last_derivations_update = 0;                           // time of last update for last_derivatios [us]
 
 private:
 };

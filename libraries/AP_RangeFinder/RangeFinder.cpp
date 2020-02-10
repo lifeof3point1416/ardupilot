@@ -3263,6 +3263,7 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
     float thrust_output;
     // check if derivations are valid
     if (!altitude_over_ground_derivations.is_valid) {
+        // TODO: prio 6: log invalid derivations?
         return 0.0f;
     }
     // calc thrust output in cgs system, [dyn] = [g*cm/s/s]
@@ -3277,12 +3278,25 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
     return thrust_output;
 }
 
+// get FFC thrust output [N], using inherent derivation data
+//  also checks if last_derivations is new enough
 float AC_FeedForwardController::get_thrust_output(void) {
 #if IS_FFC_ENABLED
     // TODO: prio 7: implement logging?
     float thrust_output;
-    // TODO: prio 7: check if data fresh enough
-    thrust_output = get_thrust
-    #error TODO: IMPLEMENT THIS
+    // check if data fresh enough
+    if (AP_HAL::micros64() - last_derivations_update > ((uint64_t) GPD_TIMEOUT_MICROS)) {
+        // TODO: prio 6: log derivations timeout?
+        return 0.0f;
+    }
+    thrust_output = get_thrust_output_from_derivations(last_derivations);
+    return thrust_output;
 #endif // IS_FFC_ENABLED
+}
+
+void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations)
+{
+
+    last_derivations = new_derivations;
+    last_derivations_update = AP_HAL::micros64();
 }

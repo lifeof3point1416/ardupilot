@@ -542,6 +542,7 @@ private:
  #if IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
     AC_GroundProfileDerivatorTester *ground_profile_derivator_tester;
  #endif // IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS
+    inline AC_FeedForwardController *get_ffc(void) {return pos_control->get_ffc();}
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 
     // System Timers
@@ -946,6 +947,7 @@ private:
     void winch_init();
     void winch_update();
     void update_ground_profile_acquisition(void);       // by PeterSt
+    void update_ground_profile_deviator(void);          // by PeterSt
 
     // setup.cpp
     void report_compass();

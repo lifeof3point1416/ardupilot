@@ -1273,11 +1273,6 @@ protected:
     // int last_scan_point_return_value;                               // init value in ::init()!
     // // send messages only after this point of time [us], to avoid spamming messages
     uint32_t send_message_scan_point_error_timeout = 0;
-    
-    // PeterSt:
-    AC_GroundProfileDerivator::DistanceDerivations last_derivations = {
-        DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
-    uint64_t last_derivations_update = 0;                           // time of last update for last_derivatios [us]
 
 private:
 

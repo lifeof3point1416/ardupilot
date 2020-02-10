@@ -196,6 +196,11 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if IS_GROUND_PROFILE_ACQUISITION_ENABLED
     SCHED_TASK(update_ground_profile_acquisition,   CALL_FREQUENCY_UPDATE_GPA,              100),
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+ #if IS_FFC_ENABLED
+    SCHED_TASK(update_ground_profile_deviator,      CALL_FREQUENCY_UPDATE_GPD,              400),
+ #endif 
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
 // end
     SCHED_TASK_CLASS(AP_Button,            &copter.g2.button,           update,           5, 100),
 #if STATS_ENABLED == ENABLED

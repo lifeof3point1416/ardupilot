@@ -103,7 +103,8 @@ bool Copter::rangefinder_alt_ok()
 
 // Ground Profile Acquisition related function by PeterSt
 
-void Copter::update_ground_profile_acquisition(void) {
+void Copter::update_ground_profile_acquisition(void)
+{
 #if IS_GROUND_PROFILE_ACQUISITION_ENABLED
     call_update_gpa_counter++;
     // GPA is only necessary in MEASUREMENT flightmode
@@ -126,7 +127,7 @@ void Copter::update_ground_profile_acquisition(void) {
         #endif // IS_DEBUG_GPA
     }
 
-    // CONTINUE HERE
+    // TODO: prio 5: fix this, if FFC is properly implemented
     #if !IS_TEST_FFC
         #error "not implemented yet"
     #endif // IS_TEST_FFC
@@ -199,6 +200,8 @@ void Copter::update_ground_profile_acquisition(void) {
         #endif // IS_PRINT_GPA_MAP_CONDENSED
     }
     #endif // IS_PRINT_GPA_MAP_AS_MESSAGE
+
+    // actual GPA scan
     if (copter.rangefinder2_state.dist_healthy) {
         last_scan_point_return_value = copter.ground_profile_acquisition->scan_point(
             copter.rangefinder2_state.dist_cm, position_neu);
@@ -260,6 +263,56 @@ void Copter::update_ground_profile_acquisition(void) {
 
     // no need for dwn rangefinder
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
+}
+
+// PeterSt:s
+// updates ffc->last_deviation with the current ground profile deviates
+//  this function is called from the scheduler
+void Copter::update_ground_profile_deviator(void)
+{
+    // GPA is only necessary in MEASUREMENT flightmode
+    if (copter.control_mode != control_mode_t::MEASUREMENT) {
+        return;
+    }
+
+    AC_FeedForwardController *ffc = copter.get_ffc();                      // Feed Forward Controller instance
+    if (ffc == nullptr) {
+        // TODO: prio 7: log that there is no ffc?
+        return;
+        // printf("?")
+    }
+    
+    // #error CONTINUE HERE
+    // TODO: prio 8: implement
+    // BEGIN OLD CODE
+    
+    float horiz_speed;
+    int32_t heading;
+    horiz_speed = inertial_nav.get_velocity_xy();   // [cm/s]
+    heading = ahrs.yaw_sensor;                      // [cdeg]
+    bool is_log_gpd = false;                        // TODO: prio 6: think about logging
+    // TODO: prio 7: reverse heading here or elsewhere??
+    #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
+        horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
+        // heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
+        heading = ffc->get_gpd()->get_opposite_heading_cd(heading);
+    #endif // IS_REVERSE_GPA_MAIN_DIRECTION
+    
+    #if IS_VERBOSE_DEBUG_GPD
+        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
+    #endif // IS_VERBOSE_DEBUG_GPD   
+    // ffc->get_gpd()
+    // last_derivations = copter.ground_profile_derivator->get_profile_derivations(
+    //     inertial_nav.get_position(), horiz_speed, heading, is_log_gpd);
+    // ffc->last_derivations = copter.ground_profile_derivator->get_profile_derivations(
+    //     inertial_nav.get_position(), horiz_speed, heading, is_log_gpd);
+    // ffc->last_derivations_update = AP_HAL::micros64();
+    ffc->update_last_derivation(ffc->get_gpd()->get_profile_derivations(
+        inertial_nav.get_position(), horiz_speed, heading, is_log_gpd));
+    #if IS_VERBOSE_DEBUG_GPD
+        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ???
+    #endif // IS_VERBOSE_DEBUG_GPD   
+    // END OLD CODE
 }
 
 /*

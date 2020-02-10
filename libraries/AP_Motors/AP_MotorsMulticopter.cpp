@@ -369,6 +369,7 @@ float AP_MotorsMulticopter::get_compensation_gain() const
     return ret;
 }
 
+// PSt: is this something like the motor control function?
 int16_t AP_MotorsMulticopter::calc_thrust_to_pwm(float thrust_in) const
 {
     thrust_in = constrain_float(thrust_in, 0.0f, 1.0f);
