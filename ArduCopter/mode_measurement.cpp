@@ -397,7 +397,8 @@ void Copter::ModeMeasurement::loiterlike_run()
         }
         #endif // 0
         #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
-            horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
+            // velocity_xy seems to be positive, even when flying backwards
+            // horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
             heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
         #endif // IS_REVERSE_GPA_MAIN_DIRECTION
         #if IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER

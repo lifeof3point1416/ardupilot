@@ -289,7 +289,8 @@ void Copter::update_ground_profile_deviator(void)
     bool is_log_gpd = true;                        // TODO: prio 6: think about logging
     // TODO: prio 7: reverse heading here or elsewhere??
     #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
-        horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
+        // velocity_xy seems to be positive, even when flying backwards
+        // horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
         // heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
         heading = ffc->get_gpd()->get_opposite_heading_cd(heading);
     #endif // IS_REVERSE_GPA_MAIN_DIRECTION

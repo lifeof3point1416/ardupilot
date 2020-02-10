@@ -47,8 +47,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_ENABLE_SECOND_RANGEFINDER                true                        // for the fwd rangefinder
 #define IS_DO_TILT_COMPENSATION_SECOND_RANGEFINDER  true
 #define IS_DO_HEALTH_CHECK_SECOND_RANGEFINDER       true
-// #define IS_REVERSE_GPA_MAIN_DIRECTION               true        // in the case that fwd rangefinder is actually mounted at the back
-#define IS_REVERSE_GPA_MAIN_DIRECTION               false        // in the case that fwd rangefinder is actually mounted at the back
+#define IS_REVERSE_GPA_MAIN_DIRECTION               true        // in the case that fwd rangefinder is actually mounted at the back
 
 #define IS_MOCK_OSCILLATING_RANGEFINDER_DATA        false    // for proving, I edited the right code
 #define IS_CHECK_MINIMUM_ALTITUDE_OVER_GROUND       true    // TODO: prio 7: test this
