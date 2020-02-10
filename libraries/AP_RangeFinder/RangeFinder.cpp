@@ -1098,7 +1098,8 @@ bool AC_GroundProfileAcquisition::init(void) {
 // start scanning, use UAV's current yaw as main main_direction (in our 2D world)
 // _heading in centi degrees
 // return: successfully started?
-bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu_cm) {
+bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu_cm)
+{
 // bool AC_GroundProfileAcquisition::start(int _heading, Vector3f position_neu_cm) {
 #if IS_DEBUG_GPA
     hal.console->printf("Calling start!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!\n");
@@ -1113,7 +1114,8 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
 #if IS_REVERSE_GPA_MAIN_DIRECTION                           
     // in case we fly backwards (if "fwd rangefinder" is mounted in the back due to practicability reasons)
     // TODO: prio 5: use get_opposite_direction instead
-    main_direction = (18000 + _heading) % 36000;
+    // main_direction = (18000 + _heading) % 36000;
+    main_direction = get_opposite_heading_cd(_heading);
 # else // IS_REVERSE_GPA_MAIN_DIRECTION
     main_direction = _heading;
 #endif // IS_REVERSE_GPA_MAIN_DIRECTION
@@ -1143,6 +1145,20 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
     return true;
 }
 
+// returns the opposite direction of a heading in range 0 <= heading < 360 deg
+uint16_t AC_GroundProfileAcquisition::get_opposite_heading_cd(uint16_t heading_cd)
+{   
+    // this is not fully tested
+    const uint32_t full_circle = 36000;
+    uint32_t opposite_heading;
+    if (heading_cd < (full_circle/2)) {
+        opposite_heading = heading_cd + (full_circle/2);
+    } else {
+        opposite_heading = heading_cd - (full_circle/2);
+    }
+    return opposite_heading;
+}
+
 // get coordinates in main direction space,
 //  of position_neu_cm along this->main_direction, origin at this->start_position_cm
 //  can be interpreted as 1-dimensional position, y should be as low as possible
@@ -1151,13 +1167,16 @@ bool AC_GroundProfileAcquisition::start(uint16_t _heading, Vector3f position_neu
 Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f position_neu_cm) {
     // goal is to get x (1D variable) of a point P is specified by position_neu_cm
     
-    // angle of the point P to North (CCW), of main_direction to point P, in ° respectively
-    float alpha_p, alpha_x;
+    // angle of the point P to North (CCW) in [deg]
+    float alpha_p;
+    // angle of main_direction to point P in [deg]
+    float alpha_x;
     // wrong:
     //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.y, position_neu_cm.x)) / 100;
     // correct: "x is y, and y is x", because of NEU coo: x - North (up | abscisse) , y - East (right | ordinate)
     // wrong: using "absolute value", not difference!
     //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.x, position_neu_cm.y)) / 100;
+    // right:
     alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(
         position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100.0f;
     alpha_x = ( ((float) main_direction)/100.0f) - alpha_p;
@@ -3063,9 +3082,11 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_pr
  #endif // IS_DO_HSC_LOGGING
     horizontal_speed_deviation_compensation_factor = cosf( (float) abs(heading_deviation) / DEGX100 );
     horiz_speed *= horizontal_speed_deviation_compensation_factor;
+ #if IS_DO_HSC_LOGGING
     log_horizontal_speed_compensation(heading, (int32_t) ground_profile_acquisition->get_main_direction(),
         heading_deviation, horizontal_speed_deviation_compensation_factor, 
         horiz_speed_orig, horiz_speed);
+ #endif // IS_DO_HSC_LOGGING
 #endif // IS_CHECK_HEADING_FOR_HORIZONTAL_SPEED_COMPENSATION
     // TODO: prio 7: test if this works, even for invalid derivations
     // get derivations over time instead of over distance

@@ -270,6 +270,8 @@ public:
     }
     inline bool is_frozen(void) {return _is_frozen;} 
 #endif // IS_USE_GPA_MAP_FREEZE_MODE
+    // returns the opposite direction of a heading in range 0 <= heading < 360 deg
+    uint16_t get_opposite_heading_cd(uint16_t heading_cd);
 
 protected:
 

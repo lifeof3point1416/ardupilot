@@ -389,10 +389,23 @@ void Copter::ModeMeasurement::loiterlike_run()
         int32_t heading;
         horiz_speed = inertial_nav.get_velocity_xy();   // [cm/s]
         heading = ahrs.yaw_sensor;                      // [cdeg]
+        #if IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER
+        uint64_t _micros;
+        _micros = AP_HAL::micros64();
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(10, _micros, 400)) {
+            hal.console->printf("MEAS: before reverse flight check: horiz_speed: %f\n", horiz_speed);
+        }
+        #endif // 0
         #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
             horiz_speed = -horiz_speed; // velocity_xy is always measured in vehicle-forward direction
             heading = copter.ground_profile_derivator->get_opposite_heading_cd(heading);
         #endif // IS_REVERSE_GPA_MAIN_DIRECTION
+        #if IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER
+        _micros = AP_HAL::micros64();
+        if (IS_TRIGGER_EVENT_ROUGHLY_EVERY_N_SEC_MICROS(10, _micros, 400)) {
+            hal.console->printf("MEAS: after reverse flight check: horiz_speed: %f\n\n", horiz_speed);
+        }
+        #endif // 0
         
         #if IS_VERBOSE_DEBUG_GPD
             printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
