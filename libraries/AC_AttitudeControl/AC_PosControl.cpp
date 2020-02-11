@@ -886,7 +886,11 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     //      void AC_PosControl::run_z_controller(control_mode_t control_mode)
 
     // send throttle to attitude controller with angle boost
-    _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
+    // PSt: original version is commented out
+    // _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
+    // PSt: my version, sending thr_out_proper instead, because we wired the FFC and 
+    //  a possible IS_IGNORE_FFC_OUTPUT inbetween
+    _attitude_control.set_throttle_out(thr_out_proper, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
 }
 
 ///
