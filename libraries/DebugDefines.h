@@ -72,7 +72,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_VERBOSE_THROTTLE_LOGGING_FFC             true
 #define IS_FFC_ENABLED                              false       // false: disable already existing code, useful for tests not concerning untested FFC code
 // #define IS_FFC_ENABLED                              true       // false: disable already existing code, useful for tests not concerning untested FFC code
-#define IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER    true        // do debug printout for horizontal velocities
+#define IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER    false        // do debug printout for horizontal velocities
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
