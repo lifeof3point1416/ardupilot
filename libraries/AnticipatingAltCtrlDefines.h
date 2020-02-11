@@ -170,6 +170,9 @@ enum AltCtrlMode : uint8_t {
 #define EXTENDED_PID_ZERO_EPSILON                   (1e-6f)
 #define EXTENDED_PID_MAX_PROJECTION_FACTOR          (5.0f)       // don't extrapolate more than this
 
+// for merging controller data and logging
+#define IS_LOG_VERBOSE_PID_FFC_OUTPUT               true    // use ffc->log_pid_ffc_ctrl
+
 //
 ///////////////////////////////////////////////////////////////////////////////
 //

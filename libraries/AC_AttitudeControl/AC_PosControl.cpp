@@ -849,10 +849,15 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         thrust_tot = thrust_pid + thrust_out_ffc;
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot);
 
-        // TODO: prio 7: log thrusts in debug mode
+        #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out);
+        #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
     } else {
         // thr_ffc = 0;
         thr_out = thr_pid;
+        #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, 0, 0, 0, thr_out);
+        #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
     }
 #else  // IS_FFC_ENABLED
     thr_out = thr_pid;

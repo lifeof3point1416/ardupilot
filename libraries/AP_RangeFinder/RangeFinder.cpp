@@ -3368,3 +3368,24 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N)
     throttle = constrain_float(throttle, 0.0f, 1.0f);
     return throttle;
 }
+
+// log PID controller's and FFC controller's outputs in AC_PosControl::run_z_controller with tag "PIFF"
+// throttles are in [1], 0~1; thrusts are in [N]
+// if there is no FFC, use 0 for uncalculated values thrust_pid, thrust_out_ffc, thrust_tot
+void AC_FeedForwardController::log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
+    float thrust_out_ffc, float thrust_tot, float throttle_out)
+{
+    DataFlash_Class::instance()->Log_Write("PIFF",                      // PId, FFc
+        "TimeUS,IsFFC,ThlPID,ThstPID,ThstFFC,ThstTot,ThlOut",
+        "s--NNN-",                                                      // [N] as unit ok?
+        "F-00000",
+        "QBfffff",
+        AP_HAL::micros64(),
+        (uint8_t) is_use_ffc,
+        throttle_pid,
+        thrust_pid,
+        thrust_out_ffc,
+        thrust_tot,
+        throttle_out
+    );    
+}
