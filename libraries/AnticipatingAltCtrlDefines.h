@@ -143,7 +143,7 @@ enum AltCtrlMode : uint8_t {
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE                ALT_CTRL_MODE_EXTENDED_PID
 #define MEASUREMENT_ALTITUDE_CONTROL_MODE                   ALT_CTRL_MODE_FFC               // only FOR TESTING yet
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR                     MEASUREMENT_BEHAVIOR_LOITER
-#define FFC_IS_ENABLE_GRAVITATION                           true                            // should we add g in FFC?     
+#define FFC_IS_ENABLE_GRAVITATION                           false                            // should we add g in FFC?     
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]

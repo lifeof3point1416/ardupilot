@@ -3328,7 +3328,10 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
 }
 
 // converts throttle [1] (0 .. 1) to thrust [N]
-float AC_FeedForwardController::get_thrust_from_throttle(float throttle)
+//  allows negative values for throttle, if is_allow_negative is true
+//  as partial throttles and thrusts from PID and FFC are added for total thrust,
+//  they might be negative
+float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is_allow_negative)
 {
     // parameters for motor control function:
     // thrust = a + b * throttle^c
@@ -3337,16 +3340,29 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle)
     const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
     
     float thrust;
+    bool is_negative;
+    is_negative = throttle < 0.0f;
 
+    if (is_negative && !is_allow_negative) {
+        return 0.0f;                                                // cut off negative values at thrust 0
+    }
+
+    // use positive values for motor control function, adjust sign afterwards
+    if (is_negative) {
+        throttle = -throttle;
+    }
     throttle = constrain_float(throttle, 0.0f, 1.0f);
     // TODO: prio 7: scale throttle
 
     thrust = parameter_exp_a + parameter_exp_b * powf(throttle, parameter_exp_c);
+    if (is_negative) {
+        thrust = -thrust;
+    }
     return thrust;
 }
 
 // converts thrust [N] to throttle [1] (0 .. 1)
-float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N)
+float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is_allow_negative)
 {
     // parameters for motor control function:
     // thrust = a + b * throttle^c
@@ -3356,9 +3372,15 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N)
     const float parameter_exp_b_pow_inv_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C; // b^(1/c)
 
     float throttle;                                                 // throttle [1], 0..1
+    bool is_negative;
+    is_negative = thrust_N < 0.0f;
 
-    if (thrust_N < 0.0f) {
-        return 0.0f;
+    if (is_negative && !is_allow_negative) {
+        return 0.0f;                                                // cut off negative values at thrust 0
+    }
+
+    if (is_negative) {
+        thrust_N = -thrust_N;
     }
 
     // inverse function gets throttle [%], which we have to convert to [1]
@@ -3366,6 +3388,9 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N)
     throttle /= 100.0f;                                             // now throttle [1]
     // TODO: prio 7: scale throttle
     throttle = constrain_float(throttle, 0.0f, 1.0f);
+    if (is_negative) {
+        throttle = -throttle;
+    }
     return throttle;
 }
 

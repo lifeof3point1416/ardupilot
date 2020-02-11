@@ -456,8 +456,8 @@ public:
         ground_profile_derivator = _ground_profile_derivator;
     }
 
-    float get_thrust_from_throttle(float throttle);     // motor control function f_m
-    float get_throttle_from_thrust(float thrust_N);     // inverse motor control function f_m^-1
+    float get_thrust_from_throttle(float throttle, bool is_allow_negative);     // motor control function f_m
+    float get_throttle_from_thrust(float thrust_N, bool is_allow_negative);     // inverse motor control function f_m^-1
     float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     // float get_throttle_output(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     float get_thrust_output(void);                      // use inherent derivation data

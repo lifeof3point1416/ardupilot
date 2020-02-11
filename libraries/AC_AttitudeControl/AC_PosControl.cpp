@@ -845,9 +845,9 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
 
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;
-        thrust_pid = _ffc->get_thrust_from_throttle(thr_pid);
+        thrust_pid = _ffc->get_thrust_from_throttle(thr_pid, true);
         thrust_tot = thrust_pid + thrust_out_ffc;
-        thr_out = _ffc->get_throttle_from_thrust(thrust_tot);
+        thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
 
         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
         _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out);
