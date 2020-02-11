@@ -3397,20 +3397,24 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
 // log PID controller's and FFC controller's outputs in AC_PosControl::run_z_controller with tag "PIFF"
 // throttles are in [1], 0~1; thrusts are in [N]
 // if there is no FFC, use 0 for uncalculated values thrust_pid, thrust_out_ffc, thrust_tot
+// throttle_out_calced is as calculated by ffc, throttle_out_proper is as actually used by actuators
+//  the two might differ, eg. if IS_IGNORE_FFC_OUTPUT is true
 void AC_FeedForwardController::log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
-    float thrust_out_ffc, float thrust_tot, float throttle_out)
+    float thrust_out_ffc, float thrust_tot, float throttle_out_calced, float throttle_out_proper)
 {
     DataFlash_Class::instance()->Log_Write("PIFF",                      // PId, FFc
-        "TimeUS,IsFFC,ThlPID,ThstPID,ThstFFC,ThstTot,ThlOut",
-        "s--NNN-",                                                      // [N] as unit ok?
-        "F-00000",
-        "QBfffff",
+        "TimeUS,IsFFC,ThlPID,ThstPID,ThstFFC,ThstTot,ThlOutC,ThlOutP",
+        // "s--NNN--",                                                  // [N] as unit ok?
+        "s-------",                                                     // [N] is deprecated
+        "F-000000",
+        "QBffffff",
         AP_HAL::micros64(),
         (uint8_t) is_use_ffc,
         throttle_pid,
         thrust_pid,
         thrust_out_ffc,
         thrust_tot,
-        throttle_out
+        throttle_out_calced,
+        throttle_out_proper
     );    
 }

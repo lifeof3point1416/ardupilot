@@ -821,8 +821,10 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     // get d term
     d = _pid_accel_z.get_d();
 
-    // Pst: actual value from pid controller for throttle out ("altitude control")
+    // PSt: value from pid controller for throttle out ("altitude control")
     float thr_out, thr_pid;
+    // PSt: actually used throttle out value, in case we discard a calculated FFC value (just use it for logging)
+    float thr_out_proper;
     // float thr_ffc;
     thr_pid = (p+i+d)*0.001f +_motors.get_throttle_hover();
 
@@ -849,18 +851,29 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         thrust_tot = thrust_pid + thrust_out_ffc;
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
 
+        #if IS_IGNORE_FFC_OUTPUT
+        thr_out_proper = thr_pid;           // use pure PID instead of FFC+PID
+        #else // IS_IGNORE_FFC_OUTPUT
+        thr_out_proper = thr_out;           // use calculated FFC+PID result
+        #endif // IS_IGNORE_FFC_OUTPUT
+
         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
-        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out);
+        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out, thr_out_proper);
         #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
     } else {
         // thr_ffc = 0;
         thr_out = thr_pid;
+        thr_out_proper = thr_out;           // use PID if FFC is not used intendedly (eg if there's no GPA data)
         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
-        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, 0, 0, 0, thr_out);
+        _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, 0, 0, 0, thr_out, thr_out_proper);
         #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
     }
 #else  // IS_FFC_ENABLED
     thr_out = thr_pid;
+    thr_out_proper = thr_out;               // always use PID if FFC is disabled, there will never be any PID+FFC
+    #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+    _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
+    #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
 #endif // IS_FFC_ENABLED
     // thr_out = thr_pid + thr_ffc; // this doesn't work, because throttle from thrust function is non-linear!
     // ==> superposition principle only applies to Forces here!
