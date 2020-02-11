@@ -461,9 +461,9 @@ public:
     float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     // float get_throttle_output(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     float get_thrust_output(void);                      // use inherent derivation data
-#if IS_VERBOSE_THROTTLE_LOGGING_FFC
-    void log_throttle(float throttle_out, float throttle_pid, float throttle_ffc, bool is_ffc_active);
-#endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
+// #if IS_VERBOSE_THROTTLE_LOGGING_FFC
+//     void log_throttle(float throttle_out, float throttle_pid, float throttle_ffc, bool is_ffc_active);
+// #endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
     inline AC_GroundProfileDerivator *get_gpd(void) {return ground_profile_derivator;}
     void update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations);
     // float get_thrust_from_throttle(float throttle);     // converts throttle [1] (0 .. 1) to thrust [N]

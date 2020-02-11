@@ -272,8 +272,8 @@ static_assert(GPA_MAP_LOG_CHUNK_SIZE == 32, "GPA map chunk sizes must be 32, in 
 #error CLF logging requires GDP2 logging!
 #endif
 
-static_assert(IS_VERBOSE_THROTTLE_LOGGING_FFC <= IS_LOG_GPA,
-    "For logging within Rangefinder.cpp IS_LOG_GPA must be true.");
+// static_assert(IS_VERBOSE_THROTTLE_LOGGING_FFC <= IS_LOG_GPA,
+//     "For logging within Rangefinder.cpp IS_LOG_GPA must be true.");
 
 static_assert(IS_VERBOSE_CLF_LOGGING <= IS_USE_SITL_CONFIGURATION,
     "Verbose CLF logging may only be used in SITL configuration.");
