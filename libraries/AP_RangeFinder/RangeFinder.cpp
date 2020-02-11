@@ -3338,6 +3338,9 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
     const float parameter_exp_a = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A;
     const float parameter_exp_b = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B;
     const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
+#if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    const float parameter_scaling_throttle_min = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN;
+#endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
     
     float thrust;
     bool is_negative;
@@ -3352,9 +3355,15 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
         throttle = -throttle;
     }
     throttle = constrain_float(throttle, 0.0f, 1.0f);
-    // TODO: prio 7: scale throttle
 
-    thrust = parameter_exp_a + parameter_exp_b * powf(throttle, parameter_exp_c);
+    // scale throttle
+    // TODO: prio 7: doublecheck scaling
+#if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    throttle = (throttle - parameter_scaling_throttle_min) / (1.0f - parameter_scaling_throttle_min);
+#endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+
+    // exponential motor control function works with throttle in [%]!
+    thrust = parameter_exp_a + parameter_exp_b * powf(throttle*100.0f, parameter_exp_c);
     if (is_negative) {
         thrust = -thrust;
     }
@@ -3370,6 +3379,9 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
     // const float parameter_exp_b = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B;
     const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
     const float parameter_exp_b_pow_inv_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C; // b^(1/c)
+#if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    const float parameter_scaling_throttle_min = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN;
+#endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
     float throttle;                                                 // throttle [1], 0..1
     bool is_negative;
@@ -3386,7 +3398,13 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
     // inverse function gets throttle [%], which we have to convert to [1]
     throttle = powf((thrust_N - parameter_exp_a), (1/parameter_exp_c)) / parameter_exp_b_pow_inv_c;
     throttle /= 100.0f;                                             // now throttle [1]
-    // TODO: prio 7: scale throttle
+
+    // unscale throttle
+    // TODO: prio 7: doublecheck scaling
+#if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    throttle = throttle * (1.0f - parameter_scaling_throttle_min) + parameter_scaling_throttle_min;
+#endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+
     throttle = constrain_float(throttle, 0.0f, 1.0f);
     if (is_negative) {
         throttle = -throttle;
