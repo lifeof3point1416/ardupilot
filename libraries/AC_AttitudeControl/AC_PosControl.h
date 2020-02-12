@@ -301,9 +301,11 @@ public:
 
     // PeterSt: set rangefinder state from Copter, because PosControl runs FFC and FFC needs current
     //  altitude over ground, which is retrieved from rangefinder
-    //  returns true, if rangefinder
-    inline void set_rangefinder_state(int16_t *_rangefinder_state_alt_cm_ptr, bool *_rangefinder_state_alt_healthy_ptr) {
-        rangefinder_state_alt_cm_ptr = _rangefinder_state_alt_cm_ptr; rangefinder_state_alt_healthy_ptr = _rangefinder_state_alt_healthy_ptr; }
+    inline void set_rangefinder_state_alt_cm_ptr(int16_t *_rangefinder_state_alt_cm_ptr) {
+        rangefinder_state_alt_cm_ptr = _rangefinder_state_alt_cm_ptr;}
+    // the following doesn't work, becaus rangefinder_state.alt_healthy is a bitfield, and we can't get an address of a bitfield
+    // inline void set_rangefinder_state(int16_t *_rangefinder_state_alt_cm_ptr, bool *_rangefinder_state_alt_healthy_ptr) {
+    //     rangefinder_state_alt_cm_ptr = _rangefinder_state_alt_cm_ptr; rangefinder_state_alt_healthy_ptr = _rangefinder_state_alt_healthy_ptr; }
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -386,7 +388,7 @@ protected:
     AC_FeedForwardController    *_ffc = nullptr;    // PeterSt: Feed Forward Controller instance
     // PSt: highlevel rangefinder state (in copter), only necessary for running FFC
     int16_t *rangefinder_state_alt_cm_ptr = nullptr;
-    bool *rangefinder_state_alt_healthy_ptr = nullptr;
+    // bool *rangefinder_state_alt_healthy_ptr = nullptr;   // stored as bitfield in rangefinder_state struct ==> no ptr
 
     // parameters
     AP_Float    _accel_xy_filt_hz;      // XY acceleration filter cutoff frequency

@@ -848,7 +848,7 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         thrust_out_ffc = _ffc->cap_thrust(thrust_out_ffc);
  #endif // FFC_IS_ENABLE_THRUST_CAPPING
  #if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
-        thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, rangefinder_state_ptr->alt_cm);
+        thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, *rangefinder_state_alt_cm_ptr);
  #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
 
         // apllying superposition principle to thrusts (=forces) not throttles!

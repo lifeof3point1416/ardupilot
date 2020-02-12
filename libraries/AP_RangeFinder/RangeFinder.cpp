@@ -3459,7 +3459,7 @@ float AC_FeedForwardController::cap_thrust(float thrust)
 // curtails FFC's negative thrust, if the actual altitude over ground (not the projected one
 //  from GPA) is below a certain threshold, to prevent FFC's outliers causing to crash the UAV
 //  only negative FFC thrusts are curtailed, as positive ones push the UAV up, and out of
-//  the low dangerous altitudes
+//  the low dangerous altitudes; not checking rangefinder status, which might be careless!
 float AC_FeedForwardController::alt_safety_thrust_curtail(float thrust_ffc, int alt_over_ground_cm)
 {
  #if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL

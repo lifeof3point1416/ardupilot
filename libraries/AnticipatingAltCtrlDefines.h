@@ -84,7 +84,7 @@ enum AltCtrlMode : uint8_t {
 // set max horizontal speed for MEASUREMENT flight mode
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT              true    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
-#define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT           true
+#define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT           false
 #define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 
 // for ground profile acquisition (GPA)

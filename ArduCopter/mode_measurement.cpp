@@ -106,7 +106,9 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     }
 
     // set rangefinder_state pointer to pos_control, because FFC needs it and is called from there
-    copter.pos_control->set_rangefinder_state(&(copter.rangefinder_state.alt_cm), &(copter.rangefinder_state.alt_healthy))
+    copter.pos_control->set_rangefinder_state_alt_cm_ptr(&(copter.rangefinder_state.alt_cm));
+    // impossible, because we can't get an address of a bitfield:
+    // copter.pos_control->set_rangefinder_state(&(copter.rangefinder_state.alt_cm), &(copter.rangefinder_state.alt_healthy))
 
 #if IS_FFC_ENABLED
     // #error CONTINUE HERE !!
