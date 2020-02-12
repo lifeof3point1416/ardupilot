@@ -844,12 +844,38 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         //      If yes: countersteer, actual motor throttle must be set correctly
         //
         thrust_out_ffc = _ffc->get_thrust_output();
+ #if IS_LOG_FFC_THRUST_CURTAILMENTS
+        float thrust_ffc_raw, thrust_ffc_after_cap;
+        thrust_ffc_raw = thrust_out_ffc;
+ #endif //IS_LOG_FFC_THRUST_CURTAILMENTS
+
  #if FFC_IS_ENABLE_THRUST_CAPPING
         thrust_out_ffc = _ffc->cap_thrust(thrust_out_ffc);
  #endif // FFC_IS_ENABLE_THRUST_CAPPING
+ #if IS_LOG_FFC_THRUST_CURTAILMENTS
+  #if FFC_IS_ENABLE_THRUST_CAPPING
+        thrust_ffc_after_cap = thrust_out_ffc;
+  #else // FFC_IS_ENABLE_THRUST_CAPPING
+        thrust_ffc_after_cap = thrust_ffc_raw;  // no change if there is no capping
+  #endif // FFC_IS_ENABLE_THRUST_CAPPING
+ #endif // IS_LOG_FFC_THRUST_CURTAILMENTS
+
  #if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
         thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, *rangefinder_state_alt_cm_ptr);
  #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
+
+ #if IS_LOG_FFC_THRUST_CURTAILMENTS
+        if (rangefinder_state_alt_cm_ptr != nullptr) {
+            _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, *rangefinder_state_alt_cm_ptr, thrust_out_ffc);
+        } else {
+            // don't want any runtime errors because of logging
+            _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, thrust_out_ffc);
+        }
+        //
+        _ffc->log_ffc_thrust_curtailments_parameters(FFC_IS_ENABLE_THRUST_CAPPING, FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL,
+            FFC_THRUST_CAPPING_MIN_THRUST, FFC_THRUST_CAPPING_MAX_THRUST, 
+            FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM, FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM);
+ #endif //IS_LOG_FFC_THRUST_CURTAILMENTS
 
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;

@@ -483,6 +483,13 @@ public:
     // float get_throttle_from_thrust(float thrust);       // converts thrust [N] to throttle [1] (0 .. 1)
     void log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
     float thrust_out_ffc, float thrust_tot, float throttle_out_calced, float throttle_out_proper);
+#if IS_LOG_FFC_THRUST_CURTAILMENTS
+    void log_ffc_thrust_curtailments_variables(float thrust_ffc_raw, float thrust_after_capping, int rangefinder_alt_cm,
+        float thrust_after_curtailment);                    // "FFC1"
+    void log_ffc_thrust_curtailments_parameters(bool is_capping_enabled, bool is_curtailment_enabled,
+        float capping_min_thrust, float capping_max_thrust, 
+        int curtailment_lower_alt_threshold, int curtailment_upper_alt_threshold);  // "FFC2"
+#endif // IS_LOG_FFC_THRUST_CURTAILMENTS    
 #if FFC_IS_ENABLE_THRUST_CAPPING
     float cap_thrust(float thrust);                         // caps thrust to max and min values
 #endif // FFC_IS_ENABLE_THRUST_CAPPING

@@ -3490,3 +3490,43 @@ float AC_FeedForwardController::alt_safety_thrust_curtail(float thrust_ffc, int 
 }
 #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
 
+#if IS_LOG_FFC_THRUST_CURTAILMENTS
+// "FFC1"
+void AC_FeedForwardController::log_ffc_thrust_curtailments_variables(float thrust_ffc_raw, float thrust_after_capping, 
+    int rangefinder_alt_cm, float thrust_after_curtailment)
+{
+    DataFlash_Class::instance()->Log_Write("FFC1",
+        "TimeUS,ThstRaw,ThstCap,RFAlt,ThstCurt",
+        // "sNNmN",                                                     // [N] specifier is deprecated
+        "s??m?",
+        "F00B0",
+        "Qffif",
+        AP_HAL::micros64(),
+        thrust_ffc_raw,
+        thrust_after_capping,
+        rangefinder_alt_cm,
+        thrust_after_curtailment
+    );
+}
+
+// "FFC2"
+void AC_FeedForwardController::log_ffc_thrust_curtailments_parameters(bool is_capping_enabled, bool is_curtailment_enabled,
+    float capping_min_thrust, float capping_max_thrust, 
+    int curtailment_lower_alt_threshold, int curtailment_upper_alt_threshold)
+{
+    DataFlash_Class::instance()->Log_Write("FFC2",
+        "TimeUS,IsCap,IsCurt,CapMinThst,CapMaxThst,CurtLowAlt,CurtHiAlt",
+        //"s--NNmm",
+        "s--??mm",
+        "F--00BB",
+        "QBBffii",
+        AP_HAL::micros64(),
+        (uint8_t) is_capping_enabled,
+        (uint8_t) is_curtailment_enabled,
+        capping_min_thrust,
+        capping_max_thrust,
+        curtailment_lower_alt_threshold,
+        curtailment_upper_alt_threshold
+    );
+}
+#endif // IS_LOG_FFC_THRUST_CURTAILMENTS    
