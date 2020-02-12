@@ -2785,8 +2785,8 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting(int x_p, int n_value
 {
     DataFlash_Class::instance()->Log_Write("SPF",
         "TimeUS,XP,N,Stat,A,B,C,D,D1,D2,D3,DOk",
-        "sm-----???-",
-        "FB-----???-",
+        "sm------???-",
+        "FB------???-",
         "QiibfffffffB",
         //
         AP_HAL::micros64(),
