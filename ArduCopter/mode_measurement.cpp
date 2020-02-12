@@ -104,6 +104,10 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     if (copter.pos_control->get_ffc() == nullptr) {
         AP_HAL::panic("Unable to allocate FeedForwardController");
     }
+
+    // set rangefinder_state pointer to pos_control, because FFC needs it and is called from there
+    copter.pos_control->set_rangefinder_state(&(copter.rangefinder_state))
+
 #if IS_FFC_ENABLED
     // #error CONTINUE HERE !!
     // TODO: prio 7: start working ffc from scheduler

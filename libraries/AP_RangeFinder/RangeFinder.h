@@ -108,6 +108,19 @@ public:
         const struct AP_Param::GroupInfo *var_info;
     };
 
+    // Added by PeterSt
+    //  added this from the originally unnamed struct in Copter.h for Copter's rangefinder_state variable
+    //  this struct is *only* used from outside the RangeFinder class, but needs to be accessed from
+    //  Copter and PosControl, which is why I put it here
+    struct RangeFinder_HighLevelState {
+        bool enabled:1;
+        bool alt_healthy:1; // true if we can trust the altitude from the rangefinder
+        int16_t alt_cm;     // tilt compensated altitude (in cm) from rangefinder
+        uint32_t last_healthy_ms;
+        LowPassFilterFloat alt_cm_filt; // altitude filter
+        int8_t glitch_count;
+    };
+
     static const struct AP_Param::GroupInfo *backend_var_info[RANGEFINDER_MAX_INSTANCES];
     
     AP_Int16 _powersave_range;

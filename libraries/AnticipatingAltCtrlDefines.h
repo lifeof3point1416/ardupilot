@@ -186,7 +186,9 @@ enum AltCtrlMode : uint8_t {
 #define EXTENDED_PID_MAX_PROJECTION_FACTOR          (5.0f)       // don't extrapolate more than this
 
 // for merging controller data and logging
+
 #define IS_LOG_VERBOSE_PID_FFC_OUTPUT               true    // use ffc->log_pid_ffc_ctrl
+#define IS_LOG_FFC_THRUST_CURTAILMENTS              true    // for thrust capping and altitude safety thrust curtailment
 
 //
 ///////////////////////////////////////////////////////////////////////////////

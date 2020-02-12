@@ -256,6 +256,12 @@ private:
     Compass compass;
     AP_InertialSensor ins;
 
+    #if 1
+    // new definition from RangeFinder.h, naming the struct so we can pass a pointer to it
+    RangeFinder rangefinder{serial_manager, ROTATION_PITCH_270};
+    struct RangeFinder::RangeFinder_HighLevelState rangefinder_state = { false, false, 0, 0 };
+    #else // 1
+    // original ArduCopter definition with unnamed struct
     RangeFinder rangefinder{serial_manager, ROTATION_PITCH_270};
     struct {
         bool enabled:1;
@@ -265,6 +271,7 @@ private:
         LowPassFilterFloat alt_cm_filt; // altitude filter
         int8_t glitch_count;
     } rangefinder_state = { false, false, 0, 0 };
+    #endif // 1
 
     // PeterSt
     // added 2nd rangefinder for anticipating altitude control 
@@ -272,6 +279,10 @@ private:
     // rangefinder is a singleton - default orientation doesn't seem to be important for us
     // RangeFinder rangefinder2{serial_manager, RANGEFINDER_ORIENTATION_FORWARD_FACING};   // need serial_manager???
     // note: this rangefinder measures a dist(-ance), rather than an alt(-itude)
+    #if 0
+    // need a slightly different struct for fwd facing rangefinder, because dist_cm != alt_cm
+    struct RangeFinder::RangeFinder_HighLevelState rangefinder2_state = { false, false, 0, 0 };
+    #else // 1
     struct {
         bool enabled:1;
         bool dist_healthy:1; // true if we can trust the altitude from the rangefinder DEPRECATED???
@@ -280,6 +291,7 @@ private:
         LowPassFilterFloat dist_cm_filt; // altitude filter
         int8_t glitch_count;
     } rangefinder2_state = { false, false, 0, 0 };
+    #endif // 1
 #endif // IS_ENABLE_SECOND_RANGEFINDER
 
 #if RPM_ENABLED == ENABLED
