@@ -256,7 +256,7 @@ private:
     Compass compass;
     AP_InertialSensor ins;
 
-    #if 1
+    #if 0
     // new definition from RangeFinder.h, naming the struct so we can pass a pointer to it
     RangeFinder rangefinder{serial_manager, ROTATION_PITCH_270};
     struct RangeFinder::RangeFinder_HighLevelState rangefinder_state = { false, false, 0, 0 };
