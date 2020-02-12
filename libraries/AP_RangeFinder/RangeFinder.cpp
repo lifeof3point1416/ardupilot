@@ -3436,3 +3436,22 @@ void AC_FeedForwardController::log_pid_ffc_ctrl(bool is_use_ffc, float throttle_
         throttle_out_proper
     );    
 }
+
+#if FFC_IS_ENABLE_THRUST_CAPPING
+// caps thrust to max and min values
+float AC_FeedForwardController::cap_thrust(float thrust)
+{
+ #if FFC_IS_ENABLE_THRUST_CAPPING
+    if (thrust > (FFC_THRUST_CAPPING_MAX_THRUST)) {
+        return FFC_THRUST_CAPPING_MAX_THRUST;
+    } else if (thrust < FFC_THRUST_CAPPING_MIN_THRUST) {
+        return FFC_THRUST_CAPPING_MIN_THRUST;
+    } else {
+        return thrust;
+    }
+ #else // #if FFC_IS_ENABLE_THRUST_CAPPING
+    return thrust;
+ #endif // #if FFC_IS_ENABLE_THRUST_CAPPING
+}
+#endif // FFC_IS_ENABLE_THRUST_CAPPING
+

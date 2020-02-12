@@ -137,7 +137,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 false        // log intermediate results for SPF ("SPF2")
 #define SPF_LES_N_VARIABLES_CUBIC                           4           // a cubic curve has 4 parameters, which we need to find
 
-// actual parameter definitions
+// FFC parameters
 
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE                ALT_CTRL_MODE_STANDARD_PID
 // #define MEASUREMENT_ALTITUDE_CONTROL_MODE                ALT_CTRL_MODE_EXTENDED_PID
@@ -153,18 +153,23 @@ enum AltCtrlMode : uint8_t {
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
 // for motor control function:
-#if 1
-// exponential motor control function
+#if 1                                                                           // switch between MCF implementations
+// exponential motor control function (MCF)
 // thrust = a + b * throttle^c
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.214470f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.2171481191077011f; // b^(1/c)
-
 #endif
-#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        //  0.2 unscaled == 0.0 scaled; is this MOT_SPIN_MIN?
 
-// for extended PID
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        //  0.2 unscaled == 0.0 scaled; is this MOT_SPIN_MIN?
+// thrust capping
+#define FFC_IS_ENABLE_THRUST_CAPPING                        true        // constrain max and min thrust from ffc
+#define FFC_THRUST_CAPPING_MAX_FACTOR                       2.0f        // max thrust is this times its own weight 2 ==> max parabola
+#define FFC_THRUST_CAPPING_MIN_FACTOR                       -1.0f
+
+// Extended PID parameters
+
 #define EXTENDED_PID_PROJECTION_TAU_FACTOR          1       // this multiplied with tau will be the interpolated time for extended PID
 #define IS_DO_XPID_DEBUGGING_LOGGING                false   // do logging for all PIDs, especially useful for Extended PID, very verbose!
 // #define XPID_LOGGING_FREQUENCY                      100     // [Hz]
@@ -213,6 +218,9 @@ enum AltCtrlMode : uint8_t {
 #define RANGEFINDER_COS_ANGLE_FORWARD_FACING        (cosf(radians( RANGEFINDER_ANGLE_FORWARD_FACING_DEG )))
 
 #define IS_USE_GPA_MAP_FREEZE_MODE                  (IS_USE_SITL_CONFIGURATION && IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS)
+
+#define FFC_THRUST_CAPPING_MAX_THRUST               (1e-5f*FFC_THRUST_CAPPING_MAX_FACTOR * PHYSICAL_MODEL_COPTER_MASS * PHYSICAL_MODEL_GRAVITATION_CONST)
+#define FFC_THRUST_CAPPING_MIN_THRUST               (1e-5f*FFC_THRUST_CAPPING_MIN_FACTOR * PHYSICAL_MODEL_COPTER_MASS * PHYSICAL_MODEL_GRAVITATION_CONST)
 
 // set name string of alt ctrl
 #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID

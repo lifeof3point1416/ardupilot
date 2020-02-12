@@ -844,6 +844,9 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         //      If yes: countersteer, actual motor throttle must be set correctly
         //
         thrust_out_ffc = _ffc->get_thrust_output();
+ #if FFC_IS_ENABLE_THRUST_CAPPING
+        thrust_out_ffc = _ffc->cap_thrust(thrust_out_ffc);
+ #endif // FFC_IS_ENABLE_THRUST_CAPPING
 
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;

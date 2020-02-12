@@ -470,6 +470,9 @@ public:
     // float get_throttle_from_thrust(float thrust);       // converts thrust [N] to throttle [1] (0 .. 1)
     void log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
     float thrust_out_ffc, float thrust_tot, float throttle_out_calced, float throttle_out_proper);
+#if FFC_IS_ENABLE_THRUST_CAPPING
+    float cap_thrust(float thrust);                         // caps thrust to max and min values
+#endif // FFC_IS_ENABLE_THRUST_CAPPING
 
     const float copter_mass = PHYSICAL_MODEL_COPTER_MASS;                                   // [g]
     const float copter_time_const = PHYSICAL_MODEL_TIME_CONSTANT_MICROS;                    // [us]
