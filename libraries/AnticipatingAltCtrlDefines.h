@@ -163,10 +163,18 @@ enum AltCtrlMode : uint8_t {
 #endif
 
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        //  0.2 unscaled == 0.0 scaled; is this MOT_SPIN_MIN?
+
 // thrust capping
 #define FFC_IS_ENABLE_THRUST_CAPPING                        true        // constrain max and min thrust from ffc
 #define FFC_THRUST_CAPPING_MAX_FACTOR                       2.0f        // max thrust is this times its own weight 2 ==> max parabola
 #define FFC_THRUST_CAPPING_MIN_FACTOR                       -1.0f
+// altitude safety thrust curtailment
+//  gradually curtails FFC's negative thrust, if real altitude over ground is below a threshold,
+//  in order to prevent FFC's errors (high absolute negative derivations of GPA) to crash UAV into the ground
+//  use proportional curtailment instead of shart capping, to prevent oscillation around threshold
+#define FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL        true
+#define FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM      60          // below this level, proportional curtailment starts
+#define FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM      30          // at this level, FFC's negative thrust is curtailed to 0
 
 // Extended PID parameters
 

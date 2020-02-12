@@ -847,6 +847,8 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
  #if FFC_IS_ENABLE_THRUST_CAPPING
         thrust_out_ffc = _ffc->cap_thrust(thrust_out_ffc);
  #endif // FFC_IS_ENABLE_THRUST_CAPPING
+        #error add minimum altitude safety capping here
+        // rangefinder_state.alt_cm
 
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;

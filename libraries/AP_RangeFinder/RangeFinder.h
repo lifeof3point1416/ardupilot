@@ -473,6 +473,9 @@ public:
 #if FFC_IS_ENABLE_THRUST_CAPPING
     float cap_thrust(float thrust);                         // caps thrust to max and min values
 #endif // FFC_IS_ENABLE_THRUST_CAPPING
+#if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
+    float alt_safety_thrust_curtail(float thrust_ffc, int alt_over_ground_cm);
+#endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
 
     const float copter_mass = PHYSICAL_MODEL_COPTER_MASS;                                   // [g]
     const float copter_time_const = PHYSICAL_MODEL_TIME_CONSTANT_MICROS;                    // [us]
