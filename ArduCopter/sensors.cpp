@@ -286,7 +286,15 @@ void Copter::update_ground_profile_deviator(void)
     int32_t heading;
     horiz_speed = inertial_nav.get_velocity_xy();   // [cm/s]
     heading = ahrs.yaw_sensor;                      // [cdeg]
-    bool is_log_gpd = true;                        // TODO: prio 6: think about logging
+
+    bool is_log_gpd;
+    #if IS_VERBOSE_GPD_LOGGING
+        is_log_GPDTester = true;
+     #else // IS_VERBOSE_GPD_LOGGING
+        // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
+        is_log_gpd = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
+     #endif // IS_VERBOSE_GPD_LOGGING
+
     // TODO: prio 7: reverse heading here or elsewhere??
     #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"
         // velocity_xy seems to be positive, even when flying backwards

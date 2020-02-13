@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   false
+#define IS_USE_SITL_CONFIGURATION                   true
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -219,8 +219,8 @@ enum AltCtrlMode : uint8_t {
 
 // for merging controller data and logging
 
-#define IS_LOG_VERBOSE_PID_FFC_OUTPUT               true    // use ffc->log_pid_ffc_ctrl
-#define IS_LOG_FFC_THRUST_CURTAILMENTS              true    // for thrust capping and altitude safety thrust curtailment
+#define IS_LOG_VERBOSE_PID_FFC_OUTPUT               000    // use ffc->log_pid_ffc_ctrl
+#define IS_LOG_FFC_THRUST_CURTAILMENTS              000    // for thrust capping and altitude safety thrust curtailment
 
 //
 ///////////////////////////////////////////////////////////////////////////////

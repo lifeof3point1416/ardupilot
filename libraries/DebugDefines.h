@@ -51,7 +51,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define GPA_MAP_CONDENSED_BIAS                      (0x80)      // (values < -<this>) will still be negative
 #define PRINT_GPA_MAP_INTERVAL                      30
 #define IS_PRINT_GPA_MAIN_DIRECTION_COO             true        // print them in an interval
-#define IS_USE_GPA_MAP_FROM_FILE                    000        // use predefined map instead (to avoid testflights each time we debug GPD)
+#define IS_USE_GPA_MAP_FROM_FILE                    0001        // use predefined map instead (to avoid testflights each time we debug GPD)
 // #define IS_USE_GPA_MAP_FROM_FILE                    false        // use predefined map instead (to avoid testflights each time we debug GPD)
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_spline_mockup.txt"
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_191206T1317P0100.txt"
@@ -86,7 +86,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2020-02-13 22:00+01:00"    // TODO: frequently update after changes
+#define LAST_CODE_CHANGE                    "2020-02-13 22:47+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but not LAST_CODE_CHANGE
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>
