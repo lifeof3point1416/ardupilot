@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   true
+#define IS_USE_SITL_CONFIGURATION                   false
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -93,7 +93,7 @@ enum AltCtrlMode : uint8_t {
 #define IS_FORCE_GROUND_PROFILE_ACQUISITION_WITH_VALUE      false       
 #define GROUND_PROFILE_ACQUISITION_VALUE_TO_BE_FORCED       true
 
-#define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // had problems with compiling new lib
+#define IS_USE_WORKAROUND_GROUND_PROFILE_ACQUISITION        true        // had problems with compiling new lib in its own file
 // true: host file, false: GroundProfileAcquisition_Workaround.h
 #define IS_USE_WORKAROUND_HOST_FILE_GPA                     true
 
@@ -122,9 +122,9 @@ enum AltCtrlMode : uint8_t {
 // #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_CONSECUTIVE_LINEAR_FITTING
 #define GROUND_PROFILE_DERIVATOR_FITTING                    GROUND_PROFILE_DERIVATOR_SINGLE_POLYNOME_FITTING
 #define DERIVATIONS_NO_DATA_INIT_VALUE                      0           // had some trouble with NAN
-#define IS_DO_GPD2_DEBUGGING_LOGGING                        true        // attention! this is very verbose
+#define IS_DO_GPD2_DEBUGGING_LOGGING                        000        // attention! this is very verbose
 #define GPD2_LOGGING_FREQUENCY                              100         // [Hz]
-#define IS_DO_HSC_LOGGING                                   true
+#define IS_DO_HSC_LOGGING                                   000
 #define GPD_TIMEOUT_MICROS                                  50000       // maximum age for ffc.last_derivations [us]
 // for CLF
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
@@ -132,7 +132,7 @@ enum AltCtrlMode : uint8_t {
 // #define CLF_LOGGING_FREQUENCY                               400         // [Hz]
 // for SPF
 #define LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE           (1.0e-10f)  // values with an abs below this are considered 0
-#define IS_DO_SPF_DEBUGGING_LOGGING                         true        // for Single Polynome Fitting Derivation
+#define IS_DO_SPF_DEBUGGING_LOGGING                         000        // for Single Polynome Fitting Derivation
 #define SPF_MINIMUM_N_VALUES                                4           // 4 is absolute minimum
 #define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 false        // log intermediate results for SPF ("SPF2")
 #define SPF_LES_N_VARIABLES_CUBIC                           4           // a cubic curve has 4 parameters, which we need to find
@@ -159,8 +159,6 @@ enum AltCtrlMode : uint8_t {
 
 #if !IS_USE_SITL_CONFIGURATION         // use real UAV?
 
-// TODO: prio 7: rescale to hovering
-#error TODO: rescale MFC to hovering!
  #if 1  // use hover-rescaled MFC?
  // MOT_THST_HOVER for flamewheel:  0.460795, mass 1.5 kg
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
