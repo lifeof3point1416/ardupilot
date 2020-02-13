@@ -3344,7 +3344,9 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
     printf("\tget_thrust_from_throttle\n");
     printf("\tfloat throttle: %f; bool is allow_negative: %d\n", throttle, (int) is_allow_negative);
-    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+    //  printout in crash, after AC_PosControl.cpp line 885 ok.
+    //      float throttle: 0.199292; bool is allow_negative: 1
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);        // ok
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
     // parameters for motor control function:
     // thrust = a + b * throttle^c
@@ -3370,8 +3372,8 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
     throttle = constrain_float(throttle, 0.0f, 1.0f);
 
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
-    printf("\tfloat throttle: %f\n", throttle);
-    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+    printf("\tfloat throttle: %f\n", throttle);             //  0.199292
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);    // ok
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
     // scale throttle
@@ -3381,8 +3383,8 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
-    printf("\tfloat throttle: %f\n", throttle);
-    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+    printf("\tfloat throttle: %f\n", throttle);             // -0.000884
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);    // ok
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
     // exponential motor control function works with throttle in [%]!
