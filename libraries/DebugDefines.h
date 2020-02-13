@@ -79,6 +79,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 // #define IS_IGNORE_FFC_OUTPUT                        true        // true: we might have an ffc, giving output data, but we don't feed it onto altitude ctrl
 #define IS_IGNORE_FFC_OUTPUT                        false        // true: we might have an ffc, giving output data, but we don't feed it onto altitude ctrl
 #define IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER    false        // do debug printout for horizontal velocities
+#define IS_VERBOSE_DEBUG_FFC                        001         // at PosCtrl, where FFC comes into action
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds

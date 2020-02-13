@@ -836,6 +836,10 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         }
     }
 
+#if IS_VERBOSE_DEBUG_FFC
+    printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+#endif // IS_VERBOSE_DEBUG_FFC
+
 #if IS_FFC_ENABLED
     if (is_use_ffc) {
         // log thrust_out_ffc, thr_ffc and thr_out if necessary, check with CTUN.ThO log
@@ -843,7 +847,14 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         //  ==> does motor thrust scaling mess up our motor control function?
         //      If yes: countersteer, actual motor throttle must be set correctly
         //
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
         thrust_out_ffc = _ffc->get_thrust_output();
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
+
  #if IS_LOG_FFC_THRUST_CURTAILMENTS
         float thrust_ffc_raw, thrust_ffc_after_cap;
         thrust_ffc_raw = thrust_out_ffc;
@@ -861,6 +872,9 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
  #endif // IS_LOG_FFC_THRUST_CURTAILMENTS
 
  #if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
+        if (rangefinder_state_alt_cm_ptr == nullptr) {
+            printf("rangefinder_state_alt_cm_ptr == nullptr!!! at TimeUS = %ull\n", AP_HAL::micros64());
+        }
         thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, *rangefinder_state_alt_cm_ptr);
  #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
 
@@ -877,11 +891,17 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
             FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM, FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM);
  #endif //IS_LOG_FFC_THRUST_CURTAILMENTS
 
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;
         thrust_pid = _ffc->get_thrust_from_throttle(thr_pid, true);
         thrust_tot = thrust_pid + thrust_out_ffc;
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
 
         #if IS_IGNORE_FFC_OUTPUT
         thr_out_proper = thr_pid;           // use pure PID instead of FFC+PID
@@ -907,6 +927,11 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
     #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
 #endif // IS_FFC_ENABLED
+
+#if IS_VERBOSE_DEBUG_FFC
+    printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+#endif // IS_VERBOSE_DEBUG_FFC
+
     // thr_out = thr_pid + thr_ffc; // this doesn't work, because throttle from thrust function is non-linear!
     // ==> superposition principle only applies to Forces here!
 
@@ -923,6 +948,10 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     // PSt: my version, sending thr_out_proper instead, because we wired the FFC and 
     //  a possible IS_IGNORE_FFC_OUTPUT inbetween
     _attitude_control.set_throttle_out(thr_out_proper, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
+
+#if IS_VERBOSE_DEBUG_FFC
+    printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+#endif // IS_VERBOSE_DEBUG_FFC
 }
 
 ///

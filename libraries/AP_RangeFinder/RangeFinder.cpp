@@ -1177,6 +1177,10 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     // wrong: using "absolute value", not difference!
     //alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(position_neu_cm.x, position_neu_cm.y)) / 100;
     // right:
+    #if IS_VERBOSE_DEBUG_FFC
+        printf("RangeFinder.cpp line %d ok.\n", __LINE__);  // ok
+    #endif // IS_VERBOSE_DEBUG_FFC
+    
     alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(
         position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100.0f;
     alpha_x = ( ((float) main_direction)/100.0f) - alpha_p;
@@ -1196,6 +1200,10 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     float x_p, y_p; // x coordinate in 1D (requested output), y coo. (error or distance to x-axis)
     x_p = cosf(radians(alpha_x)) * dist_o_p;
     y_p = sinf(radians(alpha_x)) * dist_o_p;
+
+    #if IS_VERBOSE_DEBUG_FFC
+        printf("RangeFinder.cpp line %d ok.\n", __LINE__);  // ok
+    #endif // IS_VERBOSE_DEBUG_FFC
 
     //return (int) x_p;
     Vector2<int> ret;
