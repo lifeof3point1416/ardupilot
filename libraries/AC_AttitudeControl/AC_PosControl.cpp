@@ -863,7 +863,7 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
 
  #if FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
         if (rangefinder_state_alt_cm_ptr == nullptr) {
-            printf("rangefinder_state_alt_cm_ptr == nullptr!!! at TimeUS = %llu\n", AP_HAL::micros64());
+            printf("rangefinder_state_alt_cm_ptr == nullptr!!! at TimeUS = %lu\n", AP_HAL::micros64());
         }
         thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, *rangefinder_state_alt_cm_ptr);
  #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
