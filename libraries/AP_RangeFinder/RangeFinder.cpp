@@ -3342,8 +3342,8 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
 float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is_allow_negative)
 {
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
-    printf("\tget_thrust_from_throttle\n", __LINE__);
-    printf("\tfloat throttle: %f; bool is allow_negative: %d\n", throttle, is_allow_negative);
+    printf("\tget_thrust_from_throttle\n");
+    printf("\tfloat throttle: %f; bool is allow_negative: %d\n", throttle, (int) is_allow_negative);
     printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
     // parameters for motor control function:
@@ -3403,8 +3403,8 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
 float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is_allow_negative)
 {
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
-    printf("\tget_throttle_from_thrust\n", __LINE__);
-    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tget_throttle_from_thrust\n");
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, (int) is_allow_negative);
     printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
