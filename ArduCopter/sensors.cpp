@@ -296,7 +296,7 @@ void Copter::update_ground_profile_deviator(void)
     #endif // IS_REVERSE_GPA_MAIN_DIRECTION
     
     #if IS_VERBOSE_DEBUG_GPD
-        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ok
+        printf("sensors.cpp line %d ok.\n", __LINE__);  // ok
     #endif // IS_VERBOSE_DEBUG_GPD   
     // ffc->get_gpd()
     // last_derivations = copter.ground_profile_derivator->get_profile_derivations(
@@ -309,7 +309,7 @@ void Copter::update_ground_profile_deviator(void)
     ffc->update_last_derivation(ffc->get_gpd()->get_profile_derivations(
         inertial_nav.get_position(), horiz_speed, heading, is_log_gpd));
     #if IS_VERBOSE_DEBUG_GPD
-        printf("mode_MEAS.cpp line %d ok.\n", __LINE__);  // ???
+        printf("sensors.cpp line %d ok.\n", __LINE__);  // ???
     #endif // IS_VERBOSE_DEBUG_GPD   
 }
 
