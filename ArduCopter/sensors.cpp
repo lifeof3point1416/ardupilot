@@ -290,10 +290,10 @@ void Copter::update_ground_profile_deviator(void)
     bool is_log_gpd;
     #if IS_VERBOSE_GPD_LOGGING
         is_log_GPDTester = true;
-     #else // IS_VERBOSE_GPD_LOGGING
+    #else // IS_VERBOSE_GPD_LOGGING
         // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
         is_log_gpd = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
-     #endif // IS_VERBOSE_GPD_LOGGING
+    #endif // IS_VERBOSE_GPD_LOGGING
 
     // TODO: prio 7: reverse heading here or elsewhere??
     #if IS_REVERSE_GPA_MAIN_DIRECTION               // declare vehicles "backward" as flying "forward"

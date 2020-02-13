@@ -77,7 +77,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 // #define IS_FFC_ENABLED                              false       // false: disable already existing code, useful for tests not concerning untested FFC code
 #define IS_FFC_ENABLED                              true       // false: disable already existing code, useful for tests not concerning untested FFC code
 // #define IS_IGNORE_FFC_OUTPUT                        true        // true: we might have an ffc, giving output data, but we don't feed it onto altitude ctrl
-#define IS_IGNORE_FFC_OUTPUT                        001        // true: we might have an ffc, giving output data, but we don't feed it onto altitude ctrl
+#define IS_IGNORE_FFC_OUTPUT                        0001        // true: we might have an ffc, giving output data, but we don't feed it onto altitude ctrl
 #define IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER    false        // do debug printout for horizontal velocities
 #define IS_VERBOSE_DEBUG_FFC                        false         // at PosCtrl, where FFC comes into action
 #define IS_VERY_VERBOSE_DEBUG_FFC_MCF               false         // find cause of Floating Point exception
