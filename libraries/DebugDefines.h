@@ -65,8 +65,8 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_VERBOSE_DEBUG_GPD                        000        // very verbose debugs for Ground Profile Derivator
 #define IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS       false     
 // #define IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS       true
-#define IS_DO_INTERMEDIATE_CLF_LOGGING              true        // not only before return, but also after every grade
-#define IS_VERBOSE_CLF_LOGGING                      true        // log data actually used for GPD, tag "CLF2"
+#define IS_DO_INTERMEDIATE_CLF_LOGGING              false        // not only before return, but also after every grade
+#define IS_VERBOSE_CLF_LOGGING                      false        // log data actually used for GPD, tag "CLF2"
 #define IS_TEST_INT32_INT16_LOGGING                 false       // run a test logging int32[] as int16[]
 #define IS_VERBOSE_GPD_LOGGING                      000        // log GPD every time, not just once a second
 #define IS_USE_FLOAT_ARITHMETIC_FOR_DERIVATION      true        // for CLF, as opposed to fixed integer arithmetic

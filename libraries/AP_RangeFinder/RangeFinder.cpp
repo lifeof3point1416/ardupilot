@@ -2487,7 +2487,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
  #if IS_SMOOTHEN_GROUND_PROFILE_DERIVATION_VALUES
     /// filter valid x and z values (overwrite z_vector with its filtered values)
     // build up vectors of valid x and z values
-    const float no_data_value_float = (float) GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;   // prevent multiple floatToInt
+    // const float no_data_value_float = (float) GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE;   // prevent multiple floatToInt
     for (x_int = x_target_left, n_values = 0; x_int <= x_target_right; x_int++) {
         // indices must have been checked before
         if (ground_profile_acquisition->has_ground_profile_datum_no_index_check(x_int)) {
@@ -2680,6 +2680,7 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
         pivot_row = col;                                            // iter pivot element through matrix from left to right
         // check pivot element, if it is 0, something else went wrong, as sums of powers of x_i should always be >0
         if (A[pivot_row][col] == 0.0f) {
+        // if (fabs(A[pivot_row][col]) < LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE) {
  #if IS_DO_SPF_DEBUGGING_LOGGING
             log_single_polynome_fitting(x_p, n_values, 0, 0, 0, 0, derivations, 
                 (int8_t) SinglePolynomeFittingReturnState_PIVOT_ELEMENT_EQ_ZERO);
@@ -2768,8 +2769,9 @@ AC_GroundProfileDerivator::DistanceDerivations AC_GroundProfileDerivator::get_si
     //// calculate derivates from cubic line coefficients
 
     // f_cubic(x) = z = a + b*x + c*x^2 + d*x^3
-    float coeff_a, coeff_b, coeff_c, coeff_d;
-    coeff_a = b[0];
+    // float coeff_a;   // not necessary, as derivates eat away the constant
+    float coeff_b, coeff_c, coeff_d;
+    // coeff_a = b[0];
     coeff_b = b[1];
     coeff_c = b[2];
     coeff_d = b[3];

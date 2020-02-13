@@ -128,13 +128,15 @@ enum AltCtrlMode : uint8_t {
 #define GPD_TIMEOUT_MICROS                                  50000       // maximum age for ffc.last_derivations [us]
 // for CLF
 #define GROUND_PROFILE_DERIVATOR_MULTIPLICATOR_EXPONENT     4           // fixed comma values will be multiplied by 2^<this number> for better precision
-#define IS_DO_CLF_DEBUGGING_LOGGING                         true        // for Consecutive Linear Fitting Derivation
+#define IS_DO_CLF_DEBUGGING_LOGGING                         false        // for Consecutive Linear Fitting Derivation
 // #define CLF_LOGGING_FREQUENCY                               400         // [Hz]
 // for SPF
 #define LINEAR_EQUATION_SYSTEM_SOLVER_0_TOLERANCE           (1.0e-10f)  // values with an abs below this are considered 0
 #define IS_DO_SPF_DEBUGGING_LOGGING                         000        // for Single Polynome Fitting Derivation
-#define SPF_MINIMUM_N_VALUES                                4           // 4 is absolute minimum
-#define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 false        // log intermediate results for SPF ("SPF2")
+// note that SPF logging is not necessary online in real UAV, because we can preserve GPAM, load it into SITL and 
+//  verbosely SPF-log it here, in order to analyze it step by step (with "SPF", "SPF2")
+#define SPF_MINIMUM_N_VALUES                                4           // 4 is absolute minimum, b/c of 4 unknowns
+#define IS_DO_VERBOSE_SPF_DEBUGGING_LOGGING                 false       // log intermediate results for SPF ("SPF2")
 #define SPF_LES_N_VARIABLES_CUBIC                           4           // a cubic curve has 4 parameters, which we need to find
 
 // FFC parameters
