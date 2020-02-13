@@ -2870,7 +2870,7 @@ void AC_GroundProfileDerivator::log_single_polynome_fitting_profile_data(int x_p
 void AC_GroundProfileDerivator::log_single_polynome_fitting_linear_equation_sys(
     float A[SPF_LES_N_VARIABLES_CUBIC][SPF_LES_N_VARIABLES_CUBIC], float *b, int8_t les_status)
 {
-    #error causes crash, mostlikely its the convertsion of A to A_as_int16_fp
+    #error causes crash, mostlikely its the conversion of A to A_as_int16_fp
     // TODO: prio 8: get int16_t A_as_int16[] from float A[][]
     const int int16_array_len = 32;                                     // for logging formatter 'a': int16_t[32]
     int16_t A_as_int16_fix[int16_array_len];
