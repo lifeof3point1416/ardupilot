@@ -153,16 +153,36 @@ enum AltCtrlMode : uint8_t {
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
 // for motor control function:
-#if 1                                                                           // switch between MCF implementations
+
 // exponential motor control function (MCF)
 // thrust = a + b * throttle^c
+
+#if !IS_USE_SITL_CONFIGURATION         // use real UAV?
+
+// TODO: prio 7: rescale to hovering
+#error TODO: rescale MFC to hovering!
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.214470f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.2171481191077011f; // b^(1/c)
-#endif
 
-#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        //  0.2 unscaled == 0.0 scaled; is this MOT_SPIN_MIN?
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        // MOT_SPIN_MIN, this equals 0 unscaled
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         1.0f        // MOT_SPIN_MAX
+
+#else // !IS_USE_SITL_CONFIGURATION ==> // SITL
+
+// TODO: prio 8: adjust MFC to SITL's thrust
+// for SITL's MOT_THST_HOVER = 0.347616 and m_c = 1.5 kg
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.411280f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.4142359400004029f; // b^(1/c)
+
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.15f       // MOT_SPIN_MIN, this equals 0 unscaled
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f       // MOT_SPIN_MAX
+
+
+#endif // !IS_USE_SITL_CONFIGURATION
 
 // thrust capping
 #define FFC_IS_ENABLE_THRUST_CAPPING                        true        // constrain max and min thrust from ffc

@@ -3354,6 +3354,7 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
     const float parameter_exp_b = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B;
     const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
 #if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    const float parameter_scaling_throttle_max = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX;
     const float parameter_scaling_throttle_min = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN;
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
     
@@ -3377,9 +3378,11 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
     // scale throttle
-    // TODO: prio 7: doublecheck scaling
 #if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
-    throttle = (throttle - parameter_scaling_throttle_min) / (1.0f - parameter_scaling_throttle_min);
+    // // scaling without max:
+    // throttle = (throttle - parameter_scaling_throttle_min) / (1.0f - parameter_scaling_throttle_min);
+    // scaling with 0~1 constraint (below) and max throttle:
+    throttle = (throttle - parameter_scaling_throttle_min) / (parameter_scaling_throttle_max - parameter_scaling_throttle_min);
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
@@ -3419,6 +3422,7 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
     const float parameter_exp_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C;
     const float parameter_exp_b_pow_inv_c = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C; // b^(1/c)
 #if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
+    const float parameter_scaling_throttle_max = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX;
     const float parameter_scaling_throttle_min = MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN;
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
@@ -3451,7 +3455,8 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
     // unscale throttle
     // TODO: prio 7: doublecheck scaling
 #if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
-    throttle = throttle * (1.0f - parameter_scaling_throttle_min) + parameter_scaling_throttle_min;
+    // throttle = throttle * (1.0f - parameter_scaling_throttle_min) + parameter_scaling_throttle_min;
+    throttle = throttle * (parameter_scaling_throttle_max - parameter_scaling_throttle_min) + parameter_scaling_throttle_min;
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
 #if IS_VERY_VERBOSE_DEBUG_FFC_MCF
