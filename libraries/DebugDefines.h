@@ -55,9 +55,9 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 // #define IS_USE_GPA_MAP_FROM_FILE                    false        // use predefined map instead (to avoid testflights each time we debug GPD)
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_spline_mockup.txt"
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_191206T1317P0100.txt"
-// #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma031.txt.txt"
-#define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma099.txt.txt"
-// #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma201.txt.txt"
+// #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma031.txt"
+#define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma099.txt"
+// #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_265_csma201.txt"
 #define GPA_MAP_LINE_BUFSIZ                         80          // MUST be longer than a line of the csv file
 #define IS_PRINT_GPA_MAP_FROM_FILE_DATA             true        // print data when parsing, using printf
 
