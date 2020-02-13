@@ -161,13 +161,25 @@ enum AltCtrlMode : uint8_t {
 
 // TODO: prio 7: rescale to hovering
 #error TODO: rescale MFC to hovering!
+ #if 1  // use hover-rescaled MFC?
+ // MOT_THST_HOVER for flamewheel:  0.460795, mass 1.5 kg
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.411148f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
+#define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.41410410624967914f; // b^(1/c)
+
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.20f        // MOT_SPIN_MIN, this equals 0 unscaled
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f        // MOT_SPIN_MAX
+ #else  // 1, use hover-rescaled MFC?
+ // original MFC (not hover-rescaled)
+ #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.214470f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.2171481191077011f; // b^(1/c)
 
-#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.2f        // MOT_SPIN_MIN, this equals 0 unscaled
-#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         1.0f        // MOT_SPIN_MAX
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.20f        // MOT_SPIN_MIN, this equals 0 unscaled
+#define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f        // MOT_SPIN_MAX
+ #endif // 1, use hover-rescaled MFC?
 
 #else // !IS_USE_SITL_CONFIGURATION ==> // SITL
 
