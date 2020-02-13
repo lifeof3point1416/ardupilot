@@ -836,10 +836,6 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         }
     }
 
-#if IS_VERBOSE_DEBUG_FFC
-    printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-#endif // IS_VERBOSE_DEBUG_FFC
-
 #if IS_FFC_ENABLED
     if (is_use_ffc) {
         // log thrust_out_ffc, thr_ffc and thr_out if necessary, check with CTUN.ThO log
@@ -847,13 +843,7 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         //  ==> does motor thrust scaling mess up our motor control function?
         //      If yes: countersteer, actual motor throttle must be set correctly
         //
-        #if IS_VERBOSE_DEBUG_FFC
-            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-        #endif // IS_VERBOSE_DEBUG_FFC
         thrust_out_ffc = _ffc->get_thrust_output();
-        #if IS_VERBOSE_DEBUG_FFC
-            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-        #endif // IS_VERBOSE_DEBUG_FFC
 
  #if IS_LOG_FFC_THRUST_CURTAILMENTS
         float thrust_ffc_raw, thrust_ffc_after_cap;
@@ -897,7 +887,13 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         // apllying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;
         thrust_pid = _ffc->get_thrust_from_throttle(thr_pid, true);
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
         thrust_tot = thrust_pid + thrust_out_ffc;
+        #if IS_VERBOSE_DEBUG_FFC
+            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
+        #endif // IS_VERBOSE_DEBUG_FFC
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
         #if IS_VERBOSE_DEBUG_FFC
             printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
@@ -927,10 +923,6 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
     _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
     #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
 #endif // IS_FFC_ENABLED
-
-#if IS_VERBOSE_DEBUG_FFC
-    printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-#endif // IS_VERBOSE_DEBUG_FFC
 
     // thr_out = thr_pid + thr_ffc; // this doesn't work, because throttle from thrust function is non-linear!
     // ==> superposition principle only applies to Forces here!
