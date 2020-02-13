@@ -1180,7 +1180,7 @@ Vector2<int> AC_GroundProfileAcquisition::get_main_direction_coo(Vector3f positi
     #if IS_VERBOSE_DEBUG_FFC
         printf("RangeFinder.cpp line %d ok.\n", __LINE__);  // ok
     #endif // IS_VERBOSE_DEBUG_FFC
-    
+
     alpha_p = HEADING_CENTIDEGREES_FROM_MATH_ANGLE_RADIANS(atan2f(
         position_neu_cm.x - start_position_cm.x, position_neu_cm.y - start_position_cm.y)) / 100.0f;
     alpha_x = ( ((float) main_direction)/100.0f) - alpha_p;
@@ -3341,6 +3341,11 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
 //  they might be negative
 float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is_allow_negative)
 {
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tget_thrust_from_throttle\n", __LINE__);
+    printf("\tfloat throttle: %f; bool is allow_negative: %d\n", throttle, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
     // parameters for motor control function:
     // thrust = a + b * throttle^c
     const float parameter_exp_a = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A;
@@ -3364,23 +3369,45 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
     }
     throttle = constrain_float(throttle, 0.0f, 1.0f);
 
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat throttle: %f\n", throttle);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     // scale throttle
     // TODO: prio 7: doublecheck scaling
 #if FFC_MCF_IS_ENABLE_THROTTLE_SCALING
     throttle = (throttle - parameter_scaling_throttle_min) / (1.0f - parameter_scaling_throttle_min);
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat throttle: %f\n", throttle);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     // exponential motor control function works with throttle in [%]!
     thrust = parameter_exp_a + parameter_exp_b * powf(throttle*100.0f, parameter_exp_c);
     if (is_negative) {
         thrust = -thrust;
     }
+
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat throttle: %f\n", throttle);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     return thrust;
 }
 
 // converts thrust [N] to throttle [1] (0 .. 1)
 float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is_allow_negative)
 {
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tget_throttle_from_thrust\n", __LINE__);
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     // parameters for motor control function:
     // thrust = a + b * throttle^c
     const float parameter_exp_a = MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A;
@@ -3403,9 +3430,19 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
         thrust_N = -thrust_N;
     }
 
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     // inverse function gets throttle [%], which we have to convert to [1]
     throttle = powf((thrust_N - parameter_exp_a), (1/parameter_exp_c)) / parameter_exp_b_pow_inv_c;
     throttle /= 100.0f;                                             // now throttle [1]
+
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
     // unscale throttle
     // TODO: prio 7: doublecheck scaling
@@ -3413,10 +3450,21 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
     throttle = throttle * (1.0f - parameter_scaling_throttle_min) + parameter_scaling_throttle_min;
 #endif // FFC_MCF_IS_ENABLE_THROTTLE_SCALING
 
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     throttle = constrain_float(throttle, 0.0f, 1.0f);
     if (is_negative) {
         throttle = -throttle;
     }
+
+#if IS_VERY_VERBOSE_DEBUG_FFC_MCF
+    printf("\tfloat thrust_N: %f; bool is allow_negative: %d\n", thrust_N, is_allow_negative);
+    printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);
+#endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
+
     return throttle;
 }
 
