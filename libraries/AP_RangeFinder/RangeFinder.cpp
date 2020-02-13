@@ -3387,6 +3387,8 @@ float AC_FeedForwardController::get_thrust_from_throttle(float throttle, bool is
     printf("\tRangeFinder.cpp line %d ok.\n", __LINE__);    // ok
 #endif // IS_VERY_VERBOSE_DEBUG_FFC_MCF
 
+    // prevent illegal throttle values due to scaling, powf can't handle negative values!
+    throttle = constrain_float(throttle, 0.0f, 1.0f);
     // exponential motor control function works with throttle in [%]!
     thrust = parameter_exp_a + parameter_exp_b * powf(throttle*100.0f, parameter_exp_c);
     if (is_negative) {
