@@ -741,6 +741,7 @@ private:
     int call_1hz_loop_counter = 0;                              // counts calls of Copter::one_hz_loop()
     int call_run_counter = 0;                                   // counts calls of:
     //  void Copter::ModeMeasurement::run(), Copter::ModeLoiter::run(), void Copter::ModeAltHold::run()
+    int call_update_ground_profile_deviator = 0;                // counts calls of update_ground_profile_deviator
     int call_update_gpa_counter = 0;                            // counts update_<gpa>
 
     // Attitude.cpp

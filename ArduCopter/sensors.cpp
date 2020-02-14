@@ -270,6 +270,10 @@ void Copter::update_ground_profile_acquisition(void)
 //  this function is called from the scheduler
 void Copter::update_ground_profile_deviator(void)
 {
+    // update call counter for 1 Hz "GPD" logging
+    copter.call_update_ground_profile_deviator++;
+
+
     // GPA is only necessary in MEASUREMENT flightmode
     if (copter.control_mode != control_mode_t::MEASUREMENT) {
         return;
@@ -291,8 +295,8 @@ void Copter::update_ground_profile_deviator(void)
     #if IS_VERBOSE_GPD_LOGGING
         is_log_GPDTester = true;
     #else // IS_VERBOSE_GPD_LOGGING
-        // a lot of logs (whole GPA map eg.) ==> log only once per second for samples
-        is_log_gpd = (copter.call_run_counter % (1 * CALL_FREQUENCY_MEASUREMENT_RUN)) == 1;
+        // non-verbose GPD logs only 1 per second for samples
+        is_log_gpd = (copter.call_update_ground_profile_deviator % (1 * CALL_FREQUENCY_UPDATE_GPD)) == 1;
     #endif // IS_VERBOSE_GPD_LOGGING
 
     // TODO: prio 7: reverse heading here or elsewhere??
