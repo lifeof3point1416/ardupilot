@@ -322,6 +322,21 @@ void Copter::init_ardupilot()
         if (IS_MOCK_OSCILLATING_RANGEFINDER_DATA) {
             gcs().send_text(MAV_SEVERITY_DEBUG, "MOCKING OSCILLATING RANGEFINDER!");
         }
+        // print controller type
+     
+     #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID
+        hal.console->printf("MEASUREMENT altitude control mode: Standard PID\n");
+     #elif MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_EXTENDED_PID
+        hal.console->printf("MEASUREMENT altitude control mode: Extended PID\n");
+     #elif MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
+        #if IS_IGNORE_FFC_OUTPUT
+        hal.console->printf("MEASUREMENT altitude control mode: PID, logging FFC but ignoring it\n");
+        #else // IS_IGNORE_FFC_OUTPUT
+        hal.console->printf("MEASUREMENT altitude control mode: FFC\n");
+        #endif // IS_IGNORE_FFC_OUTPUT
+     #else // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID
+        #error UNKNOWN MEASUREMENT_ALTITUDE_CONTROL_MODE
+     #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID
     #endif
 
     #if IS_MOCK_OSCILLATING_RANGEFINDER_DATA
