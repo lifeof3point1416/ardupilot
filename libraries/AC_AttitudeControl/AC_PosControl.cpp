@@ -695,6 +695,11 @@ inline void AC_PosControl::run_z_controller() {
 // specify wether the FFC should be used or not
 void AC_PosControl::run_z_controller(bool is_use_ffc)
 {
+// PeterSt: added this counter for non-verbose PIFF and FFC1 logging
+#if IS_RUN_COUNTER_POS_CTRL_RUN_Z_CTRL
+    call_run_z_controller_counter++;
+#endif // IS_RUN_COUNTER_POS_CTRL_RUN_Z_CTRL
+
     float curr_alt = _inav.get_altitude();          // PSt: relative altitude to home position
     // (not altitude over ground!)
     // 
@@ -868,18 +873,35 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         thrust_out_ffc = _ffc->alt_safety_thrust_curtail(thrust_out_ffc, *rangefinder_state_alt_cm_ptr);
  #endif // FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL
 
+//  #if IS_LOG_FFC_THRUST_CURTAILMENTS
+//         if (rangefinder_state_alt_cm_ptr != nullptr) {
+//             _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, *rangefinder_state_alt_cm_ptr, thrust_out_ffc);
+//         } else {
+//             // don't want any runtime errors because of logging
+//             _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, thrust_out_ffc);
+//         }
+//         // old FFC2 logging every time:
+//         _ffc->log_ffc_thrust_curtailments_parameters(FFC_IS_ENABLE_THRUST_CAPPING, FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL,
+//             FFC_THRUST_CAPPING_MIN_THRUST, FFC_THRUST_CAPPING_MAX_THRUST, 
+//             FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM, FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM);
+//  #endif //IS_LOG_FFC_THRUST_CURTAILMENTS
+
  #if IS_LOG_FFC_THRUST_CURTAILMENTS
-        if (rangefinder_state_alt_cm_ptr != nullptr) {
-            _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, *rangefinder_state_alt_cm_ptr, thrust_out_ffc);
-        } else {
-            // don't want any runtime errors because of logging
-            _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, thrust_out_ffc);
+        if (
+  #if IS_LOG_VERBOSE_FFC_THRUST_CURTAILMENTS
+            (1)
+  #else // IS_LOG_VERBOSE_FFC_THRUST_CURTAILMENTS
+            ((call_run_z_controller_counter % (CALL_FREQUENCY_MEASUREMENT_RUN/LOG_PID_FFC_OUTPUT_FREQUENCY)) == 1)
+  #endif // IS_LOG_VERBOSE_FFC_THRUST_CURTAILMENTS
+        ) {
+            if (rangefinder_state_alt_cm_ptr != nullptr) {
+                _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, *rangefinder_state_alt_cm_ptr, thrust_out_ffc);
+            } else {
+                // don't want any runtime errors because of logging
+                _ffc->log_ffc_thrust_curtailments_variables(thrust_ffc_raw, thrust_ffc_after_cap, GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE, thrust_out_ffc);
+            }
         }
-        //
-        _ffc->log_ffc_thrust_curtailments_parameters(FFC_IS_ENABLE_THRUST_CAPPING, FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL,
-            FFC_THRUST_CAPPING_MIN_THRUST, FFC_THRUST_CAPPING_MAX_THRUST, 
-            FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM, FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM);
- #endif //IS_LOG_FFC_THRUST_CURTAILMENTS
+ #endif // IS_LOG_FFC_THRUST_CURTAILMENTS  
 
         #if IS_VERBOSE_DEBUG_FFC
             printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
@@ -905,23 +927,44 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         thr_out_proper = thr_out;           // use calculated FFC+PID result
         #endif // IS_IGNORE_FFC_OUTPUT
 
-        #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        #if IS_LOG_PID_FFC_OUTPUT
+         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
         _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out, thr_out_proper);
-        #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+         #else // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        // non-verbose logging
+        if ((call_run_z_controller_counter % (CALL_FREQUENCY_MEASUREMENT_RUN/LOG_PID_FFC_OUTPUT_FREQUENCY)) == 1) {
+            _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, thrust_pid, thrust_out_ffc, thrust_tot, thr_out, thr_out_proper);
+        }
+         #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        #endif // IS_LOG_PID_FFC_OUTPUT        
     } else {
         // thr_ffc = 0;
         thr_out = thr_pid;
         thr_out_proper = thr_out;           // use PID if FFC is not used intendedly (eg if there's no GPA data)
-        #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        #if IS_LOG_PID_FFC_OUTPUT
+         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
         _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, 0, 0, 0, thr_out, thr_out_proper);
-        #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+         #else // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        // non-verbose logging
+        if ((call_run_z_controller_counter % (CALL_FREQUENCY_MEASUREMENT_RUN/LOG_PID_FFC_OUTPUT_FREQUENCY)) == 1) {
+            _ffc->log_pid_ffc_ctrl(is_use_ffc, thr_pid, 0, 0, 0, thr_out, thr_out_proper);
+        }
+         #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        #endif // IS_LOG_PID_FFC_OUTPUT        
     }
 #else  // IS_FFC_ENABLED
     thr_out = thr_pid;
     thr_out_proper = thr_out;               // always use PID if FFC is disabled, there will never be any PID+FFC
-    #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
-    _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
-    #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+    #if IS_LOG_PID_FFC_OUTPUT
+         #if IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
+         #else // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        // non-verbose logging
+        if ((call_run_z_controller_counter % (CALL_FREQUENCY_MEASUREMENT_RUN/LOG_PID_FFC_OUTPUT_FREQUENCY)) == 1) {
+            _ffc->log_pid_ffc_ctrl(false, thr_pid, 0, 0, 0, 0, thr_out_proper);
+        }
+         #endif // IS_LOG_VERBOSE_PID_FFC_OUTPUT
+        #endif // IS_LOG_PID_FFC_OUTPUT        
 #endif // IS_FFC_ENABLED
 
     // thr_out = thr_pid + thr_ffc; // this doesn't work, because throttle from thrust function is non-linear!

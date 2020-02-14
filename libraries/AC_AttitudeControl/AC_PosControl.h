@@ -345,6 +345,9 @@ protected:
     void run_z_controller();                        // overwritten by PeterSt
     void run_z_controller(bool is_use_ffc);         // added by PeterSt
     void run_z_controller(bool is_use_ffc, AC_FeedForwardController ffc);         // added by PeterSt
+#if IS_RUN_COUNTER_POS_CTRL_RUN_Z_CTRL
+    int call_run_z_controller_counter = 0;          // for non-verbose PIFF and FFC1 logging
+#endif // IS_RUN_COUNTER_POS_CTRL_RUN_Z_CTRL
 
     ///
     /// xy controller private methods

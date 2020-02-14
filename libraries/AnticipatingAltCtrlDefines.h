@@ -219,14 +219,23 @@ enum AltCtrlMode : uint8_t {
 
 // for merging controller data and logging
 
-#define IS_LOG_VERBOSE_PID_FFC_OUTPUT               000    // use ffc->log_pid_ffc_ctrl
-#define IS_LOG_FFC_THRUST_CURTAILMENTS              000    // for thrust capping and altitude safety thrust curtailment
+#define IS_LOG_PID_FFC_OUTPUT                       001     // "PIFF" log
+#define IS_LOG_VERBOSE_PID_FFC_OUTPUT               000     // use ffc->log_pid_ffc_ctrl "PIFF" every time, run() is exec'ed
+#define LOG_PID_FFC_OUTPUT_FREQUENCY                CALL_FREQUENCY_UPDATE_GPD   // if non-verbose: log: log with this freq
+
+#define IS_LOG_FFC_THRUST_CURTAILMENTS              001    // "FFC1" for thrust capping and altitude safety thrust curtailment
+#define IS_LOG_VERBOSE_FFC_THRUST_CURTAILMENTS      000    // for thrust capping and altitude safety thrust curtailment
+#define LOG_FFC_THRUST_CURTAILMENTS_FREQUENCY       CALL_FREQUENCY_UPDATE_GPD   // if non-verbose: log: log with this freq
 
 //
 ///////////////////////////////////////////////////////////////////////////////
 //
 ///// calculated parameters - DO NOT CHANGE from here on, if you just want to adjust the parameters
 //
+
+// only need this counter if "PIFF" or "FFC1" is supposed to be logged non-verbosely
+#define IS_RUN_COUNTER_POS_CTRL_RUN_Z_CTRL          ((IS_LOG_PID_FFC_OUTPUT && !IS_LOG_VERBOSE_PID_FFC_OUTPUT) || \
+    (IS_LOG_FFC_THRUST_CURTAILMENTS && !IS_LOG_VERBOSE_FFC_THRUST_CURTAILMENTS))
 
 // returns true after (N*1.05) s (exactly 1<<20 us), but only of the tick before hasn't been triggering
 //  usage for triggering eventy every ca. N seconds, eg. debug printout 

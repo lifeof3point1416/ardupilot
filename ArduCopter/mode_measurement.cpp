@@ -113,6 +113,12 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
 #if IS_FFC_ENABLED
     // #error CONTINUE HERE !!
     // TODO: prio 7: start working ffc from scheduler
+ #if IS_LOG_FFC_THRUST_CURTAILMENTS
+    // do "FFC2" log once
+    copter.get_ffc()->log_ffc_thrust_curtailments_parameters(FFC_IS_ENABLE_THRUST_CAPPING, FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL,
+            FFC_THRUST_CAPPING_MIN_THRUST, FFC_THRUST_CAPPING_MAX_THRUST, 
+            FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM, FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM);
+ #endif // IS_LOG_FFC_THRUST_CURTAILMENTS
 #endif // IS_FFC_ENABLED
 
 #endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
