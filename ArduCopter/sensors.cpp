@@ -293,7 +293,7 @@ void Copter::update_ground_profile_deviator(void)
 
     bool is_log_gpd;
     #if IS_VERBOSE_GPD_LOGGING
-        is_log_GPDTester = true;
+        is_log_gpd = true;
     #else // IS_VERBOSE_GPD_LOGGING
         // non-verbose GPD logs only 1 per second for samples
         is_log_gpd = (copter.call_update_ground_profile_deviator % (1 * CALL_FREQUENCY_UPDATE_GPD)) == 1;
