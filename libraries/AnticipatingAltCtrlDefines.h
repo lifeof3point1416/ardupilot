@@ -183,8 +183,10 @@ enum AltCtrlMode : uint8_t {
 
 #else // !IS_USE_SITL_CONFIGURATION ==> // SITL
 
-// TODO: prio 8: adjust MFC to SITL's thrust
 // for SITL's MOT_THST_HOVER = 0.347616 and m_c = 1.5 kg
+// ATTENTION: sitl config is not hover-scaled correclty!
+//  forgot to scale MOT_THST_HOVER, before adjusting motor control function
+//  TODO: prio 6: adjust sitl MFC to correct hover throttle
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.411280f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
@@ -207,6 +209,8 @@ enum AltCtrlMode : uint8_t {
 #define FFC_IS_ENABLE_ALTITUDE_SAFETY_THRUST_CURTAIL        true
 #define FFC_ALTITUDE_THRUST_CURTAIL_UPPER_THRESHOLD_CM      60          // below this level, proportional curtailment starts
 #define FFC_ALTITUDE_THRUST_CURTAIL_LOWER_THRESHOLD_CM      30          // at this level, FFC's negative thrust is curtailed to 0
+
+#define FFC_IS_CONSTRAIN_THROTTLE_OUT                       true        // constrain thr_out to 0~1 ?
 
 // Extended PID parameters
 

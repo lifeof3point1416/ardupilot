@@ -903,20 +903,16 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         }
  #endif // IS_LOG_FFC_THRUST_CURTAILMENTS  
 
-        #if IS_VERBOSE_DEBUG_FFC
-            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-        #endif // IS_VERBOSE_DEBUG_FFC
-        // apllying superposition principle to thrusts (=forces) not throttles!
+        // aplying superposition principle to thrusts (=forces) not throttles!
         float thrust_pid = 0, thrust_tot = 0;
         thrust_pid = _ffc->get_thrust_from_throttle(thr_pid, true);
-        #if IS_VERBOSE_DEBUG_FFC
-            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-        #endif // IS_VERBOSE_DEBUG_FFC
         thrust_tot = thrust_pid + thrust_out_ffc;
-        #if IS_VERBOSE_DEBUG_FFC
-            printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
-        #endif // IS_VERBOSE_DEBUG_FFC
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
+        
+        #if FFC_IS_CONSTRAIN_THROTTLE_OUT
+        thr_out = constrain_float(thr_out, 0.0f, 1.0f);
+        #endif // FFC_IS_CONSTRAIN_THROTTLE_OUT
+
         #if IS_VERBOSE_DEBUG_FFC
             printf("AC_PosControl.cpp line %d ok.\n", __LINE__);  // ok
         #endif // IS_VERBOSE_DEBUG_FFC
