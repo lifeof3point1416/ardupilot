@@ -51,7 +51,7 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define GPA_MAP_CONDENSED_BIAS                      (0x80)      // (values < -<this>) will still be negative
 #define PRINT_GPA_MAP_INTERVAL                      30
 #define IS_PRINT_GPA_MAIN_DIRECTION_COO             true        // print them in an interval
-#define IS_USE_GPA_MAP_FROM_FILE                    0001        // use predefined map instead (to avoid testflights each time we debug GPD)
+#define IS_USE_GPA_MAP_FROM_FILE                    0000        // use predefined map instead (to avoid testflights each time we debug GPD)
 // #define IS_USE_GPA_MAP_FROM_FILE                    false        // use predefined map instead (to avoid testflights each time we debug GPD)
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_spline_mockup.txt"
 // #define GPA_MAP_FROM_FILE_FILENAME                  "libraries/AP_RangeFinder/gpa_map_file_191206T1317P0100.txt"

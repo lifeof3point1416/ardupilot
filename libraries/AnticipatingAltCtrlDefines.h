@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   true
+#define IS_USE_SITL_CONFIGURATION                   false
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -105,7 +105,7 @@ enum AltCtrlMode : uint8_t {
 //#define GROUND_PROFILE_ACQUISITION_NO_DATA_VALUE            (0x8000)    // smallest possible value for int16_t
 #define IS_USE_GPA_MAP_OFFSET                               true        // so that first GPA map value is set to 0
 
-#define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM            100     // otherwise: don't store in GPA, send warning
+#define GPA_MAX_DEVIATION_FROM_MAIN_DIRECTION_CM            200     // otherwise: don't store in GPA, send warning
 #define IS_SEND_MESSAGE_IF_GPA_NOT_SUCCESSFUL               true
 //#define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC        (10*1000000)    // wait at least this timespan for next msg
 #define MESSAGE_IF_GPA_NOT_SUCCESSFUL_TIMEOUT_USEC          (2*1000000)    // shorter for debug mode
