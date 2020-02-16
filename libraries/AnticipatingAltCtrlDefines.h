@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   false
+#define IS_USE_SITL_CONFIGURATION                   true
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -85,7 +85,9 @@ enum AltCtrlMode : uint8_t {
 #define IS_OVERWRITE_LOIT_SPEED_IN_MEASUREMENT              true    // so that we can fly with max speed without a complex
                                                             //  GUIDED-like speed navigation
 #define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT           false
-#define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+// #define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define MAX_MEASUREMENT_HORIZONTAL_SPEED                    500     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define IS_ENABLE_MAX_HORIZONTAL_SPEED_OVERWRITING          false    // if false: can use LOIT_SPEED instead
 
 // for ground profile acquisition (GPA)
 

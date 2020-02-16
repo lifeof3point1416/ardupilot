@@ -30,7 +30,9 @@ bool Copter::ModeMeasurement::init(bool ignore_checks)
     #if IS_DEBUG_MAX_HORIZONTAL_SPEED
     hal.console->printf("set_speed_xy from ModeMeasurement::init()\n");
     #endif // IS_DEBUG_MAX_HORIZONTAL_SPEED
+    #if IS_ENABLE_MAX_HORIZONTAL_SPEED_OVERWRITING
     pos_control->set_speed_xy((float) MAX_MEASUREMENT_HORIZONTAL_SPEED);
+    #endif // IS_ENABLE_MAX_HORIZONTAL_SPEED_OVERWRITING
 #elif MEASUREMENT_FLIGHTMODE_BEHAVIOR == MEASUREMENT_BEHAVIOR_SEMI_GUIDED
     #error This behavior for flightmode MEASUREMENT is not implemented
     // pos_control->set_speed_xy(MAX_MEASUREMENT_HORIZONTAL_SPEED);

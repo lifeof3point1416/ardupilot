@@ -3297,10 +3297,14 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
         return 0.0f;
     }
     // calc thrust output in cgs system, [dyn] = [g*cm/s/s]
+    // thrust_output = copter_mass * (
+    //     copter_time_const/1e6f*altitude_over_ground_derivations.third + 
+    //     (copter_time_const*copter_air_resist_const/1e12f + 1)*altitude_over_ground_derivations.second + 
+    //     (copter_air_resist_const/1e6f) * altitude_over_ground_derivations.first +
     thrust_output = copter_mass * (
-        copter_time_const/1e6*altitude_over_ground_derivations.third + 
-        (copter_time_const*copter_air_resist_const/1e12 + 1)*altitude_over_ground_derivations.second + 
-        copter_air_resist_const/1e6*altitude_over_ground_derivations.first +
+        copter_time_const/1e6f*altitude_over_ground_derivations.third + 
+        (copter_time_const*copter_air_resist_const/1e12f + 1)*altitude_over_ground_derivations.second + 
+        (copter_air_resist_const/1e6f) * fabsf(altitude_over_ground_derivations.first) +
 #if FFC_IS_ENABLE_GRAVITATION
         copter_gravitation_const
 #else // FFC_IS_ENABLE_GRAVITATION
@@ -3308,7 +3312,7 @@ float AC_FeedForwardController::get_thrust_output_from_derivations(
 #endif // FFC_IS_ENABLE_GRAVITATION
         );
     // convert [g*cm/s/s] into [N] = [kg*m/s/s]
-    thrust_output /= 1e5;
+    thrust_output /= 1e5f;
     return thrust_output;
 }
 
