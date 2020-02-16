@@ -86,7 +86,7 @@ enum AltCtrlMode : uint8_t {
                                                             //  GUIDED-like speed navigation
 #define IS_SEND_MESSAGE_LOIT_SPEED_IN_MEASUREMENT           false
 // #define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
-#define MAX_MEASUREMENT_HORIZONTAL_SPEED                    500     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
+#define MAX_MEASUREMENT_HORIZONTAL_SPEED                    100     // in cm/s (would be MEAS_SPEED analog. to LOIT_SPEED)
 #define IS_ENABLE_MAX_HORIZONTAL_SPEED_OVERWRITING          false    // if false: can use LOIT_SPEED instead
 
 // for ground profile acquisition (GPA)
