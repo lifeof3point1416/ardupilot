@@ -149,27 +149,32 @@ enum AltCtrlMode : uint8_t {
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR                     MEASUREMENT_BEHAVIOR_LOITER
 #define FFC_IS_ENABLE_GRAVITATION                           false                            // should we add g in FFC?     
 #define FFC_MCF_IS_ENABLE_THROTTLE_SCALING                  true        // do throttle scaling in motor control function?
+#define IS_USE_SIMPLE_FFC                                   false       // if false: use full physical model
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
+#if 1 // use own values?
+#define PHYSICAL_MODEL_TIME_CONSTANT_MICROS                 253000  // PT1-time constant tau of the copter (including deadtime) [us]
+#define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s] == [1/Ms]
+#define PHYSICAL_MODEL_COPTER_MASS                            1420  // [g]
+#define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
+#else // use own values?
 #define PHYSICAL_MODEL_TIME_CONSTANT_MICROS                 149000  // PT1-time constant tau of the copter (including deadtime) [us]
 #define PHYSICAL_MODEL_SIMPLIFIED_AIR_RESISTANCE_CONST      (10000) // [1e6/s] == [1/Ms]
 #define PHYSICAL_MODEL_COPTER_MASS                            1500  // [g]
 #define PHYSICAL_MODEL_GRAVITATION_CONST                       981  // [cm/s/s]
+#endif // use own values?
 // for motor control function:
 
 // exponential motor control function (MCF)
 // thrust = a + b * throttle^c
-
 #if !IS_USE_SITL_CONFIGURATION         // use real UAV?
-
  #if 1  // use hover-rescaled MFC?
  // MOT_THST_HOVER for flamewheel:  0.460795, mass 1.5 kg
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_A              0.0f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.411148f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.41410410624967914f; // b^(1/c)
-
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.20f        // MOT_SPIN_MIN, this equals 0 unscaled
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f        // MOT_SPIN_MAX
  #else  // 1, use hover-rescaled MFC?
@@ -178,13 +183,10 @@ enum AltCtrlMode : uint8_t {
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.214470f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.2171481191077011f; // b^(1/c)
-
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.20f        // MOT_SPIN_MIN, this equals 0 unscaled
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f        // MOT_SPIN_MAX
  #endif // 1, use hover-rescaled MFC?
-
 #else // !IS_USE_SITL_CONFIGURATION ==> // SITL
-
 // for SITL's MOT_THST_HOVER = 0.347616 and m_c = 1.5 kg
 // ATTENTION: sitl config is not hover-scaled correclty!
 //  forgot to scale MOT_THST_HOVER, before adjusting motor control function
@@ -193,11 +195,8 @@ enum AltCtrlMode : uint8_t {
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B              0.411280f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_C              1.008126f
 #define MOTOR_CONTROL_FUNCTION_PARAMETER_EXP_B_POW_INV_C    0.4142359400004029f; // b^(1/c)
-
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN         0.15f       // MOT_SPIN_MIN, this equals 0 unscaled
 #define MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX         0.95f       // MOT_SPIN_MAX
-
-
 #endif // !IS_USE_SITL_CONFIGURATION
 
 // thrust capping
