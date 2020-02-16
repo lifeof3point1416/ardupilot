@@ -472,6 +472,12 @@ public:
     float get_thrust_from_throttle(float throttle, bool is_allow_negative);     // motor control function f_m
     float get_throttle_from_thrust(float thrust_N, bool is_allow_negative);     // inverse motor control function f_m^-1
     float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
+#if IS_USE_SIMPLE_FFC
+    #error not implemented yet, get MOT_THST_HOVER data into ffc! when updating!
+    float get_thrust_from_throttle_simple_model(float throttle, bool is_allow_negative);   // motor control function f_m
+    float get_throttle_from_thrust_simple_model(float thrust, bool is_allow_negative);     // inverse motor control function f_m^-1
+    float get_thrust_output_from_2nd_derivation_simple_model(float second_derivation);
+#endif // IS_USE_SIMPLE_FFC
     // float get_throttle_output(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
     float get_thrust_output(void);                      // use inherent derivation data
 // #if IS_VERBOSE_THROTTLE_LOGGING_FFC

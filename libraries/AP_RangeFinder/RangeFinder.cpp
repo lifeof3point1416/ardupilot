@@ -3327,8 +3327,18 @@ float AC_FeedForwardController::get_thrust_output(void) {
         // TODO: prio 6: log derivations timeout?
         return 0.0f;
     }
+ #if !IS_USE_SIMPLE_FFC
     thrust_output = get_thrust_output_from_derivations(last_derivations);
     return thrust_output;
+ #else // !IS_USE_SIMPLE_FFC
+    // use simple ffc model
+    if (last_derivations.is_valid) {
+        thrust_output = get_thrust_output_from_2nd_derivation_simple_model(last_derivations.second);
+        return thrust_output;
+    } else {
+        return 0.0f;
+    }
+ #endif // IS_USE_SIMPLE_FFC
 #else
     return 0.0f;
 #endif // IS_FFC_ENABLED
@@ -3482,6 +3492,41 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
 
     return throttle;
 }
+
+#if IS_USE_SIMPLE_FFC
+#error not implemented yet, get MOT_THST_HOVER data into ffc! when updating!
+// motor control function for simple FFC model, thrust is multiples of copter weight
+float AC_FeedForwardController::get_thrust_from_throttle_simple_model(float throttle, bool is_allow_negative)
+{
+    #error TODO: get throttle_hover
+    float throttle_hover;
+    #error TODO: scale throttle and throttle_hover, constrain throttle
+    float thrust;
+    thrust = throttle / throttle_hover;
+    return thrust;
+}
+
+float AC_FeedForwardController::get_throttle_from_thrust_simple_model(float thrust, bool is_allow_negative)
+{
+    #error TODO: get throttle_hover
+    float throttle_hover;
+    #error TODO: scale throttle_hover
+    float throttle;
+    throttle = throttle_hover * thrust
+    #error TODO: unscale throttle, constrain throttle
+    return throttle;
+}
+
+float AC_FeedForwardController::get_thrust_output_from_2nd_derivation_simple_model(float second_derivation)
+{
+    float thrust_out;                                       // in multiples of copter weight
+    thrust_out = second_derivation / copter_gravitation_const;
+    #if FFC_IS_ENABLE_GRAVITATION
+    thrust_out += 1;                                        // add own weight, if applicable
+    #endif // FFC_IS_ENABLE_GRAVITATION
+    return thrust_out;
+}
+#endif // IS_USE_SIMPLE_FFC
 
 // log PID controller's and FFC controller's outputs in AC_PosControl::run_z_controller with tag "PIFF"
 // throttles are in [1], 0~1; thrusts are in [N]

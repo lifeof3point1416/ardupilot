@@ -26,7 +26,7 @@ enum AltCtrlMode : uint8_t {
 // for rangefinders
 //
 
-#define IS_USE_SITL_CONFIGURATION                   false
+#define IS_USE_SITL_CONFIGURATION                   true
 
 #if !IS_USE_SITL_CONFIGURATION
 #define RANGEFINDER_ANGLE_FORWARD_FACING_DEG        45      // 0° is downwards
@@ -149,7 +149,7 @@ enum AltCtrlMode : uint8_t {
 #define MEASUREMENT_FLIGHTMODE_BEHAVIOR                     MEASUREMENT_BEHAVIOR_LOITER
 #define FFC_IS_ENABLE_GRAVITATION                           false                            // should we add g in FFC?     
 #define FFC_MCF_IS_ENABLE_THROTTLE_SCALING                  true        // do throttle scaling in motor control function?
-#define IS_USE_SIMPLE_FFC                                   false       // if false: use full physical model
+#define IS_USE_SIMPLE_FFC                                   true       // if false: use full physical model
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
@@ -275,8 +275,15 @@ enum AltCtrlMode : uint8_t {
 
 #define IS_USE_GPA_MAP_FREEZE_MODE                  (IS_USE_SITL_CONFIGURATION && IS_RUN_GROUND_PROFILE_DERIVATOR_TESTS)
 
+#if IS_USE_SIMPLE_FFC
+// for simple model 
+#define FFC_THRUST_CAPPING_MAX_THRUST               (FFC_THRUST_CAPPING_MAX_FACTOR)     // measured in multiples of copter weight for simple model
+#define FFC_THRUST_CAPPING_MIN_THRUST               (FFC_THRUST_CAPPING_MIN_FACTOR)     // measured in multiples of copter weight for simple model
+#else // IS_USE_SIMPLE_FFC
+// for full FFC model
 #define FFC_THRUST_CAPPING_MAX_THRUST               (1e-5f*FFC_THRUST_CAPPING_MAX_FACTOR * PHYSICAL_MODEL_COPTER_MASS * PHYSICAL_MODEL_GRAVITATION_CONST)
 #define FFC_THRUST_CAPPING_MIN_THRUST               (1e-5f*FFC_THRUST_CAPPING_MIN_FACTOR * PHYSICAL_MODEL_COPTER_MASS * PHYSICAL_MODEL_GRAVITATION_CONST)
+#endif // IS_USE_SIMPLE_FFC
 
 // set name string of alt ctrl
 #if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_STANDARD_PID
