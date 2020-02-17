@@ -902,13 +902,20 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
             }
         }
  #endif // IS_LOG_FFC_THRUST_CURTAILMENTS  
-        
-        #error TODO: implement simple FFC model as an option
         // aplying superposition principle to thrusts (=forces) not throttles!
+ #if !IS_USE_SIMPLE_FFC
+        // full FFC model
         float thrust_pid = 0, thrust_tot = 0;
         thrust_pid = _ffc->get_thrust_from_throttle(thr_pid, true);
         thrust_tot = thrust_pid + thrust_out_ffc;
         thr_out = _ffc->get_throttle_from_thrust(thrust_tot, true);
+ #else // !IS_USE_SIMPLE_FFC
+        // simple FFC model, thrust is measured in multiples of copter weight
+        float thrust_pid = 0, thrust_tot = 0;
+        thrust_pid = _ffc->get_thrust_from_throttle_simple_model(thr_pid, true);
+        thrust_tot = thrust_pid + thrust_out_ffc;
+        thr_out = _ffc->get_throttle_from_thrust_simple_model(thrust_tot, true);
+ #endif // !IS_USE_SIMPLE_FFC
 
         #if FFC_IS_CONSTRAIN_THROTTLE_OUT
         thr_out = constrain_float(thr_out, 0.0f, 1.0f);
