@@ -150,6 +150,7 @@ enum AltCtrlMode : uint8_t {
 #define FFC_IS_ENABLE_GRAVITATION                           false                            // should we add g in FFC?     
 #define FFC_MCF_IS_ENABLE_THROTTLE_SCALING                  true        // do throttle scaling in motor control function?
 #define IS_USE_SIMPLE_FFC                                   false       // if false: use full physical model
+static_assert(!IS_USE_SIMPLE_FFC, "Fix SimpleFFC which  right now causes crashing SITL as soon as AC starts!");
 
 // physical model parameters
 // TODO: use actual values of my flamewheel, these are taken from [Kam11] and [Kla12]
