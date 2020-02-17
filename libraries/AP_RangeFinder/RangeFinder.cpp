@@ -3346,9 +3346,8 @@ float AC_FeedForwardController::get_thrust_output(void) {
 
 void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations)
 {
-
     last_derivations = new_derivations;
-    last_derivations_update = AP_HAL::micros64();
+    last_derivations_update = AP_HAL::micros64();   // millis would be sufficient and faster in calculation
 }
 
 // converts throttle [1] (0 .. 1) to thrust [N]
@@ -3494,26 +3493,73 @@ float AC_FeedForwardController::get_throttle_from_thrust(float thrust_N, bool is
 }
 
 #if IS_USE_SIMPLE_FFC
-#error not implemented yet, get MOT_THST_HOVER data into ffc! when updating!
 // motor control function for simple FFC model, thrust is multiples of copter weight
 float AC_FeedForwardController::get_thrust_from_throttle_simple_model(float throttle, bool is_allow_negative)
 {
-    #error TODO: get throttle_hover
-    float throttle_hover;
-    #error TODO: scale throttle and throttle_hover, constrain throttle
+    bool is_negative;
+    is_negative = throttle < 0.0f;
+    if (is_negative && !is_allow_negative) {
+        return 0.0f;                                                // cut off negative values at thrust 0
+    }
+
+    // use positive values for motor control function, adjust sign afterwards
+    if (is_negative) {
+        throttle = -throttle;
+    }
+
+    float throttle_hover = _throttle_hover;
+    // scale throttle and throttle_hover with 0~1 constraint (below) and max throttle:
+    throttle = (throttle - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) /
+        (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN);
+    throttle = constrain_float(throttle, 0.0f, 1.0f);
+    //
+    throttle_hover = (throttle_hover - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) /
+        (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN);
+    throttle_hover = constrain_float(throttle_hover, 0.0f, 1.0f);
+    //
     float thrust;
+    // under all circumstances avoid division by 0
+    if (throttle_hover == 0.0f) {
+        return 1.0f;            // own weight as thrust: hovering is a safe result if s/th wrong happens
+    }
     thrust = throttle / throttle_hover;
+    
+    if (is_negative) {
+        thrust = -thrust;
+    }
     return thrust;
 }
 
 float AC_FeedForwardController::get_throttle_from_thrust_simple_model(float thrust, bool is_allow_negative)
 {
-    #error TODO: get throttle_hover
-    float throttle_hover;
-    #error TODO: scale throttle_hover
+    bool is_negative;
+    is_negative = thrust < 0.0f;
+
+    if (is_negative && !is_allow_negative) {
+        return 0.0f;                                                // cut off negative values at thrust 0
+    }
+
+    if (is_negative) {
+        thrust = -thrust;
+    }
+
+    float throttle_hover = _throttle_hover;
+    // scale throttle_hover with 0~1 constraint (below) and max throttle:
+    throttle_hover = (throttle_hover - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) /
+        (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN);
+    throttle_hover = constrain_float(throttle_hover, 0.0f, 1.0f);
+    //
     float throttle;
-    throttle = throttle_hover * thrust
-    #error TODO: unscale throttle, constrain throttle
+    // under all circumstances avoid division by 0
+    throttle = throttle_hover * thrust;
+    // unscale and constrain throttle
+    throttle = throttle * (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) 
+        + MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN;
+    throttle = constrain_float(throttle, 0.0f, 1.0f);
+
+    if (is_negative) {
+        throttle = -throttle;
+    }
     return throttle;
 }
 
@@ -3522,7 +3568,7 @@ float AC_FeedForwardController::get_thrust_output_from_2nd_derivation_simple_mod
     float thrust_out;                                       // in multiples of copter weight
     thrust_out = second_derivation / copter_gravitation_const;
     #if FFC_IS_ENABLE_GRAVITATION
-    thrust_out += 1;                                        // add own weight, if applicable
+    thrust_out += 1.0f;                                        // add own weight, if applicable
     #endif // FFC_IS_ENABLE_GRAVITATION
     return thrust_out;
 }

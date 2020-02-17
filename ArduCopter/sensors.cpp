@@ -325,6 +325,14 @@ void Copter::update_ground_profile_deviator(void)
     #endif // IS_VERBOSE_DEBUG_GPD   
 }
 
+#if IS_USE_SIMPLE_FFC
+// PeterSt: update ffc's throttle hover value, which is necessary in SimpleFFC mode
+void Copter::update_ffc_throttle_hover(void)
+{
+    copter.get_ffc()->set_throttle_hover(copter.motors->get_throttle_hover());
+}
+#endif // IS_USE_SIMPLE_FFC
+
 /*
   update RPM sensors
  */

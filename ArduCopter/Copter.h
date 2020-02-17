@@ -961,6 +961,9 @@ private:
     void winch_update();
     void update_ground_profile_acquisition(void);       // by PeterSt
     void update_ground_profile_deviator(void);          // by PeterSt
+#if IS_USE_SIMPLE_FFC
+    void update_ffc_throttle_hover(void);               // by PeterSt
+#endif // IS_USE_SIMPLE_FFC
 
     // setup.cpp
     void report_compass();

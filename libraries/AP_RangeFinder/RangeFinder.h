@@ -473,7 +473,6 @@ public:
     float get_throttle_from_thrust(float thrust_N, bool is_allow_negative);     // inverse motor control function f_m^-1
     float get_thrust_output_from_derivations(AC_GroundProfileDerivator::DistanceDerivations altitude_over_ground_derivations);
 #if IS_USE_SIMPLE_FFC
-    #error not implemented yet, get MOT_THST_HOVER data into ffc! when updating!
     float get_thrust_from_throttle_simple_model(float throttle, bool is_allow_negative);   // motor control function f_m
     float get_throttle_from_thrust_simple_model(float thrust, bool is_allow_negative);     // inverse motor control function f_m^-1
     float get_thrust_output_from_2nd_derivation_simple_model(float second_derivation);
@@ -485,8 +484,12 @@ public:
 // #endif // IS_VERBOSE_THROTTLE_LOGGING_FFC
     inline AC_GroundProfileDerivator *get_gpd(void) {return ground_profile_derivator;}
     void update_last_derivation(AC_GroundProfileDerivator::DistanceDerivations new_derivations);
-    // float get_thrust_from_throttle(float throttle);     // converts throttle [1] (0 .. 1) to thrust [N]
-    // float get_throttle_from_thrust(float thrust);       // converts thrust [N] to throttle [1] (0 .. 1)
+#if IS_USE_SIMPLE_FFC
+    // inline void set_throttle_hover(float new_throttle_hover) {
+    //     _throttle_hover = constrain_float(new_throttle_hover, AP_MOTORS_THST_HOVER_MIN, AP_MOTORS_THST_HOVER_MAX);}  // can't access defines
+    inline void set_throttle_hover(float new_throttle_hover) {
+        _throttle_hover = constrain_float(new_throttle_hover, 0.0f, 1.0f);}
+#endif // IS_USE_SIMPLE_FFC
     void log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
     float thrust_out_ffc, float thrust_tot, float throttle_out_calced, float throttle_out_proper);
 #if IS_LOG_FFC_THRUST_CURTAILMENTS
@@ -513,6 +516,9 @@ protected:
     AC_GroundProfileDerivator::DistanceDerivations last_derivations = {
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
     uint64_t last_derivations_update = 0;                           // time of last update for last_derivatios [us]
+#if IS_USE_SIMPLE_FFC
+    float _throttle_hover = 0.35f;                                   // hard coded default value, not very nice
+#endif // #if IS_USE_SIMPLE_FFC
 
 private:
 };
