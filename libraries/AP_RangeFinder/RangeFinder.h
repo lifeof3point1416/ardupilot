@@ -487,8 +487,10 @@ public:
 #if IS_USE_SIMPLE_FFC
     // inline void set_throttle_hover(float new_throttle_hover) {
     //     _throttle_hover = constrain_float(new_throttle_hover, AP_MOTORS_THST_HOVER_MIN, AP_MOTORS_THST_HOVER_MAX);}  // can't access defines
-    inline void set_throttle_hover(float new_throttle_hover) {
-        _throttle_hover = constrain_float(new_throttle_hover, 0.0f, 1.0f);}
+    //
+    // inline void set_throttle_hover(float new_throttle_hover) {
+    //     _throttle_hover = constrain_float(new_throttle_hover, 0.0f, 1.0f);}
+    void set_throttle_hover(float new_throttle_hover);
 #endif // IS_USE_SIMPLE_FFC
     void log_pid_ffc_ctrl(bool is_use_ffc, float throttle_pid, float thrust_pid, 
     float thrust_out_ffc, float thrust_tot, float throttle_out_calced, float throttle_out_proper);
@@ -517,7 +519,7 @@ protected:
         DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, DERIVATIONS_NO_DATA_INIT_VALUE, false};
     uint64_t last_derivations_update = 0;                           // time of last update for last_derivatios [us]
 #if IS_USE_SIMPLE_FFC
-    float _throttle_hover = 0.35f;                                   // hard coded default value, not very nice
+    float ffc_throttle_hover = 0.35f;                                   // hard coded default value, not very nice
 #endif // #if IS_USE_SIMPLE_FFC
 
 private:

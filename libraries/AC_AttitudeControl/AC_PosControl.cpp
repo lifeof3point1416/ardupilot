@@ -850,6 +850,11 @@ void AC_PosControl::run_z_controller(bool is_use_ffc)
         //
         thrust_out_ffc = _ffc->get_thrust_output();
 
+        // dirty workaround for simple FFC
+ #if IS_USE_SIMPLE_FFC && IS_USE_WORKAROUND_SIMPLE_FFC
+ _ffc->set_throttle_hover(_motors.get_throttle_hover());
+ #endif // IS_USE_SIMPLE_FFC
+
  #if IS_LOG_FFC_THRUST_CURTAILMENTS
         float thrust_ffc_raw, thrust_ffc_after_cap;
         thrust_ffc_raw = thrust_out_ffc;

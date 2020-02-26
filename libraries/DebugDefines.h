@@ -81,12 +81,15 @@ static_assert(!IS_PRINT_GPA_NEW_POINT, "must not use this, to prevent io from be
 #define IS_REVERSE_FLIGHT_SPEED_CHECK_LOG_TESTER    false        // do debug printout for horizontal velocities
 #define IS_VERBOSE_DEBUG_FFC                        false         // at PosCtrl, where FFC comes into action
 #define IS_VERY_VERBOSE_DEBUG_FFC_MCF               false         // find cause of Floating Point exception
+#define IS_ALLOW_SIMPLE_FFC                         false       // for debug purposes
+#define IS_USE_WORKAROUND_SIMPLE_FFC                true
 
 // debug values
 #define REPEATET_GCS_MESSAGE_INTERVAL               60          // print a custom gcs message every X seconds
 #define REPEATET_MESSAGE_IN_MEASUREMENT_INTERVAL    30          // print a custom gcs message every X seconds
 #define CALL_FREQUENCY_MEASUREMENT_RUN              400         // call frequency of Copter::ModeMeasurement::run()
-#define LAST_CODE_CHANGE                    "2020-02-17 11:30+01:00"    // TODO: frequently update after changes
+// #define LAST_CODE_CHANGE                    "2020-02-17 11:30+01:00"    // TODO: frequently update after changes // last real code change
+#define LAST_CODE_CHANGE                    "2020-02-26 21:49+01:00"    // TODO: frequently update after changes
 #define IS_LAST_CHANGE_DATE_DEPRECATED              00          // change to 1, if you changed code but not LAST_CODE_CHANGE
 #define PRINT_MESSAGE_VALUE_INTERVAL                5
 #define PRINT_GPA_MAP_UNTIL_INDEX                   2000         // print all ground_profile[0:<this value>

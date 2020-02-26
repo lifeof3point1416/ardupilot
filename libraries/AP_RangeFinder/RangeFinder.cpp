@@ -3350,6 +3350,14 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
     last_derivations_update = AP_HAL::micros64();   // millis would be sufficient and faster in calculation
 }
 
+void AC_FeedForwardController::set_throttle_hover(float new_throttle_hover)
+{
+    // printf("rf.cpp, line %d ok.\n", __LINE__);
+    // printf("new_throttle_hover: %lf\n", new_throttle_hover);
+    ffc_throttle_hover = constrain_float(new_throttle_hover, 0.0f, 1.0f);
+    // printf("rf.cpp, line %d ok.\n", __LINE__);
+}
+
 // converts throttle [1] (0 .. 1) to thrust [N]
 //  allows negative values for throttle, if is_allow_negative is true
 //  as partial throttles and thrusts from PID and FFC are added for total thrust,
@@ -3507,7 +3515,7 @@ float AC_FeedForwardController::get_thrust_from_throttle_simple_model(float thro
         throttle = -throttle;
     }
 
-    float throttle_hover = _throttle_hover;
+    float throttle_hover = ffc_throttle_hover;
     // scale throttle and throttle_hover with 0~1 constraint (below) and max throttle:
     throttle = (throttle - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) /
         (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN);
@@ -3543,7 +3551,7 @@ float AC_FeedForwardController::get_throttle_from_thrust_simple_model(float thru
         thrust = -thrust;
     }
 
-    float throttle_hover = _throttle_hover;
+    float throttle_hover = ffc_throttle_hover;
     // scale throttle_hover with 0~1 constraint (below) and max throttle:
     throttle_hover = (throttle_hover - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN) /
         (MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MAX - MOTOR_CONTROL_FUNCTION_SCALING_THROTTLE_MIN);
