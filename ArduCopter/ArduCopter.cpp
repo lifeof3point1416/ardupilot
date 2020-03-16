@@ -448,7 +448,7 @@ void Copter::one_hz_loop()
 #if IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
     gcs().send_text(MAV_SEVERITY_DEBUG, "Moin :)");          // works
 #endif // IS_PRINT_REPEATET_MESSAGE_1HZ_CONSOLE
-#if IS_LOG_GPA
+#if IS_LOG_GPA && (MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC)
     if (is_started_ground_profile_acquisition) {
         ground_profile_acquisition->log_ground_profile();
     }

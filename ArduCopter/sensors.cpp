@@ -265,6 +265,7 @@ void Copter::update_ground_profile_acquisition(void)
 #endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 }
 
+#if IS_GROUND_PROFILE_ACQUISITION_ENABLED
 // PeterSt:s
 // updates ffc->last_deviation with the current ground profile deviates
 //  this function is called from the scheduler
@@ -279,12 +280,14 @@ void Copter::update_ground_profile_deviator(void)
         return;
     }
 
+#if MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
     AC_FeedForwardController *ffc = copter.get_ffc();                      // Feed Forward Controller instance
     if (ffc == nullptr) {
         // TODO: prio 7: log that there is no ffc?
         return;
         // printf("?")
     }
+#endif // MEASUREMENT_ALTITUDE_CONTROL_MODE == ALT_CTRL_MODE_FFC
     
     float horiz_speed;
     int32_t heading;
@@ -324,6 +327,7 @@ void Copter::update_ground_profile_deviator(void)
         printf("sensors.cpp line %d ok.\n", __LINE__);  // ???
     #endif // IS_VERBOSE_DEBUG_GPD   
 }
+#endif // IS_GROUND_PROFILE_ACQUISITION_ENABLED
 
 #if IS_USE_SIMPLE_FFC
 // PeterSt: update ffc's throttle hover value, which is necessary in SimpleFFC mode

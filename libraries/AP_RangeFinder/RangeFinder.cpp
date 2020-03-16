@@ -3350,6 +3350,7 @@ void AC_FeedForwardController::update_last_derivation(AC_GroundProfileDerivator:
     last_derivations_update = AP_HAL::micros64();   // millis would be sufficient and faster in calculation
 }
 
+#if IS_USE_SIMPLE_FFC
 void AC_FeedForwardController::set_throttle_hover(float new_throttle_hover)
 {
     // printf("rf.cpp, line %d ok.\n", __LINE__);
@@ -3357,6 +3358,7 @@ void AC_FeedForwardController::set_throttle_hover(float new_throttle_hover)
     ffc_throttle_hover = constrain_float(new_throttle_hover, 0.0f, 1.0f);
     // printf("rf.cpp, line %d ok.\n", __LINE__);
 }
+#endif // IS_USE_SIMPLE_FFC
 
 // converts throttle [1] (0 .. 1) to thrust [N]
 //  allows negative values for throttle, if is_allow_negative is true
